@@ -20,6 +20,7 @@
 
 # Игнорировать директории сборки (CMake, Make, Autotools, etc.)
 build/
+build-*/
 bin/
 out/
 Debug/
@@ -45,6 +46,8 @@ CTestTestfile.cmake
 *.bak
 
 # Игнорировать пользовательские файлы IDE (Visual Studio, CLion, Qt Creator, etc.)
+.idea/
+*.iml
 *.suo
 *.user
 *.ncb
