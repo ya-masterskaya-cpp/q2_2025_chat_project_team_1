@@ -23,12 +23,17 @@ set(SERVER_SRC server/src)
 
 add_executable(Client
     ${CLIENT_SRC}/main.cpp
+    ${CLIENT_INCL}/application.h
+    ${CLIENT_INCL}/main_frame.h
+    ${CLIENT_SRC}/main_frame.cpp
 
 )
+target_include_directories(Client PRIVATE ${CLIENT_INCL})
 
 add_executable(Server
     ${SERVER_SRC}/main.cpp
 )
+target_include_directories(Server PRIVATE ${SERVER_INCL})
 
 
 target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
