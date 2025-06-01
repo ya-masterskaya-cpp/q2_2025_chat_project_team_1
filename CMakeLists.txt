@@ -24,8 +24,13 @@ set(SERVER_SRC server/src)
 add_executable(Client
     ${CLIENT_SRC}/main.cpp
     ${CLIENT_INCL}/application.h
+    # gui
     ${CLIENT_INCL}/main_frame.h
     ${CLIENT_SRC}/main_frame.cpp
+    #transfer
+    ${CLIENT_INCL}/transfer_interface.h
+    ${CLIENT_INCL}/tcp_client.h
+    ${CLIENT_SRC}/tcp_client.cpp
 
 )
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
