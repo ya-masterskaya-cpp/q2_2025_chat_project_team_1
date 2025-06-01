@@ -81,6 +81,22 @@ std::vector<UserRecord> UsersRepository::LoadAll() const {
     return result;
 }
 
+std::optional<UserRecord> UsersRepository::FindByUsername(const std::string &username) const
+{
+    const pqxx::result res = transaction_.exec_params(
+        R"(SELECT id, username, password_hash, registered_at FROM users WHERE username = $1;)", username
+    );
+    if (res.empty())
+        return std::nullopt;
+    const auto& row = res[0];
+    return UserRecord{
+        UserId::FromString(row[0].as<std::string>()),
+        row[1].as<std::string>(),
+        row[2].as<std::string>(), // password_hash
+        row[3].as<std::string>()
+    };
+}
+
 // ---- RoomsRepository ----
 
 RoomsRepository::RoomsRepository(pqxx::work &transaction) : transaction_(transaction) {}

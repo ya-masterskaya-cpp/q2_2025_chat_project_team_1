@@ -112,6 +112,7 @@ public:
 
     void Save(const std::string& username, const std::string& password_hash) const;
     std::vector<UserRecord> LoadAll() const;
+    std::optional<UserRecord> FindByUsername(const std::string& username) const;
 
 private:
     pqxx::work& transaction_;
