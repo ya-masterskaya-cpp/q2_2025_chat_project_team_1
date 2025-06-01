@@ -1,0 +1,241 @@
+#include "postgres.h"
+#include "tagged_uuid.h"
+
+namespace postgres {
+
+using namespace std::literals;
+using pqxx::operator"" _zv;
+
+// ---- ConnectionPool реализация ----
+
+ConnectionPool::ConnectionWrapper::ConnectionWrapper(std::shared_ptr<pqxx::connection> &&conn, PoolType &pool) noexcept
+: conn_{std::move(conn)}
+, pool_{&pool} {}
+
+pqxx::connection & ConnectionPool::ConnectionWrapper::operator*() const & noexcept {
+return *conn_;
+}
+
+pqxx::connection * ConnectionPool::ConnectionWrapper::operator->() const & noexcept {
+return conn_.get();
+}
+
+ConnectionPool::ConnectionWrapper::~ConnectionWrapper() {
+    if (conn_) {
+        pool_->ReturnConnection(std::move(conn_));
+    }
+}
+
+ConnectionPool::ConnectionWrapper ConnectionPool::GetConnection() {
+    std::unique_lock lock{mutex_};
+    cond_var_.wait(lock, [this] {
+        return used_connections_ < pool_.size();
+    });
+    return {std::move(pool_[used_connections_++]), *this};
+}
+
+std::optional<ConnectionPool::ConnectionWrapper> ConnectionPool::GetConnection(std::chrono::milliseconds timeout) {
+    std::unique_lock lock{mutex_};
+    if (!cond_var_.wait_for(lock, timeout, [this] {
+        return used_connections_ < pool_.size();
+    })) {
+        return std::nullopt;
+    }
+    return ConnectionWrapper{std::move(pool_[used_connections_++]), *this};
+}
+
+void ConnectionPool::ReturnConnection(ConnectionPtr &&conn) {
+    {
+        std::lock_guard lock{mutex_};
+        assert(used_connections_ != 0);
+        pool_[--used_connections_] = std::move(conn);
+    }
+    cond_var_.notify_one();
+}
+
+// ---- UsersRepository ----
+
+UsersRepository::UsersRepository(pqxx::work &transaction) : transaction_(transaction) {}
+
+void UsersRepository::Save(const std::string &username, const std::string &password_hash) const {
+    auto id = UserId::New().ToString();
+    transaction_.exec_params(
+            R"(INSERT INTO users (id, username, password_hash, registered_at) VALUES ($1, $2, $3, NOW());)"_zv,
+            id, username, password_hash
+    );
+}
+
+std::vector<UserRecord> UsersRepository::LoadAll() const {
+    std::vector<UserRecord> result;
+    const pqxx::result query_result = transaction_.exec(
+            R"(SELECT id, username, password_hash, registered_at FROM users ORDER BY registered_at DESC;)"_zv
+    );
+    for (const auto& row : query_result) {
+        result.push_back(UserRecord{
+                UserId::FromString(row[0].as<std::string>()),
+                row[1].as<std::string>(),
+                row[2].as<std::string>(),
+                row[3].as<std::string>()
+        });
+    }
+    return result;
+}
+
+// ---- RoomsRepository ----
+
+RoomsRepository::RoomsRepository(pqxx::work &transaction) : transaction_(transaction) {}
+
+void RoomsRepository::Save(const std::string &name) const {
+    auto id = RoomId::New().ToString();
+    transaction_.exec_params(
+            R"(INSERT INTO rooms (id, name, created_at) VALUES ($1, $2, NOW());)"_zv, id, name
+    );
+}
+
+std::vector<RoomRecord> RoomsRepository::LoadAll() const {
+    std::vector<RoomRecord> result;
+    const pqxx::result query_result = transaction_.exec(
+            R"(SELECT id, name, created_at FROM rooms ORDER BY created_at DESC;)"_zv
+    );
+    for (const auto& row : query_result) {
+        result.push_back(RoomRecord{
+                RoomId::FromString(row[0].as<std::string>()),
+                row[1].as<std::string>(),
+                row[2].as<std::string>()
+        });
+    }
+    return result;
+}
+
+// ---- MessagesRepository ----
+
+MessagesRepository::MessagesRepository(pqxx::work &transaction) : transaction_(transaction) {}
+
+void MessagesRepository::Save(const UserId& user_id, const RoomId& room_id, const std::string& message) const {
+    auto id = MessageId::New().ToString();
+    transaction_.exec_params(
+            R"(INSERT INTO messages (id, user_id, room_id, message, sent_at) VALUES ($1, $2, $3, $4, NOW());)"_zv,
+            id, user_id.ToString(), room_id.ToString(), message
+    );
+}
+
+std::vector<MessageRecord> MessagesRepository::LoadRecent(const RoomId& room_id, int max_items) const {
+    std::vector<MessageRecord> result;
+    const pqxx::result query_result = transaction_.exec_params(
+            R"(SELECT id, user_id, room_id, message, sent_at FROM messages
+           WHERE room_id = $1
+           ORDER BY sent_at DESC LIMIT $2;)"_zv,
+            room_id.ToString(), max_items
+    );
+    for (const auto& row : query_result) {
+        result.push_back(MessageRecord{
+                MessageId::FromString(row[0].as<std::string>()),
+                UserId::FromString(row[1].as<std::string>()),
+                RoomId::FromString(row[2].as<std::string>()),
+                row[3].as<std::string>(),
+                row[4].as<std::string>()
+        });
+    }
+    return result;
+}
+
+// ---- RoomMembersRepository ----
+
+RoomMembersRepository::RoomMembersRepository(pqxx::work& transaction)
+        : transaction_(transaction) {}
+
+void RoomMembersRepository::Save(const UserId& user_id, const RoomId& room_id) const {
+    auto id = RoomMemberId::New().ToString();
+    transaction_.exec_params(
+            R"(INSERT INTO room_members (id, room_id, user_id, joined_at)
+            VALUES ($1, $2, $3, NOW())
+            ON CONFLICT DO NOTHING;)",
+            id, room_id.ToString(), user_id.ToString()
+    );
+}
+
+void RoomMembersRepository::Remove(const UserId& user_id, const RoomId& room_id) const {
+    transaction_.exec_params(
+            R"(DELETE FROM room_members WHERE room_id = $1 AND user_id = $2;)",
+            room_id.ToString(), user_id.ToString()
+    );
+}
+
+std::vector<RoomMemberRecord> RoomMembersRepository::LoadMembers(const RoomId& room_id) const {
+    std::vector<RoomMemberRecord> result;
+    const pqxx::result query_result = transaction_.exec_params(
+            R"(SELECT id, room_id, user_id, joined_at FROM room_members WHERE room_id = $1;)",
+            room_id.ToString()
+    );
+    for (const auto& row : query_result) {
+        result.push_back(RoomMemberRecord{
+                RoomMemberId::FromString(row[0].as<std::string>()),
+                RoomId::FromString(row[1].as<std::string>()),
+                UserId::FromString(row[2].as<std::string>()),
+                row[3].as<std::string>()
+        });
+    }
+    return result;
+}
+
+std::vector<RoomMemberRecord> RoomMembersRepository::LoadRooms(const UserId& user_id) const {
+    std::vector<RoomMemberRecord> result;
+    const pqxx::result query_result = transaction_.exec_params(
+            R"(SELECT id, room_id, user_id, joined_at FROM room_members WHERE user_id = $1;)",
+            user_id.ToString()
+    );
+    for (const auto& row : query_result) {
+        result.push_back(RoomMemberRecord{
+                RoomMemberId::FromString(row[0].as<std::string>()),
+                RoomId::FromString(row[1].as<std::string>()),
+                UserId::FromString(row[2].as<std::string>()),
+                row[3].as<std::string>()
+        });
+    }
+    return result;
+}
+
+// ---- Database ----
+
+Database::Database(std::shared_ptr<ConnectionPool> pool_ptr)
+        : pool_ptr_(std::move(pool_ptr)) {
+    const auto conn = pool_ptr_->GetConnection();
+    pqxx::work transaction{*conn};
+
+    transaction.exec(
+            R"(
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID PRIMARY KEY,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                password_hash VARCHAR(256) NOT NULL,
+                registered_at TIMESTAMP NOT NULL DEFAULT NOW()
+            );
+            CREATE TABLE IF NOT EXISTS rooms (
+                id UUID PRIMARY KEY,
+                name VARCHAR(100) UNIQUE NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            );
+            CREATE TABLE IF NOT EXISTS messages (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id),
+                room_id UUID NOT NULL REFERENCES rooms(id),
+                message TEXT NOT NULL,
+                sent_at TIMESTAMP NOT NULL DEFAULT NOW()
+            );
+            CREATE TABLE IF NOT EXISTS room_members (
+                id UUID PRIMARY KEY,
+                room_id UUID NOT NULL REFERENCES rooms(id),
+                user_id UUID NOT NULL REFERENCES users(id),
+                joined_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE(room_id, user_id)
+            );
+        )"_zv
+    );
+    transaction.commit();
+}
+
+ConnectionPool::ConnectionWrapper Database::GetTransaction() const {
+    return pool_ptr_->GetConnection();
+}
+
+} // namespace postgres

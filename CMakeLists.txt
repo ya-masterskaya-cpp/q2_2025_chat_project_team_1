@@ -23,11 +23,16 @@ set(SERVER_SRC server/src)
 
 add_executable(Client
     ${CLIENT_SRC}/main.cpp
-
 )
 
 add_executable(Server
     ${SERVER_SRC}/main.cpp
+        server/src/tagged.h
+        server/src/tagged_uuid.h
+        server/src/postgres.h
+        server/src/postgres.cpp
+        server/src/tagged_uuid.cpp
+        server/src/postgres.h
 )
 
 
