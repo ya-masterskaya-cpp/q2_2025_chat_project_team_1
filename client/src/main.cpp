@@ -7,7 +7,7 @@
 wxIMPLEMENT_APP(Application);
 
 bool Application::OnInit() {
-    gui::MainFrame* frame = new gui::MainFrame("Hello wxWidgets");
+    gui::MainFrame* frame = new gui::MainFrame("IRC-chat");
     frame->Show(true);
     return true;
 }
