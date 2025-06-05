@@ -17,6 +17,9 @@ MainFrame::MainFrame(const wxString& title)
     // поле ввода
     message_input_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
 
+    // поле ввода - событие нажатия Enter
+    message_input_->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnSendButtonClicked, this);
+
     //кнопки
     wxButton* send_button = new wxButton(panel, wxID_ANY, "Send");
     send_button->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked, this);
