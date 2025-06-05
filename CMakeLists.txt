@@ -21,18 +21,20 @@ set(CLIENT_SRC client/src)
 set(SERVER_INCL server/include)
 set(SERVER_SRC server/src)
 
-add_executable(Client
+add_executable( Client
     ${CLIENT_SRC}/main.cpp
     ${CLIENT_INCL}/application.h
     # gui
     ${CLIENT_INCL}/main_frame.h
     ${CLIENT_SRC}/main_frame.cpp
+    ${CLIENT_INCL}/rooms_frame.h
+    ${CLIENT_SRC}/rooms_frame.cpp
     #transfer
     ${CLIENT_INCL}/transfer_interface.h
     ${CLIENT_INCL}/tcp_client.h
     ${CLIENT_SRC}/tcp_client.cpp
-
 )
+
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
 
 add_executable(Server

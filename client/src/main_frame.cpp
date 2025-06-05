@@ -1,35 +1,54 @@
 #include "main_frame.h"
 
-#include <wx/wx.h>
+#include "rooms_frame.h"
 
 namespace gui {
 
 MainFrame::MainFrame(const wxString& title)
     : wxFrame(nullptr, wxID_ANY, title) {
     wxPanel* panel = new wxPanel(this);
-    wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* general_sizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-    // История чата (read-only)
+    // история чата (read-only)
     chat_history_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxSize(400, 300),
                                  wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH);
 
-    // Поле ввода
+    // поле ввода
     message_input_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-    wxButton* sendButton = new wxButton(panel, wxID_ANY, "Send");
 
-    sizer->Add(chat_history_, 1, wxEXPAND | wxALL, 5);
-    sizer->Add(message_input_, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
-    sizer->Add(sendButton, 0, wxALIGN_RIGHT | wxRIGHT | wxBOTTOM, 5);
+    //кнопки
+    wxButton* send_button = new wxButton(panel, wxID_ANY, "Send");
+    send_button->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked, this);
+    wxButton* rooms_button = new wxButton(panel, wxID_ANY, "Rooms");
+    rooms_button->Bind(wxEVT_BUTTON, &MainFrame::OnRoomButtonClicked, this);
 
-    panel->SetSizer(sizer);
+    //компоновщики
+    general_sizer->Add(chat_history_, 1, wxEXPAND | wxALL, 5);
+    general_sizer->Add(message_input_, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
+    general_sizer->Add(buttons_sizer, 0 , wxEXPAND | wxLEFT | wxRIGHT, 5);
+
+    buttons_sizer->Add(rooms_button, 0,  wxLEFT| wxBOTTOM, 5);
+    buttons_sizer->AddStretchSpacer(1);
+    buttons_sizer->Add(send_button, 0,  wxRIGHT | wxBOTTOM, 5);
+
+    panel->SetSizer(general_sizer);
 }
 
-
-void MainFrame::OnSend(wxCommandEvent& event) {
+void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
     wxString message = message_input_->GetValue();
     if (!message.empty()) {
         chat_history_->AppendText("You: " + message + "\n");
         message_input_->Clear();
     }
 }
+
+void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
+    RoomsFrame* rooms_frame = new RoomsFrame("Select Room");
+    rooms_frame->Show();
+}
+
+
+
+
 }   //namespace gui
