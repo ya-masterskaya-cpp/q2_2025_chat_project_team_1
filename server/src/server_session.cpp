@@ -1,22 +1,52 @@
-#include"srv.h"
-void MainServer::ServerSession::HandleSession(shared_socket socket)
-        {
-            if (!Service::IsAliveSocket(*socket))
-            {
-                Service::ShutDownSocket(*socket);
-                return;
-            }
+#include "srv.h"
 
-            std::atomic_bool condition = true;
-            net::steady_timer timer(server_->ioc_);
-            auto self = this->shared_from_this();
-            timer.async_wait([socket, self, &condition](const boost::system::error_code &ec)
-                             {
-                 if(condition){return;}
-                 std::cout << "Timer expired!" << std::endl;
-                 Service::ShutDownSocket(*socket); });
-            timer.expires_after(std::chrono::milliseconds(3));
-            auto tasks = Service::DoubleGuardedExcept<std::vector<task>>([socket]()
-                                                                         { return Service::ExtractObjectsfromSocket(*socket); }, "HandleSession");
-            condition = false;
-        };
+std::string MainServer::ServerSession::GetStringResponceToSocket(shared_task action)
+{
+    auto reason = ServiceChatroomServer::CHK_Chr_CheckErrorsChatServer(*action);
+    if (reason)
+    {
+        return ServiceChatroomServer::MakeAnswerError(*reason, __func__);
+    }
+    return ExectuteReadySession(action, socket_);
+}
+
+void MainServer::ServerSession::ExecuteTask(shared_task action)
+{
+    ExectuteReadySession(action, socket_);
+}
+
+std::string MainServer::ServerSession::ExectuteReadySession(shared_task action, shared_socket socket)
+{
+    try
+    {
+        Service::ACTION act = Service::Additional::action_scernario.at(action->at(CONSTANTS::LF_ACTION));
+        switch (act)
+        {
+        case Service::ACTION::CREATE_ROOM:    
+            ZyncPrint("CREATE_ROOM:");
+            return server_->CreateRoom(std::move(action->at(CONSTANTS::LF_ROOMNAME)));
+            break;
+        case Service::ACTION::CREATE_USER:
+             ZyncPrint("CREATE_USER:");
+            return server_->AddUserToSQL(action->at(CONSTANTS::LF_NAME), action->at(CONSTANTS::LF_PASSWORD));
+            break;
+        case Service::ACTION::GET_USERS:            
+             ZyncPrint("GET_USERS:");
+            return server_->GetRoomUsersList(action->at(CONSTANTS::LF_ROOMNAME));
+            break;
+        case Service::ACTION::LOGIN:           
+             ZyncPrint("LOGIN:");
+            return server_->LoginUser(action, socket);
+            break;
+        case Service::ACTION::ROOM_LIST:           
+           ZyncPrint("::ROOM_LIST:");
+           return server_->GetRoomsList();
+            break;
+        }
+        return ServiceChatroomServer::MakeAnswerError("UNRECOGNIZED ACTION SERVSESSION ", __func__);
+    }
+    catch (const std::exception &ex)
+    {
+        return ServiceChatroomServer::MakeAnswerError(ex.what(), __func__);
+    }
+}

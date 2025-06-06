@@ -6,130 +6,137 @@
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
-void test1()
-{
+std::shared_ptr<std::ofstream> ofs = std::make_shared<std::ofstream>("log!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.txt");
 
-  try
-  {
-    
-    std::ofstream ofs("log!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.txt"); 
+net::io_context ioc(16);
+shared_strand strand__ = Service::MakeSharedStrand(ioc);
+shared_socket socket__ = Service::MakeSharedSocket(ioc);
+boost::system::error_code ec;
+auto endpoint = tcp::endpoint(net::ip::make_address("127.0.0.1"), 80);
+std::mutex mtx;
 
-
-    net::io_context ioc(16);
-    tcp::socket socket{net::make_strand(ioc)};
-    boost::system::error_code ec;
-    auto endpoint = tcp::endpoint(net::ip::make_address("127.0.0.1"), 80);
-
-    socket.open(endpoint.protocol(), ec);
+void InitSocket(){
+  socket__->open(endpoint.protocol(), ec);
     if (ec)
     {
       std::cerr << "Open error: " << ec.message() << std::endl;
     }
 
-    socket.set_option(boost::asio::socket_base::reuse_address(true), ec);
+    socket__->set_option(boost::asio::socket_base::reuse_address(true), ec);
     if (ec)
     {
       std::cerr << "Set option error: " << ec.message() << std::endl;
     }
 
-    socket.connect(endpoint, ec);
+    socket__->connect(endpoint, ec);
     if (ec)
     {
       std::cerr << "COnnect error: " << ec.message() << std::endl;
     }
+}
 
-    task mp;
-    std::optional<std::string> reas = std::nullopt;
-    std::string str = "";
-    Service::TokenGen gen;
+std::shared_ptr<std::vector<std::string>> GetStringValues()
+{
+  Service::TokenGen gen;
+  std::vector<std::string> objs{
+      UserInterface::US_ChrMakeSendMessage(gen.GenerateHEXToken(), "22sssssssswdqeefvqwef222222222222222222222222222222"),
+      UserInterface::US_ChrMakeObjDisconnect(gen.GenerateHEXToken()),
+      UserInterface::US_SrvMakeObjCreateRoom("YANDEX"),
+      UserInterface::US_SrvMakeObjCreateUser("RRAT", "hjsjklk;l"),
+      UserInterface::US_SrvMakeObjGetUsers("RRAT"),
+      UserInterface::US_SrvMakeObjLogin("RRAT", "jijjiw", "kjjolpdpw"),
+      UserInterface::US_SrvMakeObjRoomList()
 
-    // boost::asio::io_context ioc;
-    str = UserInterface::US_ChrMakeSendMessage(gen.GenerateHEXToken(), "22sssssssswdqeefvqwef222222222222222222222222222222");
-    ofs << "->" << str << "<-\n\n\n";
-    net::write(socket, net::buffer(std::move(str))); ;
-    ioc.run();
+  };
+  return std::make_shared<std::vector<std::string>>(std::move(objs));
+}
+std::atomic_int cnt;
+auto values = GetStringValues();
 
-    str = UserInterface::US_ChrMakeObjDisconnect(gen.GenerateHEXToken());
-    net::write(socket, net::buffer(std::move(str))); 
-    ofs << "->" << str << "<-\n\n\n";
-    ioc.run();
-  
-     
-    str = UserInterface::US_SrvMakeObjCreateRoom("YANDEX");
-     net::write(socket, net::buffer(std::move(str)));
-     ofs << "->" << str << "<-\n\n\n";
-     ioc.run();
 
+void Read()
+{
+  auto sb = Service::MakeSharedStreambuf();
+  auto handler = [sb](err ec, size_t bytes)
+  {
+    if (ec)
+    {
+      ZyncPrint(ec.what());
+      system("pause");
+      return;
+      
+    }
     
-    str = UserInterface::US_SrvMakeObjCreateUser("RRAT", "hjsjklk;l");
-    net::write(socket, net::buffer(std::move(str))); 
-     ofs << "->" << str << "<-\n\n\n";
-     ioc.run();
+    //ZyncPrint("->" + Service::ExtractStrFromStreambuf(*sb, bytes) + "<-");
+    auto i = Service::ExtractObjectsfromBuffer(*sb,bytes);
+    Service::PrintUmap(i, *ofs);
+    sb->consume(bytes);
+   
+    
+   
+  };
+  net::async_read_until(*socket__, *sb, CONSTANTS::SERIAL_SYM , handler);
+}
 
- 
+void test1()
+{
+
+  try
+  {
+    auto buf = Service::MakeSharedStreambuf(); 
+    
+    for (auto &&str : *values)
+    {
+    
+      net::async_write(*socket__, net::buffer(str), [](err ec, size_t bytes){
+                  Read();
+      });
      
+      
+    }
 
-    str = UserInterface::US_SrvMakeObjGetUsers("RRAT");
-   net::write(socket, net::buffer(std::move(str)));
-       ofs << "->" << str << "<-\n\n\n";
-       ioc.run();
-
-    str = UserInterface::US_SrvMakeObjLogin("RRAT", "jijjiw", "kjjolpdpw");
-   net::write(socket, net::buffer(std::move(str)));
-      ofs << "->" << str << "<-\n\n\n";
-      ioc.run();
-
-    str = UserInterface::US_SrvMakeObjRoomList();
-     net::write(socket, net::buffer(std::move(str))); 
-   ofs << "->" << str << "<-\n\n\n";
-   ioc.run();
-
-      // Service::MtreadRunContext(ioc);
-     
   }
   catch (const std::exception &ex)
   {
     std::cout << ex.what();
     system("pause");
   }
+}
+
+
+void 
+test2(){
+  std::vector<std::string> o{
+     
+     // UserInterface::US_ChrMakeSendMessage(gen.GenerateHEXToken(), "22sssssssswdqeefvqwef222222222222222222222222222222"),
+     // UserInterface::US_ChrMakeObjDisconnect(gen.GenerateHEXToken()),
+      UserInterface::US_SrvMakeObjCreateRoom("YANDEX"),
+      UserInterface::US_SrvMakeObjCreateUser("RRAT", "hjsjklk;l"),
+      UserInterface::US_SrvMakeObjGetUsers("YANDEX"),
+    //  UserInterface::US_SrvMakeObjLogin("RRAT", "jijjiw", "kjjolpdpw"),
+      UserInterface::US_SrvMakeObjRoomList()
+
+  };
+  
+  for(int q = 0; q< 2; ++q){
+   for(int i = 0; i< o.size(); ++i){
+      net::write(*socket__, net::buffer(o[i]));
+   }
+  }
 
 }
+
 
 int main()
 {
- for(int i = 0; i < 100; ++ i){
-    test1();
- }
+   InitSocket();  // сначала подключаемся
+   Read();       // затем запускаем чтение
+   
+     for(int q = 0; q< 2;){
+   test1();
+   }
   
-  /// system("pause");
+  
+  //запуск ioc
+  Service::MtreadRunContext(ioc);
 }
-
-/*
-net::post(ioc, [&]()
-              { net::write(socket, net::buffer(std::move(str))); });
-              
-
-    str = UserInterface::US_ChrMakeObjDisconnect(gen.GenerateHEXToken());
-    net::post(ioc, [&]()
-              { net::write(socket, net::buffer(std::move(str))); });
-
-    str = UserInterface::US_SrvMakeObjCreateRoom("YANDEX");
-    net::post(ioc, [&]()
-              { net::write(socket, net::buffer(std::move(str))); });
-
-    str = UserInterface::US_SrvMakeObjCreateUser("RRAT", "hjsjklk;l");
-    net::post(ioc, [&]()
-              { net::write(socket, net::buffer(std::move(str))); });
-
-    str = UserInterface::US_SrvMakeObjGetUsers("RRAT");
-    net::post(ioc, [&]()
-              { net::write(socket, net::buffer(std::move(str))); });
-
-    str = UserInterface::US_SrvMakeObjLogin("RRAT", "jijjiw", "kjjolpdpw");
-    net::post(ioc, [&]()
-              { net::write(socket, net::buffer(std::move(str))); });
-
-    str = UserInterface::US_SrvMakeObjRoomList();
-    net::post(ioc, [&]()
-              { net::write(socket, net::buffer(std::move(str))); });
-*/

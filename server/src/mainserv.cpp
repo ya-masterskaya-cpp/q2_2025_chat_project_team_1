@@ -61,10 +61,24 @@ void MainServer::Listen()
               std::cout << ec.value() << "  " << ec.message() << '\n' <<
               ec.what() << '\n';
             }                                           
-             std::shared_ptr<ServerSession> servsess = std::make_shared<ServerSession>(this); 
-             servsess->HandleSession(std::make_shared<tcp::socket>(std::move(socket)));
-             Listen(); 
-        });
-
-   
+             std::shared_ptr<ServerSession> servsess = std::make_shared<ServerSession>
+             (this, std::make_shared<tcp::socket>(std::move(socket)),
+               Service::MakeSharedStrand(this->ioc_)); 
+             servsess->HandleSession();
+             Listen(); });
 }
+
+MainServer::MainServer(net::io_context &ioc) : ioc_(ioc), acceptor_(net::make_strand(ioc_))
+{
+    init();
+}
+
+void MainServer::PrintRooms()
+{
+    for (auto &&room : rooms_)
+    {
+        std::cout << room.first << " members:" << room.second->users_.size() << '\n';
+    }
+}
+
+
