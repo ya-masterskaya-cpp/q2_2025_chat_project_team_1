@@ -134,12 +134,12 @@ namespace Service {
     /// @param buffer Буфер, из которого извлекается строка
     /// @param extract Количество символов для извлечения
     /// @return Извлечённая и очищенная от пробелов строка
-    std::string ExtractStrFromStreambuf(net::streambuf &buffer, size_t extract) {
-        const char *data = boost::asio::buffer_cast<const char *>(buffer.data());
-        std::string str(data, extract);
-        boost::algorithm::trim(str);
-        return str;
-    }
+    // std::string ExtractStrFromStreambuf(net::streambuf &buffer, size_t extract) {
+    //     const char *data = boost::asio::buffer_cast<const char *>(buffer.data());
+    //     std::string str(data, extract);
+    //     boost::algorithm::trim(str);
+    //     return str;
+    // }
 
     /// @brief Извлекает объект из буфера streambuf и десериализует его
     /// @param buffer Буфер с сериализованными данными

@@ -39,6 +39,7 @@ add_executable( Client
     ${CLIENT_SRC}/tcp_client.cpp
 )
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
+target_include_directories(Client PRIVATE ${DOMAIN_INCL})
 
 add_executable(Server
     ${SERVER_SRC}/main.cpp
