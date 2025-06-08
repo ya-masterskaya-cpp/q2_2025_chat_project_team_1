@@ -10,7 +10,7 @@ set(wxBUILD_SHARED ON)
 include(${wxWidgets_USE_FILE})
 
 #настройка boost
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost REQUIRED COMPONENTS system filesystem json)
 
 #настройка libpqxx
 find_package(libpqxx REQUIRED)
@@ -37,6 +37,8 @@ add_executable( Client
     ${CLIENT_INCL}/transfer_interface.h
     ${CLIENT_INCL}/tcp_client.h
     ${CLIENT_SRC}/tcp_client.cpp
+    ${CLIENT_INCL}/messages_handler.h
+    ${CLIENT_SRC}/messages_handler.cpp
 )
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
 target_include_directories(Client PRIVATE ${DOMAIN_INCL})

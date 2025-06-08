@@ -38,7 +38,8 @@
 #include <deque>
 #include <future>
 #include "const.h"
-#include "guardlock.h"
+// #include "guardlock.h"
+
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 using task = std::unordered_map<std::string, std::string>;

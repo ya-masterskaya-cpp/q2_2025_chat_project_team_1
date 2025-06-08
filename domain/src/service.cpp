@@ -132,24 +132,24 @@ namespace Service
 
 namespace Service
 {
-    std::string ExtractStrFromStreambuf(net::streambuf &buffer, size_t extract)
-    {
-        const char *data = boost::asio::buffer_cast<const char *>(buffer.data());
-        std::string str(data, extract);
-        boost::algorithm::trim(str);
-        return str;
-    }
+    // std::string ExtractStrFromStreambuf(net::streambuf &buffer, size_t extract)
+    // {
+        // const char *data = boost::asio::buffer_cast<const char *>(buffer.data());
+        // std::string str(data, extract);
+        // boost::algorithm::trim(str);
+        // return str;
+    // }
 
-    task ExtractObjectsfromBuffer(net::streambuf &buffer, size_t extract)
-    {
-        std::string str(ExtractStrFromStreambuf(buffer, extract));
-        return DeserializeUmap<std::string, std::string>(str);
-    };
-    shared_task ExtractSharedObjectsfromBuffer(net::streambuf &buffer, size_t extract)
-    {
-        std::string str(ExtractStrFromStreambuf(buffer, extract));
-        return std::make_shared<task>(DeserializeUmap<std::string, std::string>(str));
-    };
+    // task ExtractObjectsfromBuffer(net::streambuf &buffer, size_t extract)
+    // {
+    //     std::string str(ExtractStrFromStreambuf(buffer, extract));
+    //     return DeserializeUmap<std::string, std::string>(str);
+    // };
+    // shared_task ExtractSharedObjectsfromBuffer(net::streambuf &buffer, size_t extract)
+    // {
+    //     std::string str(ExtractStrFromStreambuf(buffer, extract));
+    //     return std::make_shared<task>(DeserializeUmap<std::string, std::string>(str));
+    // };
 
     std::shared_ptr<beast::flat_buffer> MakeSharedFlatBuffer()
     {

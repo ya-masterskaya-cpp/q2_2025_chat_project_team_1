@@ -1,11 +1,12 @@
 #include "main_frame.h"
 
+#include "const.h"
 #include "rooms_frame.h"
 
 namespace gui {
 
-MainFrame::MainFrame(const wxString& title)
-    : wxFrame(nullptr, wxID_ANY, title) {
+MainFrame::MainFrame(const wxString& title, MessagesHandler& message_handler)
+    : wxFrame(nullptr, wxID_ANY, title), message_handler_{message_handler} {
     wxPanel* panel = new wxPanel(this);
     wxBoxSizer* general_sizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -36,6 +37,8 @@ MainFrame::MainFrame(const wxString& title)
     buttons_sizer->Add(send_button, 0,  wxRIGHT | wxBOTTOM, 5);
 
     panel->SetSizer(general_sizer);
+
+    message_handler_.AddAction(CONSTANTS::LF_MESSAGE, )
 }
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {

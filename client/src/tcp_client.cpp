@@ -46,7 +46,7 @@ std::string TcpCLient::Receive(char delimeter) {
         );
 
         return message;
-    } catch (const std::exception& e) {
+    } catch (...) {
         connected_ = false;
         throw;
     }

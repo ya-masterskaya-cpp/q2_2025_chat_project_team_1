@@ -4,17 +4,20 @@
 
 #include <wx/wx.h>
 
-namespace gui {
+#include "messages_handler.h"
 
+namespace gui {
 
 class MainFrame : public wxFrame
 {
 public:
-    MainFrame(const wxString& title);
+    MainFrame(const wxString& title, MessagesHandler& message_handler);
     void OnSendButtonClicked(wxCommandEvent& event);
     void OnRoomButtonClicked(wxCommandEvent& event);
 
 private:
+    MessagesHandler& message_handler_;
+
     wxTextCtrl* chat_history_;
     wxTextCtrl* message_input_;
 };
