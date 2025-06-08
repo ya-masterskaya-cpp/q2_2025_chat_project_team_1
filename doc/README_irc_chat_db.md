@@ -248,7 +248,7 @@ auto recent = messages_repo.LoadRecent(rooms[0].id, 10);
     ```
 
 4. **Отладка:**  
-   Поддерживается в IDE (CLion, VS Code, tarгет `run_tests`).
+   Поддерживается в IDE (CLion, VS Code, tagget `run_tests`).
 
 ### Важно
 
