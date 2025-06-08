@@ -1,8 +1,7 @@
 #pragma once
-
 #include <string>
-
-struct CONSTANTS {
+struct CONSTANTS
+{
     // Actions
     static const std::string ACT_DISCONNECT;
     static const std::string ACT_GET_USERS;
@@ -12,6 +11,7 @@ struct CONSTANTS {
     static const std::string ACT_ROOM_LIST;
     static const std::string ACT_CREATE_USER;
     static const std::string ACT_EARLIER_MESS;
+    static const std::string ACT_USER_MESSAGE; 
 
     // Map Parameters
     static const std::string LF_ACTION;
@@ -25,6 +25,7 @@ struct CONSTANTS {
     static const std::string LF_LOGIN;
     static const std::string LF_ROOMLIST;
     static const std::string LF_PASSWORD;
+    static const std::string LF_LAST_MSG;
 
     static const std::string RF_SUCCESS;
     static const std::string RF_ERROR;
@@ -51,5 +52,5 @@ struct CONSTANTS {
     static const char SERIAL_SYM;
 
 private:
-    CONSTANTS() {}; // CONSTANTS() = delete; // (?)
+    CONSTANTS() {};
 };

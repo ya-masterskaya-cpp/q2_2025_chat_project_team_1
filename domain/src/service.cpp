@@ -1,8 +1,8 @@
 #include "service.h"
-
 using namespace std;
 
-namespace Service {
+namespace Service
+{
     const std::unordered_map<std::string, ACTION> Additional::action_scernario{
         {CONSTANTS::ACT_CREATE_ROOM, ACTION::CREATE_ROOM},
         {CONSTANTS::ACT_CREATE_USER, ACTION::CREATE_USER},
@@ -24,72 +24,75 @@ namespace Service {
 
     std::mutex Service::Additional::mtx;
 
-    /// @brief Запускает контекст ввода-вывода в нескольких потоках
-    /// @param ioc Контекст ввода-вывода
-    void MtreadRunContext(net::io_context &ioc) {
+    void MtreadRunContext(net::io_context &ioc)
+    {
         std::vector<jthread> run;
-        for (int i = 0; i < std::thread::hardware_concurrency(); ++i) {
-            run.push_back(jthread([&ioc] { ioc.run(); }));
+        for (int i = 0; i < std::thread::hardware_concurrency(); ++i)
+        {
+            run.push_back(jthread([&ioc]
+                                  { ioc.run(); }));
         }
         ioc.run();
     }
 
-    /// @brief Считывает всё содержимое из файла в строку
-    /// @param ifs Поток чтения файла
-    /// @return Содержимое файла в виде строки или CONSTANTS::RF_ERROR при ошибке
-    std::string ReadFromFstream(std::ifstream &ifs) {
-        if (!ifs) {
+    std::string ReadFromFstream(std::ifstream &ifs)
+    {
+        if (!ifs)
+        {
             std::cerr << "Bad Filestream\n";
             return CONSTANTS::RF_ERROR;
         }
         std::stringstream strm;
-        while (ifs) {
+
+        while (ifs)
+        {
             std::string tmp;
             std::getline(ifs, tmp);
             strm << tmp;
         }
         return strm.str();
-    }
+    };
 
-    /// @brief Создаёт shared_ptr для strand с заданным контекстом ioc
-    /// @param ioc Контекст ввода-вывода
-    /// @return Умный указатель на strand
-    shared_strand MakeSharedStrand(net::io_context &ioc) {
+    shared_strand MakeSharedStrand(net::io_context &ioc)
+    {
         return std::make_shared<strand>(net::make_strand(ioc));
     }
-
-    /// @brief Создаёт shared_ptr для MutableBufferHolder (пустой)
-    /// @return Умный указатель на MutableBufferHolder
-    std::shared_ptr<MutableBufferHolder> MakeSharedMutableGuffer() {
+    std::shared_ptr<MutableBufferHolder> MakeSharedMutableBuffer()
+    {
         return std::shared_ptr<Service::MutableBufferHolder>();
-    }
-
-    /// @brief Создаёт shared_ptr для streambuf
-    /// @return Умный указатель на streambuf
-    std::shared_ptr<net::streambuf> MakeSharedStreambuf() {
+    };
+    std::shared_ptr<net::streambuf> MakeSharedStreambuf()
+    {
         return std::make_shared<net::streambuf>();
-    }
+    };
+
 }
 
-namespace Service {
-    /// @brief Проверяет, жив ли сокет
-    /// @param sock Ссылка на TCP сокет
-    /// @return true если сокет открыт и соединение активно, иначе false
-    bool IsAliveSocket(tcp::socket &sock) {
-        if (!sock.is_open()) {
+namespace Service
+{
+    bool IsAliveSocket(tcp::socket &sock)
+    {
+        if (!sock.is_open())
+        {
             return false;
         }
         boost::system::error_code ec;
         char data;
         size_t len = sock.receive(boost::asio::buffer(&data, 1), boost::asio::socket_base::message_peek, ec);
 
-        if (ec) {
-            if (ec == boost::asio::error::would_block || ec == boost::asio::error::try_again) {
+        if (ec)
+        {
+
+            if (ec == boost::asio::error::would_block || boost::asio::error::try_again)
+            {
                 return true;
             }
-            if (ec == boost::asio::error::eof) {
+            if (ec == boost::asio::error::eof)
+            {
                 return false;
-            } else {
+            }
+            else
+            {
                 return false;
             }
         }
@@ -97,65 +100,81 @@ namespace Service {
         return len > 0;
     }
 
-    /// @brief Проверяет, жив ли сокет из shared_ptr
-    /// @param sock Умный указатель на TCP сокет
-    /// @return true если сокет открыт и соединение активно, иначе false
-    bool IsAliveSocket(shared_socket sock) {
+    bool IsAliveSocket(shared_socket sock)
+    {
         return IsAliveSocket(*sock);
-    }
+    };
 
-    /// @brief Корректно закрывает и выключает сокет
-    /// @param sock Ссылка на TCP сокет
-    void ShutDownSocket(tcp::socket &sock) {
+    void ShutDownSocket(tcp::socket &sock)
+    {
         boost::system::error_code ec;
         sock.cancel(ec);
-        if (ec) {
+        if (ec)
+        {
             std::cout << ec.what() << std::endl;
         }
         sock.shutdown(sock.shutdown_both, ec);
-        if (ec) {
+        if (ec)
+        {
             std::cout << ec.what() << std::endl;
         }
         sock.close();
-        if (ec) {
+        if (ec)
+        {
             std::cout << ec.what() << std::endl;
         }
-    }
-
-    /// @brief Корректно закрывает и выключает сокет из shared_ptr
-    /// @param sock Умный указатель на TCP сокет
-    void ShutDownSocket(shared_socket sock) {
+    };
+    void ShutDownSocket(shared_socket sock)
+    {
         ShutDownSocket(*sock);
-    }
+    };
 }
 
-namespace Service {
-    /// @brief Извлекает строку из буфера streambuf
-    /// @param buffer Буфер, из которого извлекается строка
-    /// @param extract Количество символов для извлечения
-    /// @return Извлечённая и очищенная от пробелов строка
-    // std::string ExtractStrFromStreambuf(net::streambuf &buffer, size_t extract) {
-    //     const char *data = boost::asio::buffer_cast<const char *>(buffer.data());
-    //     std::string str(data, extract);
-    //     boost::algorithm::trim(str);
-    //     return str;
-    // }
+namespace Service
+{
+    std::string ExtractStrFromStreambuf(net::streambuf &buffer, size_t extract)
+    {
+        const char *data = boost::asio::buffer_cast<const char *>(buffer.data());
+        std::string str(data, extract);
+        boost::algorithm::trim(str);
+        return str;
+    }
 
-    /// @brief Извлекает объект из буфера streambuf и десериализует его
-    /// @param buffer Буфер с сериализованными данными
-    /// @param extract Количество символов для извлечения
-    /// @return Задача с десериализованными данными (task)
-    task ExtractObjectsfromBuffer(net::streambuf &buffer, size_t extract) {
+    task ExtractObjectsfromBuffer(net::streambuf &buffer, size_t extract)
+    {
         std::string str(ExtractStrFromStreambuf(buffer, extract));
         return DeserializeUmap<std::string, std::string>(str);
-    }
-
-    /// @brief Извлекает объект из буфера streambuf и десериализует его, возвращая shared_ptr на task
-    /// @param buffer Буфер с сериализованными данными
-    /// @param extract Количество символов для извлечения
-    /// @return Shared задача с десериализованными данными (shared_task)
-    shared_task ExtractSharedObjectsfromBuffer(net::streambuf &buffer, size_t extract) {
+    };
+    shared_task ExtractSharedObjectsfromBuffer(net::streambuf &buffer, size_t extract)
+    {
         std::string str(ExtractStrFromStreambuf(buffer, extract));
         return std::make_shared<task>(DeserializeUmap<std::string, std::string>(str));
+    };
+
+    std::shared_ptr<beast::flat_buffer> MakeSharedFlatBuffer()
+    {
+        return std::make_shared<beast::flat_buffer>();
+    };
+
+    request MakeRequest(http::verb verb, int version, std::string body)
+    {
+        request req{verb, "/s/d/d/", version};
+        req.set(boost::beast::http::field::host, "127.0.0.1");
+        req.set(boost::beast::http::field::content_type, "text/html");
+        req.body() = std::move(body);
+        req.keep_alive(true);
+        req.prepare_payload();
+        return req;
+    };
+
+    response MakeResponce(int version, bool keep_alive, beast::http::status status, std::string body)
+    {
+        response resp{status, version};
+        resp.keep_alive(keep_alive);
+        resp.set(boost::beast::http::field::content_type, "text/html");
+        resp.body() = std::move(body);
+        resp.prepare_payload();
+        return resp;
     }
+
 }
