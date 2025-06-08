@@ -59,9 +59,9 @@ UsersRepository::UsersRepository(pqxx::work &transaction) : transaction_(transac
 
 void UsersRepository::Save(const std::string &username, const std::string &password_hash) const {
     auto id = UserId::New().ToString();
-    transaction_.exec_params(
+    transaction_.exec(
             R"(INSERT INTO users (id, username, password_hash, registered_at) VALUES ($1, $2, $3, NOW());)"_zv,
-            id, username, password_hash
+            pqxx::params(id, username, password_hash)
     );
 }
 
@@ -83,8 +83,8 @@ std::vector<UserRecord> UsersRepository::LoadAll() const {
 
 std::optional<UserRecord> UsersRepository::FindByUsername(const std::string &username) const
 {
-    const pqxx::result res = transaction_.exec_params(
-        R"(SELECT id, username, password_hash, registered_at FROM users WHERE username = $1;)", username
+    const pqxx::result res = transaction_.exec(
+        R"(SELECT id, username, password_hash, registered_at FROM users WHERE username = $1;)", pqxx::params(username)
     );
     if (res.empty())
         return std::nullopt;
@@ -103,8 +103,8 @@ RoomsRepository::RoomsRepository(pqxx::work &transaction) : transaction_(transac
 
 void RoomsRepository::Save(const std::string &name) const {
     auto id = RoomId::New().ToString();
-    transaction_.exec_params(
-            R"(INSERT INTO rooms (id, name, created_at) VALUES ($1, $2, NOW());)"_zv, id, name
+    transaction_.exec(
+            R"(INSERT INTO rooms (id, name, created_at) VALUES ($1, $2, NOW());)"_zv, pqxx::params(id, name)
     );
 }
 
@@ -129,19 +129,19 @@ MessagesRepository::MessagesRepository(pqxx::work &transaction) : transaction_(t
 
 void MessagesRepository::Save(const UserId& user_id, const RoomId& room_id, const std::string& message) const {
     auto id = MessageId::New().ToString();
-    transaction_.exec_params(
+    transaction_.exec(
             R"(INSERT INTO messages (id, user_id, room_id, message, sent_at) VALUES ($1, $2, $3, $4, NOW());)"_zv,
-            id, user_id.ToString(), room_id.ToString(), message
+            pqxx::params(id, user_id.ToString(), room_id.ToString(), message)
     );
 }
 
 std::vector<MessageRecord> MessagesRepository::LoadRecent(const RoomId& room_id, int max_items) const {
     std::vector<MessageRecord> result;
-    const pqxx::result query_result = transaction_.exec_params(
+    const pqxx::result query_result = transaction_.exec(
             R"(SELECT id, user_id, room_id, message, sent_at FROM messages
-           WHERE room_id = $1
-           ORDER BY sent_at DESC LIMIT $2;)"_zv,
-            room_id.ToString(), max_items
+                WHERE room_id = $1
+                ORDER BY sent_at DESC, id ASC LIMIT $2;)"_zv,
+            pqxx::params(room_id.ToString(), max_items)
     );
     for (const auto& row : query_result) {
         result.push_back(MessageRecord{
@@ -162,26 +162,27 @@ RoomMembersRepository::RoomMembersRepository(pqxx::work& transaction)
 
 void RoomMembersRepository::Save(const UserId& user_id, const RoomId& room_id) const {
     auto id = RoomMemberId::New().ToString();
-    transaction_.exec_params(
+    transaction_.exec(
             R"(INSERT INTO room_members (id, room_id, user_id, joined_at)
             VALUES ($1, $2, $3, NOW())
             ON CONFLICT DO NOTHING;)",
-            id, room_id.ToString(), user_id.ToString()
+            pqxx::params(id, room_id.ToString(), user_id.ToString())
     );
 }
 
 void RoomMembersRepository::Remove(const UserId& user_id, const RoomId& room_id) const {
-    transaction_.exec_params(
+    transaction_.exec(
             R"(DELETE FROM room_members WHERE room_id = $1 AND user_id = $2;)",
-            room_id.ToString(), user_id.ToString()
+            pqxx::params(room_id.ToString(), user_id.ToString())
     );
 }
 
 std::vector<RoomMemberRecord> RoomMembersRepository::LoadMembers(const RoomId& room_id) const {
     std::vector<RoomMemberRecord> result;
-    const pqxx::result query_result = transaction_.exec_params(
-            R"(SELECT id, room_id, user_id, joined_at FROM room_members WHERE room_id = $1;)",
-            room_id.ToString()
+    const pqxx::result query_result = transaction_.exec(
+            R"(SELECT id, room_id, user_id, joined_at FROM room_members WHERE room_id = $1
+                    ORDER BY joined_at DESC;)",
+            pqxx::params(room_id.ToString())
     );
     for (const auto& row : query_result) {
         result.push_back(RoomMemberRecord{
@@ -196,9 +197,10 @@ std::vector<RoomMemberRecord> RoomMembersRepository::LoadMembers(const RoomId& r
 
 std::vector<RoomMemberRecord> RoomMembersRepository::LoadRooms(const UserId& user_id) const {
     std::vector<RoomMemberRecord> result;
-    const pqxx::result query_result = transaction_.exec_params(
-            R"(SELECT id, room_id, user_id, joined_at FROM room_members WHERE user_id = $1;)",
-            user_id.ToString()
+    const pqxx::result query_result = transaction_.exec(
+            R"(SELECT id, room_id, user_id, joined_at FROM room_members WHERE user_id = $1
+                    ORDER BY joined_at DESC;)",
+            pqxx::params(user_id.ToString())
     );
     for (const auto& row : query_result) {
         result.push_back(RoomMemberRecord{
@@ -224,27 +226,34 @@ Database::Database(std::shared_ptr<ConnectionPool> pool_ptr)
                 id UUID PRIMARY KEY,
                 username VARCHAR(100) UNIQUE NOT NULL,
                 password_hash VARCHAR(256) NOT NULL,
-                registered_at TIMESTAMP NOT NULL DEFAULT NOW()
+                registered_at TIMESTAMP NOT NULL DEFAULT clock_timestamp()
             );
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
             CREATE TABLE IF NOT EXISTS rooms (
                 id UUID PRIMARY KEY,
                 name VARCHAR(100) UNIQUE NOT NULL,
-                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                created_at TIMESTAMP NOT NULL DEFAULT clock_timestamp()
             );
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_rooms_name ON rooms(name);
+            CREATE INDEX IF NOT EXISTS idx_rooms_created_at ON rooms(created_at);
             CREATE TABLE IF NOT EXISTS messages (
                 id UUID PRIMARY KEY,
                 user_id UUID NOT NULL REFERENCES users(id),
                 room_id UUID NOT NULL REFERENCES rooms(id),
                 message TEXT NOT NULL,
-                sent_at TIMESTAMP NOT NULL DEFAULT NOW()
+                sent_at TIMESTAMP NOT NULL DEFAULT clock_timestamp()
             );
+            CREATE INDEX IF NOT EXISTS idx_messages_room_sent_at_id ON messages(room_id, sent_at DESC, id DESC);
+            CREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);
             CREATE TABLE IF NOT EXISTS room_members (
                 id UUID PRIMARY KEY,
                 room_id UUID NOT NULL REFERENCES rooms(id),
                 user_id UUID NOT NULL REFERENCES users(id),
-                joined_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                joined_at TIMESTAMP NOT NULL DEFAULT clock_timestamp(),
                 UNIQUE(room_id, user_id)
             );
+            CREATE INDEX IF NOT EXISTS idx_room_members_room_id ON room_members(room_id);
+            CREATE INDEX IF NOT EXISTS idx_room_members_user_id ON room_members(user_id);
         )"_zv
     );
     transaction.commit();

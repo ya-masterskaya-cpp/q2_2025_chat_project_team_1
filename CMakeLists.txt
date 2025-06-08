@@ -1,40 +1,64 @@
-cmake_minimum_required(VERSION 3.31)
-project(IRC-chat)
+cmake_minimum_required(VERSION 3.16)
+project(ServerApp LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Настройка wxWidgets
+# !!! Toolchain-файл задаётся только в командной строке или настройках IDE !!!
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PQXX REQUIRED libpqxx)
+
 find_package(wxWidgets REQUIRED COMPONENTS core base)
-set(wxBUILD_SHARED ON)
-include(${wxWidgets_USE_FILE})
+find_package(Boost REQUIRED)
 
-#настройка boost
-find_package(Boost REQUIRED COMPONENTS system filesystem)
-
-#настройка libpqxx
-find_package(libpqxx REQUIRED)
-
-#настройка целей
-set(CLIENT_INCL client/include)
-set(CLIENT_SRC client/src)
-set(SERVER_INCL server/include)
-set(SERVER_SRC server/src)
-
-add_executable(Client
-    ${CLIENT_SRC}/main.cpp
-)
-
+# ==== Основное приложение ====
 add_executable(Server
-    ${SERVER_SRC}/main.cpp
-        server/src/tagged.h
-        server/src/tagged_uuid.h
-        server/src/postgres.h
-        server/src/postgres.cpp
-        server/src/tagged_uuid.cpp
-        server/src/postgres.h
+    server/src/main.cpp
+    server/src/postgres.cpp
+    server/src/tagged_uuid.cpp
 )
 
+target_include_directories(Server PRIVATE
+    ${PQXX_INCLUDE_DIRS}
+    ${wxWidgets_INCLUDE_DIRS}
+)
 
-target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries(Server PRIVATE ${Boost_LIBRARIES} libpqxx::pqxx)
+target_link_libraries(Server PRIVATE
+    ${PQXX_LIBRARIES}
+    ${wxWidgets_LIBRARIES}
+    Boost::boost
+)
+
+target_compile_options(Server PRIVATE -Wall -Wextra -Wpedantic)
+
+# ==== Юнит-тесты ====
+# Найдём GoogleTest (желательно через vcpkg, либо через систему)
+find_package(GTest REQUIRED)
+
+add_executable(run_tests
+    server/tests/test_postgres.cpp
+    server/src/postgres.cpp
+    server/src/tagged_uuid.cpp
+    # Если появятся другие cpp-файлы ядра, добавляй сюда!
+)
+
+target_include_directories(run_tests PRIVATE
+    ${PQXX_INCLUDE_DIRS}
+    ${GTEST_INCLUDE_DIRS}
+    ${wxWidgets_INCLUDE_DIRS}
+    server/src
+    server/tests
+)
+
+target_link_libraries(run_tests PRIVATE
+    ${PQXX_LIBRARIES}
+    ${wxWidgets_LIBRARIES}
+    Boost::boost
+    GTest::GTest
+    GTest::Main
+    pthread
+)
+
+target_compile_options(run_tests PRIVATE -Wall -Wextra -Wpedantic)
