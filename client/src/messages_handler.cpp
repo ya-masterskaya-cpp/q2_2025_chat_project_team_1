@@ -23,3 +23,7 @@ void MessagesHandler::DoOnReceive() {
 void MessagesHandler::AddAction(const std::string& action, action_function action_func) {
     actions_[action] = action_func;
 }
+
+void MessagesHandler::Send(const std::string& message) {
+    tcp_client_.Send(message);
+}

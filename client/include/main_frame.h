@@ -17,6 +17,7 @@ public:
 
 private:
     MessagesHandler& message_handler_;
+    std::string token_{};
 
     wxTextCtrl* chat_history_;
     wxTextCtrl* message_input_;

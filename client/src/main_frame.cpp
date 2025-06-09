@@ -2,6 +2,7 @@
 
 #include "const.h"
 #include "rooms_frame.h"
+#include "service.h"
 
 namespace gui {
 
@@ -38,23 +39,32 @@ MainFrame::MainFrame(const wxString& title, MessagesHandler& message_handler)
 
     panel->SetSizer(general_sizer);
 
-    message_handler_.AddAction(CONSTANTS::LF_MESSAGE, )
+    message_handler_.AddAction(CONSTANTS::ACT_USER_MESSAGE,
+                               [self = this](const std::unordered_map<std::string,std::string>& params) {
+                                   // self->
+    });
+    message_handler_.AddAction(CONSTANTS::ACT_SEND_MESSAGE,
+                               [self = this](const std::unordered_map<std::string,std::string>& params) {
+                                   if(params.at(CONSTANTS::LF_RESULT) == CONSTANTS::RF_ERROR) {
+                                       self->chat_history_->AppendText(params.at(CONSTANTS::LF_REASON));
+                                   }
+                               });
 }
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
-    wxString message = message_input_->GetValue();
-    if (!message.empty()) {
-        chat_history_->AppendText("You: " + message + "\n");
-        message_input_->Clear();
-    }
+    // wxString message = message_input_->GetValue();
+    // if (!message.empty()) {
+    //     chat_history_->AppendText("You: " + message + "\n");
+    //     message_input_->Clear();
+    // }
+
+    message_handler_.Send(UserInterface::US_ChrMakeSendMessage(token_, message_input_->GetValue().utf8_string()));
 }
 
 void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
     RoomsFrame* rooms_frame = new RoomsFrame("Select Room");
     rooms_frame->Show();
 }
-
-
 
 
 }   //namespace gui

@@ -26,6 +26,7 @@ public:
 
     void DoOnReceive();
     void AddAction(const std::string& action, action_function action_func);
+    void Send(const std::string& message);
 
 
 private:
