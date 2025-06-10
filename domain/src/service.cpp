@@ -72,32 +72,7 @@ namespace Service
 {
     bool IsAliveSocket(tcp::socket &sock)
     {
-        if (!sock.is_open())
-        {
-            return false;
-        }
-        boost::system::error_code ec;
-        char data;
-        size_t len = sock.receive(boost::asio::buffer(&data, 1), boost::asio::socket_base::message_peek, ec);
-
-        if (ec)
-        {
-
-            if (ec == boost::asio::error::would_block || boost::asio::error::try_again)
-            {
-                return true;
-            }
-            if (ec == boost::asio::error::eof)
-            {
-                return false;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        // Данные доступны для чтения — соединение живо
-        return len > 0;
+        return sock.is_open();   
     }
 
     bool IsAliveSocket(shared_socket sock)
@@ -132,24 +107,24 @@ namespace Service
 
 namespace Service
 {
-    // std::string ExtractStrFromStreambuf(net::streambuf &buffer, size_t extract)
-    // {
-        // const char *data = boost::asio::buffer_cast<const char *>(buffer.data());
-        // std::string str(data, extract);
-        // boost::algorithm::trim(str);
-        // return str;
-    // }
+    std::string ExtractStrFromStreambuf(net::streambuf &buffer, size_t extract)
+    {
+        const char *data = boost::asio::buffer_cast<const char *>(buffer.data());
+        std::string str(data, extract);
+        boost::algorithm::trim(str);
+        return str;
+    }
 
-    // task ExtractObjectsfromBuffer(net::streambuf &buffer, size_t extract)
-    // {
-    //     std::string str(ExtractStrFromStreambuf(buffer, extract));
-    //     return DeserializeUmap<std::string, std::string>(str);
-    // };
-    // shared_task ExtractSharedObjectsfromBuffer(net::streambuf &buffer, size_t extract)
-    // {
-    //     std::string str(ExtractStrFromStreambuf(buffer, extract));
-    //     return std::make_shared<task>(DeserializeUmap<std::string, std::string>(str));
-    // };
+    task ExtractObjectsfromBuffer(net::streambuf &buffer, size_t extract)
+    {
+        std::string str(ExtractStrFromStreambuf(buffer, extract));
+        return DeserializeUmap<std::string, std::string>(str);
+    };
+    shared_task ExtractSharedObjectsfromBuffer(net::streambuf &buffer, size_t extract)
+    {
+        std::string str(ExtractStrFromStreambuf(buffer, extract));
+        return std::make_shared<task>(DeserializeUmap<std::string, std::string>(str));
+    };
 
     std::shared_ptr<beast::flat_buffer> MakeSharedFlatBuffer()
     {
