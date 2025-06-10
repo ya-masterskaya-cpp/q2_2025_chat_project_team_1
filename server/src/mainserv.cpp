@@ -7,7 +7,7 @@ void MainServer::init()
 
     try
     {
-        std::string load_var = "loaderserv.conf";
+        std::string load_var = "../data/loaderserv.conf";
         std::ifstream ifs(load_var);
         std::string json = Service::ReadFromFstream(ifs);
 
@@ -28,10 +28,12 @@ void MainServer::init()
         auto ip = obj.as_object().at(CONSTANTS::IP).as_string();
         auto port = obj.as_object().at(CONSTANTS::PORT).as_int64();
 
-        std::cout << ip << " |" << port << "|\n";
+        std::cout<<"|" << ip << " |" << port << "|\n";
+        err ec;
         endpoint_ = tcp::endpoint(net::ip::make_address(ip), port);
 
-        acceptor_.open(endpoint_.protocol());
+        
+        acceptor_.open(endpoint_.protocol() , ec);
         acceptor_.set_option(net::socket_base::reuse_address(true));
         acceptor_.bind(endpoint_);
         acceptor_.listen(net::socket_base::max_listen_connections);
@@ -41,9 +43,10 @@ void MainServer::init()
             const auto &rooms = obj.as_object().at(CONSTANTS::CHATROOMS).as_array();
             for (const auto &room : rooms)
             {
-                rooms_[std::string(room.as_string())] = std::make_shared<Chatroom>(ioc_);
+                this->CreateRoom(std::string(room.as_string()));
             }
         }
+      
     }
     catch (const std::exception &ex)
     {
@@ -62,15 +65,15 @@ void MainServer::Listen()
               ec.what() << '\n';
             }                                           
              std::shared_ptr<ServerSession> servsess = std::make_shared<ServerSession>
-             (this, std::make_shared<tcp::socket>(std::move(socket)),
-               Service::MakeSharedStrand(this->ioc_)); 
+             (this, std::make_shared<tcp::socket>(std::move(socket))); 
              servsess->HandleSession();
-             Listen(); });
+             
+             
+             Listen();});
 }
 
 MainServer::MainServer(net::io_context &ioc) : ioc_(ioc), acceptor_(net::make_strand(ioc_))
 {
-    init();
 }
 
 void MainServer::PrintRooms()
