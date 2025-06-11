@@ -1,5 +1,6 @@
 #include "pausable_thread.h"
 
+namespace domain {
 
 void PausableThread::Start() {
     if (running_) return;
@@ -42,3 +43,5 @@ void PausableThread::Run() {
         if (task_) task_();
     }
 }
+
+} //namespace domain

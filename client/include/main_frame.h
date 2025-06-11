@@ -4,23 +4,28 @@
 
 #include <wx/wx.h>
 
+#include "domain.h"
 #include "messages_handler.h"
+#include "pausable_thread.h"
+#include "rooms_frame.h"
 
 namespace gui {
 
 class MainFrame : public wxFrame
 {
 public:
-    MainFrame(const wxString& title, MessagesHandler& message_handler);
+    MainFrame(const wxString& title, transfer::MessagesHandler& message_handler);
     void OnSendButtonClicked(wxCommandEvent& event);
     void OnRoomButtonClicked(wxCommandEvent& event);
 
 private:
-    MessagesHandler& message_handler_;
-    std::string token_{};
+    transfer::MessagesHandler& message_handler_;
+    domain::UserData user_;
+    domain::PausableThread pausable_thread_;
 
     wxTextCtrl* chat_history_;
     wxTextCtrl* message_input_;
+    RoomsFrame* rooms_frame_{nullptr};
 };
 
 } //gui namespace

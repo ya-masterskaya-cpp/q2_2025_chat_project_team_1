@@ -3,21 +3,27 @@
 
 #include <wx/wx.h>
 
+#include "domain.h"
+#include "login_frame.h"
+#include "messages_handler.h"
+
 namespace gui {
 
 class RoomsFrame : public wxFrame
 {
 public:
-    RoomsFrame(const wxString& title);
+    RoomsFrame(wxWindow* parent, const wxString& title,
+               transfer::MessagesHandler& message_handler, domain::UserData& user);
+    void OnLoginButtonClicked(wxCommandEvent& event);
+    std::vector<std::string> UpdateRoomsList();
 
 private:
     wxListBox* rooms_list_;
-    void OnClose(wxCloseEvent& event)
-    {
-        // Освобождаем ресурсы (если нужно) и уничтожаем окно
-        Destroy();
-    }
+    transfer::MessagesHandler& message_handler_;
+    domain::UserData& user_;
+    LoginFrame* login_frame_{nullptr};
 
+    void ParseRooms(std::string roomslist);
 };
 
 }   //namespace gui

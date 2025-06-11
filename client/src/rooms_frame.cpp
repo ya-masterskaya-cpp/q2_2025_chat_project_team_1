@@ -1,11 +1,15 @@
 #include "rooms_frame.h"
 
+#include <const.h>
+#include <service.h>
+
 namespace gui {
 
-RoomsFrame::RoomsFrame(const wxString& title)
-    : wxFrame(nullptr, wxID_ANY, title) {
+RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
+                       transfer::MessagesHandler& message_handler, domain::UserData& user)
+    : wxFrame(parent, wxID_ANY, title), message_handler_{message_handler}, user_{user} {
 
-    Bind(wxEVT_CLOSE_WINDOW, &RoomsFrame::OnClose, this);
+    // Bind(wxEVT_CLOSE_WINDOW, &RoomsFrame::OnClose, this);
 
 
     wxPanel* panel = new wxPanel(this);
@@ -18,6 +22,8 @@ RoomsFrame::RoomsFrame(const wxString& title)
 
     //кнопки
     wxButton* reload_button = new wxButton(panel, wxID_ANY, "Reload");
+    wxButton* login_button = new wxButton(panel, wxID_ANY, "Login");
+    login_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnLoginButtonClicked,this);
     wxButton* ok_button = new wxButton(panel, wxID_ANY, "Ok");
     wxButton* cancel_button = new wxButton(panel, wxID_ANY, "Cancel");
 
@@ -27,11 +33,43 @@ RoomsFrame::RoomsFrame(const wxString& title)
     general_sizer->Add(buttons_sizer, 0 , wxEXPAND | wxLEFT | wxRIGHT, 5);
 
     buttons_sizer->Add(reload_button, 0,  wxLEFT| wxBOTTOM, 5);
+    buttons_sizer->Add(login_button, 0,  wxLEFT| wxBOTTOM, 5);
     buttons_sizer->AddStretchSpacer(1);
     buttons_sizer->Add(ok_button, 0,  wxRIGHT | wxBOTTOM, 5);
     buttons_sizer->Add(cancel_button, 0,  wxRIGHT | wxBOTTOM, 5);
 
     panel->SetSizer(general_sizer);
+
+    //transfer logic
+    message_handler_.AddAction(CONSTANTS::ACT_ROOM_LIST, [self = this] (const std::unordered_map<std::string,std::string>& params) {
+        if(params.at(CONSTANTS::LF_RESULT) == CONSTANTS::RF_ERROR) {
+            self->rooms_list_->Clear();
+            self->rooms_list_->Append(std::move(params.at(CONSTANTS::LF_REASON)));
+        } else {
+            self->rooms_list_->Clear();
+            std::vector<std::string> rooms = self->ParseRooms(std::move(params.at(CONSTANTS::ACT_ROOM_LIST)));
+            for (auto& room : rooms) {
+                self->rooms_list_->Append(room);
+            }
+        }
+    });
+    UpdateRoomsList();
+}
+
+std::vector<std::string> RoomsFrame::UpdateRoomsList() {
+    message_handler_.Send(UserInterface::US_SrvMakeObjRoomList());
+}
+
+void RoomsFrame::ParseRooms(std::string roomslist) {
+
+}
+
+void RoomsFrame::OnLoginButtonClicked(wxCommandEvent& event) {
+    if(!login_frame_) {
+        login_frame_ = new LoginFrame(this, message_handler_,user_);
+
+    }
+    login_frame_->Show();
 }
 
 }

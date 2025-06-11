@@ -28,19 +28,16 @@ file(GLOB DOMAIN_SOURCES "domain/src/*.cpp" "domain/include/*.h")
 add_executable( Client
     ${CLIENT_SRC}/main.cpp
     ${CLIENT_INCL}/application.h
+    ${CLIENT_INCL}/domain.h
     # gui
-    ${CLIENT_INCL}/main_frame.h
-    ${CLIENT_SRC}/main_frame.cpp
-    ${CLIENT_INCL}/rooms_frame.h
-    ${CLIENT_SRC}/rooms_frame.cpp
+    ${CLIENT_INCL}/main_frame.h ${CLIENT_SRC}/main_frame.cpp
+    ${CLIENT_INCL}/rooms_frame.h ${CLIENT_SRC}/rooms_frame.cpp
+    ${CLIENT_INCL}/login_frame.h ${CLIENT_SRC}/login_frame.cpp
     #transfer
     ${CLIENT_INCL}/transfer_interface.h
-    ${CLIENT_INCL}/tcp_client.h
-    ${CLIENT_SRC}/tcp_client.cpp
-    ${CLIENT_INCL}/messages_handler.h
-    ${CLIENT_SRC}/messages_handler.cpp
-    ${CLIENT_INCL}/pausable_thread.h
-    ${CLIENT_SRC}/pausable_thread.cpp
+    ${CLIENT_INCL}/tcp_client.h ${CLIENT_SRC}/tcp_client.cpp
+    ${CLIENT_INCL}/messages_handler.h ${CLIENT_SRC}/messages_handler.cpp
+    ${CLIENT_INCL}/pausable_thread.h ${CLIENT_SRC}/pausable_thread.cpp
 )
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
 target_include_directories(Client PRIVATE ${DOMAIN_INCL})

@@ -1,12 +1,13 @@
 #ifndef MESSAGESHANDLER_H
 #define MESSAGESHANDLER_H
 
-// #include <queue>
-// #include <list>
+
 #include <functional>
 #include <unordered_map>
 
 #include "tcp_client.h"
+
+namespace transfer {
 
 using action_function = std::function<void(const
                             std::unordered_map<std::string,std::string>&)>;
@@ -33,5 +34,7 @@ private:
     transfer::TcpCLient& tcp_client_;
     std::unordered_map<std::string,action_function> actions_;
 };
+
+} //namespace transfer
 
 #endif // MESSAGESHANDLER_H

@@ -1,13 +1,12 @@
 #include "main_frame.h"
 
 #include "const.h"
-#include "rooms_frame.h"
 #include "service.h"
 
 namespace gui {
 
-MainFrame::MainFrame(const wxString& title, MessagesHandler& message_handler)
-    : wxFrame(nullptr, wxID_ANY, title), message_handler_{message_handler} {
+MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler& message_handler)
+    : wxFrame(nullptr, wxID_ANY, title), message_handler_{message_handler}, pausable_thread_{} {
     wxPanel* panel = new wxPanel(this);
     wxBoxSizer* general_sizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -39,6 +38,12 @@ MainFrame::MainFrame(const wxString& title, MessagesHandler& message_handler)
 
     panel->SetSizer(general_sizer);
 
+
+    //transfer logic ---------------------------------------------------------------------------
+    pausable_thread_.SetTask([self = this] () {
+        self->message_handler_.DoOnReceive();
+    });
+
     message_handler_.AddAction(CONSTANTS::ACT_USER_MESSAGE,
                                [self = this](const std::unordered_map<std::string,std::string>& params) {
                                    // self->
@@ -52,18 +57,14 @@ MainFrame::MainFrame(const wxString& title, MessagesHandler& message_handler)
 }
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
-    // wxString message = message_input_->GetValue();
-    // if (!message.empty()) {
-    //     chat_history_->AppendText("You: " + message + "\n");
-    //     message_input_->Clear();
-    // }
-
-    message_handler_.Send(UserInterface::US_ChrMakeSendMessage(token_, message_input_->GetValue().utf8_string()));
+    message_handler_.Send(UserInterface::US_ChrMakeSendMessage(user_.token, message_input_->GetValue().utf8_string()));
 }
 
 void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
-    RoomsFrame* rooms_frame = new RoomsFrame("Select Room");
-    rooms_frame->Show();
+    if(!rooms_frame_) {
+            rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_,user_);
+    }
+    rooms_frame_->Show();
 }
 
 

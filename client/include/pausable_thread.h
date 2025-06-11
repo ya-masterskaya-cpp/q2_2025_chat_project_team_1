@@ -1,8 +1,13 @@
+#ifndef PAUSABLE_THREAD_H
+#define PAUSABLE_THREAD_H
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <functional>
 #include <atomic>
+
+namespace domain {
 
 class PausableThread {
 public:
@@ -31,3 +36,7 @@ private:
 
     void Run();
 };
+
+}   // namespace domain
+
+#endif // PAUSABLE_THREAD_H
