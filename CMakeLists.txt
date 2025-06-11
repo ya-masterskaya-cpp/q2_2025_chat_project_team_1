@@ -23,20 +23,26 @@ set(SERVER_SRC server/src)
 set(DOMAIN_INCL domain/include)
 set(DOMAIN_SRC domain/src)
 
-#все *.cpp и *.h для сервера 
+# общие файлы для сервера и клиента
 file(GLOB DOMAIN_SOURCES "domain/src/*.cpp" "domain/include/*.h")
-file(GLOB SERVER_SRC_FILES "${SERVER_SRC}/*.cpp" "${SERVER_SRC}/*.h")
 
-add_executable( Client
-    ${CLIENT_SRC}/main.cpp
+# все *.cpp и *.h для клиента 
+file(GLOB CLIENT_INCL_FILES "${CLIENT_INCL}/*.h")
+file(GLOB CLIENT_SRC_FILES "${CLIENT_SRC}/*.cpp")
+
+# все *.cpp и *.h для сервера 
+file(GLOB SERVER_INCL_FILES "${SERVER_INCL}/*.h")
+file(GLOB SERVER_SRC_FILES "${SERVER_SRC}/*.cpp")
+
+add_executable(Client
+    ${CLIENT_INCL_FILES}
+    ${CLIENT_SRC_FILES}
 )
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
 target_include_directories(Client PRIVATE ${DOMAIN_INCL})
 
-#add_executable(Server
-#    ${SERVER_SRC}/main.cpp
-#)
 add_executable(Server
+    ${SERVER_INCL_FILES}
     ${SERVER_SRC_FILES}
 )
 target_include_directories(Server PRIVATE ${SERVER_INCL})

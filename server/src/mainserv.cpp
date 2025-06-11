@@ -7,6 +7,7 @@ void MainServer::init()
 
     try
     {
+        //std::string load_var = "loaderserv.conf";
         std::string load_var = "../data/loaderserv.conf";
         std::ifstream ifs(load_var);
         std::string json = Service::ReadFromFstream(ifs);
@@ -65,7 +66,7 @@ void MainServer::Listen()
               ec.what() << '\n';
             }                                           
              std::shared_ptr<ServerSession> servsess = std::make_shared<ServerSession>
-             (this, std::make_shared<tcp::socket>(std::move(socket))); 
+             (this, std::make_shared<beast::tcp_stream>(std::move(socket))); 
              servsess->HandleSession();
              
              
