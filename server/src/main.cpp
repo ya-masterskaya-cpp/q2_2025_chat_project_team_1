@@ -1,9 +1,14 @@
+#include "logger.h"
+#include "log_functions.h" // типовый фунции логирования
 #include "srv.h"
 
 
 
 int main()
 {
+
+    // Инициализируем логирование
+    logger::Logger().Init(logger::Logger::Level::Debug);
     
     try{
     setlocale(LC_ALL, "Ru-ru");
@@ -15,6 +20,7 @@ int main()
     Service::MtreadRunContext(ioc);
     }
     catch(const std::exception& ex){
-        ZyncPrint("MAINSERVER EX", ex.what());
+        log_functions::LogFatalError(ex.what());
+        ZyncPrint("MAINSERVER EX", ex.what()); // TODO заменить все вызовы ZyncPrint логгированием
     }
 }

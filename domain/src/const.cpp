@@ -46,3 +46,23 @@ const size_t CONSTANTS::N_TOKEN_LEN = 32;
 const size_t CONSTANTS::N_MAX_MESSAGE_LEN = 512;
 
 const char CONSTANTS::SERIAL_SYM = '\0';
+
+// Log Tags
+const std::string LogTag::ServerStart = "ServerStart";
+const std::string LogTag::ServerStop = "ServerStop";
+const std::string LogTag::Listening = "Listening";
+const std::string LogTag::ClientConnect = "ClientConnect";
+const std::string LogTag::ClientDisconnect = "ClientDisconnect";
+const std::string LogTag::AuthSuccess = "AuthSuccess";
+const std::string LogTag::AuthFail = "AuthFail";
+const std::string LogTag::CreateRoom = "CreateRoom";
+const std::string LogTag::ListRooms = "ListRooms";
+const std::string LogTag::ListUsers = "ListUsers";
+const std::string LogTag::UserJoinRoom = "UserJoinRoom";
+const std::string LogTag::UserLeaveRoom = "UserLeaveRoom";
+const std::string LogTag::MessageSent = "MessageSent";
+const std::string LogTag::MessageRejected = "MessageRejected";
+const std::string LogTag::ExecuteCommand = "ExecuteCommand";
+const std::string LogTag::ReceiveRequest = "ReceiveRequest";
+const std::string LogTag::FatalError = "FatalError";
+const std::string LogTag::ParseError = "ParseError";

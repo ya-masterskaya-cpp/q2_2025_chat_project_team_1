@@ -1,63 +1,85 @@
 #include "srv.h"
 std::atomic_int AbstractSession::exempslars = 0;
-void AbstractSession::HandleSession()
+////////////////////////////////
+void AbstractSession::Read()
 {
-
+    request_ = {};
     //  ПРОВЕРЯЕМ ЖИВ ЛИ СОКЕТ
     if (!Service::IsAliveSocket(stream_->socket()))
     {
+        ZyncPrint("SOCKET IS DAMAGED");
         Service::ShutDownSocket(stream_->socket());
         return;
     }
-    auto self = this->shared_from_this();
-    http::async_read(*stream_, readbuf_, request_, [self](err ec, size_t bytes)
-                     {
-                        try{
+    if (!stream_)
+    {
+        ZyncPrint("STREAM SESSION IS DAMAGED");
+        return;
+    }
 
-                        
-                         if (!ec)
-                         {
-                             // ИЗВЛЕКАЕМ ЗНАЧЕНИЕ
-                             auto action = Service::ExtractSharedObjectsfromRequestOrResponce(self->request_);
-                             // ЧИСТА БУФЕРА
-                             std::string responce_body;
-                             
-                             try{
-                             // ПРОВЕРКИ ЕСТЬ ЛИ ДЕЙСТВИЕ
-                             auto reason = ServiceChatroomServer::CHK_FieldExistsAndNotEmpty(*action, CONSTANTS::LF_ACTION);
-                             if (reason)
-                             {
-                                 responce_body = ServiceChatroomServer::MakeAnswerError(*reason, "HandleSession()", CONSTANTS::UNKNOWN);
-                             }
-                             else
-                             {
-                                 responce_body = self->GetStringResponceToSocket(action);
-                             }
-
-                             if (responce_body.empty())
-                             {
-                                 return;
-                             }
-                            }
-                            catch(const std::exception& ex){
-                              responce_body = ServiceChatroomServer::MakeAnswerError(ex.what(), "HandleSession() Exc1", CONSTANTS::UNKNOWN);
-
-                            }
-
-                             // КЛАДЕМ В ОЧЕРЕДЬ???
-                             self->mess_queue_.push_back(responce_body);
-
-                             auto resobj = Service::DeserializeUmap<std::string, std::string>(responce_body);
-                        
-                             http::status stat = http::status::ok;
-                             response rsp(Service::MakeResponce(11, true, stat, std::move(responce_body)));
-                             // ПИШЕМ В СОКЕТ
-                             http::async_write(*(self->stream_), rsp, [self](err ec, size_t bytes) {}); // async writ              
-                         } // if !ec outer
-                     } // async read until lam
-                     catch(const std::exception&ex){
-                            ZyncPrint("");                          
-                     } }); // async read until
-
-    return;
+    // Начинаем асинхронноен чтение
+    http::async_read(*stream_, readbuf_, request_,
+                     beast::bind_front_handler(&AbstractSession::OnRead, shared_from_this())); // async read until
 };
+
+void AbstractSession::OnRead(err ec, size_t bytes)
+{
+    if (!ec)
+    { // Обрабатываем прочитанные данные
+        StartAfterReadHandle();
+    }
+};
+
+void AbstractSession::Run()
+{
+   if(!stream_) {
+      ZyncPrint("THE STREAM IS DAMAGED");
+      return;
+   }
+    net::dispatch(stream_->get_executor(),
+                  beast::bind_front_handler(
+                      &AbstractSession::Read,
+                      shared_from_this()));
+};
+
+void AbstractSession::Write(std::string responce_body, http::status status)
+{
+    try
+    {
+        response rsp(Service::MakeResponce(
+            11, true,
+            status, std::move(responce_body)));
+        ZyncPrint(rsp.body());
+        Service::PrintUmap(Service::DeserializeUmap<std::string, std::string>(rsp.body()));
+
+        // ПИШЕМ В СОКЕТ
+        http::async_write(*stream_, std::move(rsp),
+                          beast::bind_front_handler(&AbstractSession::OnWrite, shared_from_this(), rsp.keep_alive())); // async writ
+    }
+    catch (const std::exception &ex)
+    {
+        ZyncPrint("WriteToSocketEXCERPTION", ex.what());
+    }
+};
+
+void AbstractSession::OnWrite(bool keep_alive, beast::error_code ec, std::size_t bytes_transferred)
+{
+    boost::ignore_unused(bytes_transferred);
+
+    if (ec)
+
+        if (!keep_alive)
+        {
+            stream_->socket().close();
+        }
+    // Read another request
+    ZyncPrint("WriteComplete.............");
+    request_ = {};
+    Read();
+}
+
+void AbstractSession::Сlose()
+{
+    beast::error_code ec;
+    stream_->socket().shutdown(tcp::socket::shutdown_send, ec);
+}

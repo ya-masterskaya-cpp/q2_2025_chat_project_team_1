@@ -10,7 +10,7 @@ set(wxBUILD_SHARED ON)
 include(${wxWidgets_USE_FILE})
 
 #настройка boost
-find_package(Boost REQUIRED COMPONENTS system filesystem json serialization)
+find_package(Boost REQUIRED COMPONENTS log log_setup system filesystem thread json serialization)
 
 #настройка libpqxx
 find_package(libpqxx REQUIRED)

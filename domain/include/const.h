@@ -56,3 +56,27 @@ struct CONSTANTS
 private:
     CONSTANTS() {};
 };
+
+struct LogTag {
+    static const std::string ServerStart;
+    static const std::string ServerStop;
+    static const std::string Listening;
+    static const std::string ClientConnect;
+    static const std::string ClientDisconnect;
+    static const std::string AuthSuccess;
+    static const std::string AuthFail;
+    static const std::string CreateRoom;
+    static const std::string ListRooms;
+    static const std::string ListUsers;
+    static const std::string UserJoinRoom;
+    static const std::string UserLeaveRoom;
+    static const std::string MessageSent;
+    static const std::string MessageRejected;
+    static const std::string ExecuteCommand;
+    static const std::string ReceiveRequest;
+    static const std::string FatalError;
+    static const std::string ParseError;
+
+private:
+    LogTag() {};
+};
