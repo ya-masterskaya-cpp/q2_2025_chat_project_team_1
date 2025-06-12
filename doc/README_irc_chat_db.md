@@ -83,8 +83,6 @@
 - `std::vector<MessageRecord> LoadPage(const RoomId& room_id, int offset, int limit) const`
     - Получает сообщения из заданной комнаты постранично (от новых к старым).
 
-> **Старые методы** `LoadAll` и `LoadRecent` также доступны для обратной совместимости.
-
 ---
 
 ### Пример использования пагинации
