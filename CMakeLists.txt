@@ -16,7 +16,10 @@ find_package(Boost REQUIRED)
 # ==== Основное приложение ====
 add_executable(Server
     server/src/main.cpp
+    server/src/postgres.h
     server/src/postgres.cpp
+    server/src/tagged.h
+    server/src/tagged_uuid.h
     server/src/tagged_uuid.cpp
 )
 

@@ -97,6 +97,26 @@ std::optional<UserRecord> UsersRepository::FindByUsername(const std::string &use
     };
 }
 
+std::vector<UserRecord> UsersRepository::LoadPage(int offset, int limit) const
+{
+    std::vector<UserRecord> result;
+    const pqxx::result query_result = transaction_.exec(
+        R"(SELECT id, username, password_hash, registered_at FROM users
+            ORDER BY registered_at DESC
+            LIMIT $1 OFFSET $2;)",
+        pqxx::params(limit, offset)
+        );
+    for (const auto& row : query_result) {
+        result.push_back(UserRecord{
+            UserId::FromString(row[0].as<std::string>()),
+            row[1].as<std::string>(),
+            row[2].as<std::string>(),
+            row[3].as<std::string>()
+        });
+    }
+    return result;
+}
+
 // ---- RoomsRepository ----
 
 RoomsRepository::RoomsRepository(pqxx::work &transaction) : transaction_(transaction) {}
@@ -118,6 +138,24 @@ std::vector<RoomRecord> RoomsRepository::LoadAll() const {
                 RoomId::FromString(row[0].as<std::string>()),
                 row[1].as<std::string>(),
                 row[2].as<std::string>()
+        });
+    }
+    return result;
+}
+
+std::vector<RoomRecord> RoomsRepository::LoadPage(int offset, int limit) const {
+    std::vector<RoomRecord> result;
+    const pqxx::result query_result = transaction_.exec(
+        R"(SELECT id, name, created_at FROM rooms
+            ORDER BY created_at DESC
+            LIMIT $1 OFFSET $2;)",
+        pqxx::params(limit, offset)
+        );
+    for (const auto& row : query_result) {
+        result.push_back(RoomRecord{
+            RoomId::FromString(row[0].as<std::string>()),
+            row[1].as<std::string>(),
+            row[2].as<std::string>()
         });
     }
     return result;
@@ -150,6 +188,27 @@ std::vector<MessageRecord> MessagesRepository::LoadRecent(const RoomId& room_id,
                 RoomId::FromString(row[2].as<std::string>()),
                 row[3].as<std::string>(),
                 row[4].as<std::string>()
+        });
+    }
+    return result;
+}
+
+std::vector<MessageRecord> MessagesRepository::LoadPage(const RoomId& room_id, int offset, int limit) const {
+    std::vector<MessageRecord> result;
+    const pqxx::result query_result = transaction_.exec(
+        R"(SELECT id, user_id, room_id, message, sent_at FROM messages
+            WHERE room_id = $1
+            ORDER BY sent_at DESC, id ASC
+            LIMIT $2 OFFSET $3;)",
+        pqxx::params(room_id.ToString(), limit, offset)
+        );
+    for (const auto& row : query_result) {
+        result.push_back(MessageRecord{
+            MessageId::FromString(row[0].as<std::string>()),
+            UserId::FromString(row[1].as<std::string>()),
+            RoomId::FromString(row[2].as<std::string>()),
+            row[3].as<std::string>(),
+            row[4].as<std::string>()
         });
     }
     return result;

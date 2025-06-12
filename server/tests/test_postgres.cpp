@@ -50,8 +50,8 @@ TEST_F(PostgresRepoTest, UsersRepository_SaveAndLoadAndFind) {
 
 // --- RoomsRepository ---
 TEST_F(PostgresRepoTest, RoomsRepository_SaveAndLoad) {
+    auto conn = db->GetTransaction();
     {
-        auto conn = db->GetTransaction();
         pqxx::work txn(*conn);
         postgres::RoomsRepository repo(txn);
         repo.Save("room1");
@@ -59,7 +59,6 @@ TEST_F(PostgresRepoTest, RoomsRepository_SaveAndLoad) {
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     {
-        auto conn = db->GetTransaction();
         pqxx::work txn(*conn);
         postgres::RoomsRepository repo(txn);
         repo.Save("room2");
@@ -73,31 +72,46 @@ TEST_F(PostgresRepoTest, RoomsRepository_SaveAndLoad) {
 
 // --- MessagesRepository ---
 TEST_F(PostgresRepoTest, MessagesRepository_SaveAndLoadRecent) {
+    std::optional<postgres::UserRecord> user;
+    postgres::RoomRecord room;
     auto conn = db->GetTransaction();
-    pqxx::work txn(*conn);
-
     // Для сообщения нужен пользователь и комната
-    postgres::UsersRepository users(txn);
-    users.Save("msguser", "phash");
-    auto user = users.FindByUsername("msguser");
-    ASSERT_TRUE(user.has_value());
-
-    postgres::RoomsRepository rooms(txn);
-    rooms.Save("msgroom");
-    auto room = rooms.LoadAll().front();
-
-    postgres::MessagesRepository msgs(txn);
-    msgs.Save(user->id, room.id, "Hello!");
-    msgs.Save(user->id, room.id, "Second message");
-    auto loaded = msgs.LoadRecent(room.id, 5);
-    ASSERT_EQ(loaded.size(), 2);
-    EXPECT_EQ(loaded[0].message, "Second message");
-    EXPECT_EQ(loaded[1].message, "Hello!");
-
-    // Ограничение выборки
-    auto one = msgs.LoadRecent(room.id, 1);
-    ASSERT_EQ(one.size(), 1);
-    EXPECT_EQ(one[0].message, "Second message");
+    {
+        pqxx::work txn(*conn);
+        postgres::UsersRepository users(txn);
+        users.Save("msguser", "phash");
+        user = users.FindByUsername("msguser");
+        ASSERT_TRUE(user.has_value());
+        txn.commit();
+    }
+    {
+        pqxx::work txn(*conn);
+        postgres::RoomsRepository rooms(txn);
+        rooms.Save("msgroom");
+        room = rooms.LoadAll().front();
+        txn.commit();
+    }
+    {
+        pqxx::work txn(*conn);
+        postgres::MessagesRepository msgs(txn);
+        msgs.Save(user->id, room.id, "Hello!");
+        txn.commit();
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    {
+        pqxx::work txn(*conn);
+        postgres::MessagesRepository msgs(txn);
+        msgs.Save(user->id, room.id, "Second message");
+        auto loaded = msgs.LoadRecent(room.id, 5);
+        ASSERT_EQ(loaded.size(), 2);
+        EXPECT_EQ(loaded[0].message, "Second message");
+        EXPECT_EQ(loaded[1].message, "Hello!");
+        // Ограничение выборки
+        auto one = msgs.LoadRecent(room.id, 1);
+        ASSERT_EQ(one.size(), 1);
+        EXPECT_EQ(one[0].message, "Second message");
+        txn.commit();
+    }
 }
 
 // --- RoomMembersRepository ---
@@ -137,49 +151,45 @@ TEST_F(PostgresRepoTest, RoomMembersRepository_LoadRoomsByUser) {
     std::optional<postgres::UserRecord> alice;
     postgres::RoomRecord r1;
     postgres::RoomRecord r2;
+    auto conn = db->GetTransaction();
     {
-        auto conn = db->GetTransaction();
         pqxx::work txn(*conn);
-
         postgres::UsersRepository users(txn);
+
         users.Save("alice", "hash1");
         alice = users.FindByUsername("alice");
         txn.commit();
         ASSERT_TRUE(alice.has_value());
     }
     {
-        auto conn = db->GetTransaction();
         pqxx::work txn(*conn);
-
         postgres::RoomsRepository rooms(txn);
+
         rooms.Save("r1");
         txn.commit();
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     {
-        auto conn = db->GetTransaction();
         pqxx::work txn(*conn);
-
         postgres::RoomsRepository rooms(txn);
+
         rooms.Save("r2");
         r1 = rooms.LoadAll()[1]; // r1 - старее, r2 - новее
         r2 = rooms.LoadAll()[0];
         txn.commit();
     }
     {
-        auto conn = db->GetTransaction();
         pqxx::work txn(*conn);
-
         postgres::RoomMembersRepository members(txn);
+
         members.Save(alice->id, r1.id);
         txn.commit();
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     {
-        auto conn = db->GetTransaction();
         pqxx::work txn(*conn);
-
         postgres::RoomMembersRepository members(txn);
+
         members.Save(alice->id, r2.id);
         auto rooms_by_user = members.LoadRooms(alice->id);
         txn.commit();
@@ -187,6 +197,96 @@ TEST_F(PostgresRepoTest, RoomMembersRepository_LoadRoomsByUser) {
         EXPECT_EQ(rooms_by_user[0].room_id.ToString(), r2.id.ToString());
         EXPECT_EQ(rooms_by_user[1].room_id.ToString(), r1.id.ToString());
     }
+}
+
+// --- UsersRepository::LoadPage ---
+TEST_F(PostgresRepoTest, UsersRepository_LoadPage) {
+    auto conn = db->GetTransaction();
+
+    for (int i = 1; i <= 5; ++i) {
+        pqxx::work txn(*conn);
+        postgres::UsersRepository repo(txn);
+        repo.Save("user" + std::to_string(i), "hash" + std::to_string(i));
+        txn.commit();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    pqxx::work txn(*conn);
+    postgres::UsersRepository repo(txn);
+    auto page1 = repo.LoadPage(0, 2);
+    auto page2 = repo.LoadPage(2, 2);
+    auto page3 = repo.LoadPage(4, 2); // Последняя страница (1 элемент)
+    txn.commit();
+
+    EXPECT_EQ(page1.size(), 2);
+    EXPECT_EQ(page2.size(), 2);
+    EXPECT_EQ(page3.size(), 1);
+    EXPECT_EQ(page1[0].username, "user5"); // DESC
+    EXPECT_EQ(page1[1].username, "user4");
+    EXPECT_EQ(page2[0].username, "user3");
+    EXPECT_EQ(page2[1].username, "user2");
+    EXPECT_EQ(page3[0].username, "user1");
+}
+
+// --- RoomsRepository::LoadPage ---
+TEST_F(PostgresRepoTest, RoomsRepository_LoadPage) {
+    auto conn = db->GetTransaction();
+
+    for (int i = 1; i <= 4; ++i) {
+        pqxx::work txn(*conn);
+        postgres::RoomsRepository repo(txn);
+        repo.Save("room" + std::to_string(i));
+        txn.commit();
+    }
+    pqxx::work txn(*conn);
+    postgres::RoomsRepository repo(txn);
+    auto page1 = repo.LoadPage(0, 2);
+    auto page2 = repo.LoadPage(2, 2);
+    txn.commit();
+
+    EXPECT_EQ(page1.size(), 2);
+    EXPECT_EQ(page2.size(), 2);
+    EXPECT_EQ(page1[0].name, "room4");
+    EXPECT_EQ(page1[1].name, "room3");
+    EXPECT_EQ(page2[0].name, "room2");
+    EXPECT_EQ(page2[1].name, "room1");
+}
+
+// --- MessagesRepository::LoadPage ---
+TEST_F(PostgresRepoTest, MessagesRepository_LoadPage) {
+    auto conn = db->GetTransaction();
+
+    pqxx::work txn1(*conn);
+    postgres::UsersRepository users(txn1);
+    users.Save("alice", "hashA");
+    auto user = users.FindByUsername("alice");
+    ASSERT_TRUE(user.has_value());
+
+    postgres::RoomsRepository rooms(txn1);
+    rooms.Save("main");
+    auto room = rooms.LoadAll().front();
+    txn1.commit();
+
+    for (int i = 1; i <= 6; ++i) {
+        pqxx::work txn(*conn);
+        postgres::MessagesRepository msgs(txn);
+        msgs.Save(user->id, room.id, "msg" + std::to_string(i));
+        txn.commit();
+    }
+
+    pqxx::work txn2(*conn);
+    postgres::MessagesRepository msgs(txn2);
+    auto page1 = msgs.LoadPage(room.id, 0, 3);
+    auto page2 = msgs.LoadPage(room.id, 3, 3);
+    txn2.commit();
+
+    EXPECT_EQ(page1.size(), 3);
+    EXPECT_EQ(page2.size(), 3);
+    EXPECT_EQ(page1[0].message, "msg6");
+    EXPECT_EQ(page1[1].message, "msg5");
+    EXPECT_EQ(page1[2].message, "msg4");
+    EXPECT_EQ(page2[0].message, "msg3");
+    EXPECT_EQ(page2[1].message, "msg2");
+    EXPECT_EQ(page2[2].message, "msg1");
 }
 
 // --- TaggedUUID ---

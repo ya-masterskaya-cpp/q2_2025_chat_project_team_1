@@ -113,6 +113,7 @@ public:
     void Save(const std::string& username, const std::string& password_hash) const;
     std::vector<UserRecord> LoadAll() const;
     std::optional<UserRecord> FindByUsername(const std::string& username) const;
+    std::vector<UserRecord> LoadPage(int offset, int limit) const;
 
 private:
     pqxx::work& transaction_;
@@ -125,6 +126,7 @@ public:
 
     void Save(const std::string& name) const;
     std::vector<RoomRecord> LoadAll() const;
+    std::vector<RoomRecord> LoadPage(int offset, int limit) const;
 
 private:
     pqxx::work& transaction_;
@@ -137,6 +139,7 @@ public:
 
     void Save(const UserId& user_id, const RoomId& room_id, const std::string& message) const;
     std::vector<MessageRecord> LoadRecent(const RoomId& room_id, int max_items) const;
+    std::vector<MessageRecord> LoadPage(const RoomId& room_id, int offset, int limit) const;
 
 private:
     pqxx::work& transaction_;
