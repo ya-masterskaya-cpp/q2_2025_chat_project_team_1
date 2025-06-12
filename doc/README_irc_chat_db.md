@@ -41,12 +41,13 @@
   - `Save(const std::string& username, const std::string& password_hash)`
   - `std::vector<UserRecord> LoadAll() const`
   - `std::optional<UserRecord> FindByUsername(const std::string&) const`
+  - `std::vector<UserRecord> LoadPage(int offset, int limit) const;`
 
 #### `RoomsRepository`
-- **Методы:** `Save`, `LoadAll`
+- **Методы:** `Save`, `LoadAll`, `LoadPage`
 
 #### `MessagesRepository`
-- **Методы:** `Save`, `LoadRecent`
+- **Методы:** `Save`, `LoadRecent`, `LoadPage`
 
 #### `RoomMembersRepository`
 - **Методы:**
@@ -61,6 +62,48 @@
 
 - **Назначение:** Инициализация и миграция базы данных (создание таблиц), предоставление транзакций.
 - **Метод:** `GetTransaction()` — получить соединение для транзакции.
+
+---
+
+## 🔄 Пагинация (постраничная выборка)
+
+В репозиториях пользователей, комнат и сообщений теперь доступны методы **постраничной выборки** (пагинации):
+
+### Методы пагинации
+
+#### `UsersRepository`
+- `std::vector<UserRecord> LoadPage(int offset, int limit) const`
+    - Загружает пользователей, начиная с позиции `offset`, не более `limit` штук (сортировка: самые новые сначала).
+
+#### `RoomsRepository`
+- `std::vector<RoomRecord> LoadPage(int offset, int limit) const`
+    - Загружает комнаты постранично по аналогии с пользователями.
+
+#### `MessagesRepository`
+- `std::vector<MessageRecord> LoadPage(const RoomId& room_id, int offset, int limit) const`
+    - Получает сообщения из заданной комнаты постранично (от новых к старым).
+
+> **Старые методы** `LoadAll` и `LoadRecent` также доступны для обратной совместимости.
+
+---
+
+### Пример использования пагинации
+
+```cpp
+pqxx::work tx(*conn);
+
+// --- Пагинация пользователей
+UsersRepository users_repo(tx);
+auto users_page = users_repo.LoadPage(0, 20); // первые 20 пользователей
+
+// --- Пагинация комнат
+RoomsRepository rooms_repo(tx);
+auto rooms_page = rooms_repo.LoadPage(20, 10); // начиная с 21-й комнаты, 10 штук
+
+// --- Пагинация сообщений в комнате
+MessagesRepository messages_repo(tx);
+auto messages_page = messages_repo.LoadPage(room_id, 0, 50); // первые 50 сообщений в комнате
+```
 
 ---
 
@@ -93,53 +136,6 @@ CREATE TABLE IF NOT EXISTS room_members (
     UNIQUE(room_id, user_id)
 );
 ```
-
----
-
-## 🐳 Использование Docker для базы данных
-
-Контейнер с PostgreSQL разворачивается с помощью Docker Compose.
-
-### Конфигурация
-
-В корне проекта: [`docker-compose.yml`](./docker-compose.yml).
-
-#### Пример содержимого:
-
-```yaml
-version: "3.8"
-services:
-  postgres:
-    image: postgres:15
-    container_name: irc_chat_postgres
-    environment:
-      POSTGRES_USER: test_user
-      POSTGRES_PASSWORD: test_password
-      POSTGRES_DB: test_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-volumes:
-  pgdata:
-```
-
-### Запуск и остановка
-
-- **Запуск:** `docker compose up -d`
-- **Остановка:** `docker compose down`
-- **Удаление данных:** `docker compose down -v`
-
-### Подключение из кода
-
-```cpp
-pqxx::connection conn("host=localhost port=5432 user=test_user password=test_password dbname=test_db");
-```
-
-### Для тестирования
-
-- Используется изолированная тестовая база (Docker-контейнер легко сбрасывать между тестами).
-- Не использовать production-базу для тестов!
 
 ---
 
@@ -217,7 +213,54 @@ auto recent = messages_repo.LoadRecent(rooms[0].id, 10);
 - Покрытие: все основные репозитории и бизнес-операции.
 - Проверка: создание, выборка, корректность данных, ошибки, граничные ситуации.
 
-### Сборка и запуск тестов
+### Для тестирования
+
+- Используется изолированная тестовая база (Docker-контейнер легко сбрасывать между тестами).
+- Не использовать production-базу для тестов!
+
+### 🐳 Использование Docker для базы данных
+
+Контейнер с PostgreSQL разворачивается с помощью Docker Compose.
+
+#### Конфигурация
+
+В корне проекта: [`docker-compose.yml`](./docker-compose.yml).
+
+##### Пример содержимого:
+
+```yaml
+version: "3.8"
+services:
+  postgres:
+    image: postgres:15
+    container_name: irc_chat_postgres
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+```
+
+#### Запуск и остановка
+
+- **Запуск:** `docker compose up -d`
+- **Остановка:** `docker compose down`
+- **Удаление данных:** `docker compose down -v`
+
+#### Подключение из кода
+
+```cpp
+pqxx::connection conn("host=localhost port=5432 user=test_user password=test_password dbname=test_db");
+```
+
+---
+
+#### Сборка и запуск тестов
 
 1. **Сборка:**
     ```sh
@@ -283,5 +326,3 @@ auto recent = messages_repo.LoadRecent(rooms[0].id, 10);
 - `postgres.h/.cpp` — репозитории, пул соединений, Database
 
 ---
-
-**Если нужно добавить или расширить какую-то часть для будущих изменений или интеграций — пиши, обновлю раздел!**
