@@ -8,13 +8,13 @@
 
 class LoginFrame : public wxDialog {
 public:
-    LoginFrame(wxWindow* parent, transfer::MessagesHandler& message_handler,
+    LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_handler,
                     domain::UserData& user);
     void OnSignUpButtonClicked(wxCommandEvent& event);
     void OnLoginButtonClicked(wxCommandEvent& event);
 
 private:
-    transfer::MessagesHandler& message_handler_;
+    transfer::MessagesHandler* message_handler_;
     domain::UserData& user_;
 
     wxTextCtrl* username_ctrl_;

@@ -6,10 +6,8 @@
 namespace gui {
 
 RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
-                       transfer::MessagesHandler& message_handler, domain::UserData& user)
+                       transfer::MessagesHandler* message_handler, domain::UserData& user)
     : wxFrame(parent, wxID_ANY, title), message_handler_{message_handler}, user_{user} {
-
-    // Bind(wxEVT_CLOSE_WINDOW, &RoomsFrame::OnClose, this);
 
 
     wxPanel* panel = new wxPanel(this);
@@ -41,23 +39,24 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
     panel->SetSizer(general_sizer);
 
     //transfer logic
-    message_handler_.AddAction(CONSTANTS::ACT_ROOM_LIST, [self = this] (const std::unordered_map<std::string,std::string>& params) {
+    message_handler_->AddAction(CONSTANTS::ACT_ROOM_LIST, [self = this] (const std::unordered_map<std::string,std::string>& params) {
         if(params.at(CONSTANTS::LF_RESULT) == CONSTANTS::RF_ERROR) {
             self->rooms_list_->Clear();
             self->rooms_list_->Append(std::move(params.at(CONSTANTS::LF_REASON)));
         } else {
             self->rooms_list_->Clear();
-            std::vector<std::string> rooms = self->ParseRooms(std::move(params.at(CONSTANTS::ACT_ROOM_LIST)));
-            for (auto& room : rooms) {
-                self->rooms_list_->Append(room);
-            }
+            // std::vector<std::string> rooms = self->ParseRooms(std::move(params.at(CONSTANTS::ACT_ROOM_LIST)));
+            // for (auto& room : rooms) {
+            //     self->rooms_list_->Append(room);
+            // }
         }
     });
-    UpdateRoomsList();
+    // UpdateRoomsList();
+    std::cout << "r" << std::endl;
 }
 
 std::vector<std::string> RoomsFrame::UpdateRoomsList() {
-    message_handler_.Send(UserInterface::US_SrvMakeObjRoomList());
+    // message_handler_.Send(UserInterface::US_SrvMakeObjRoomList());
 }
 
 void RoomsFrame::ParseRooms(std::string roomslist) {

@@ -1,6 +1,6 @@
 #include "login_frame.h"
 
-LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler& message_handler,
+LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_handler,
                        domain::UserData& user)
     : wxDialog(parent, wxID_ANY, "Authorization", wxDefaultPosition, wxSize(450, 150)),
     message_handler_{message_handler} , user_{user} {
@@ -20,7 +20,7 @@ LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler& message_hand
     //кнопки
     wxButton* sign_up_button = new wxButton(panel, wxID_ANY, "Sign Up");
     wxButton* login_button = new wxButton(panel, wxID_ANY, "Login");
-    login_button->Bind(wxEVT_BUTTON, &LoginFrame::OnSignUpButtonClicked,this);
+    sign_up_button->Bind(wxEVT_BUTTON, &LoginFrame::OnSignUpButtonClicked,this);
     login_button->Bind(wxEVT_BUTTON, &LoginFrame::OnLoginButtonClicked,this);
 
     main_sizer->Add(sign_up_button);
@@ -32,7 +32,7 @@ LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler& message_hand
     panel->SetSizer(main_sizer);
 
     //transfer logic
-    message_handler.AddAction();
+    // message_handler.AddAction();
 }
 
 void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {

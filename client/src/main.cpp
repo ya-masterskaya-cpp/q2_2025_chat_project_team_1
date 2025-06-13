@@ -2,17 +2,15 @@
 
 #include "application.h"
 #include "main_frame.h"
-#include "messages_handler.h"
-#include "tcp_client.h"
 
 
 wxIMPLEMENT_APP(Application);
 
 bool Application::OnInit() {
-    transfer::TcpCLient tcp_client;
-    transfer::MessagesHandler message_handler{tcp_client};
+    tcp_client = std::make_unique<transfer::TcpCLient>();
+    message_handler = std::make_unique<transfer::MessagesHandler>(*tcp_client);
 
-    gui::MainFrame* frame = new gui::MainFrame("IRC-chat", message_handler);
+    gui::MainFrame* frame = new gui::MainFrame("IRC-chat", message_handler.get());
     frame->Show(true);
     return true;
 }
