@@ -40,7 +40,6 @@
 #include <future>
 #include <cassert>
 #include "const.h"
-#include "guardlock.h"
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 using task = std::unordered_map<std::string, std::string>;
@@ -59,6 +58,7 @@ using request = http::request<http::string_body>;
 using response = http::response<http::string_body>;
 using stream = beast::tcp_stream;
 using shared_stream = std::shared_ptr<stream>;
+using shared_flatbuf = std::shared_ptr<beast::flat_buffer>;
 
 
 template <typename... Args>

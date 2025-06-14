@@ -115,25 +115,53 @@
 
 ---
 
+## Установка
+
+Клонируем репозиторий vcpkg:  
+```bash
+git clone https://github.com/Microsoft/vcpkg.git ~/.local/share/vcpkg
+```
+
+Запускаем bootstrap (для Windows - .\bootstrap-vcpkg.bat):  
+```bash
+cd ~/.local/share/vcpkg
+./bootstrap-vcpkg.sh
+```
+
+Убеждаемся VCPKG_ROOT установлен корректо:__
+```bash
+echo $VCPKG_ROOT
+```
+
+Если не установлен, устанавливаем:__
+```bash
+export VCPKG_ROOT="$HOME/.local/share/vcpkg"
+```
+(действует только на данную сессию, для постоянной настройки__
+добавлем строку в ~/.bashrc или ~/.zshrc)__
+
+Устанавливаем libpqxx, Boost и wxWidgets:__
+```bash
+vcpkg install libpqxx boost wxwidgets
+```
+
+Для специфичных версий (если нужно):__
+```bash
+vcpkg install libpqxx@7.7.4 boost@1.83.0 wxwidgets@3.2.2.1
+```
+
+При проблемах установки смотрим файл `~/.local/share/vcpkg/installed/vcpkg/issue_body.md` 
+там все расписано, в частности, каких зависимостей нехватает.__
+
+---
+
 ## Сборка проекта
 
-**Требования:**
-// TODO: скорректировать, если conan не используем
-- Linux / Windows
-- C++17
-- CMake 3.11+
-- Conan 1.65+
-- wxWidgets (GUI клиента)
-- Boost (asio, serialization и т.д.)
-- PostgreSQL (если используется хранилище)
-
-**Сборка:**
-// TODO: скорректировать команды сборки
+Сборка в директории build (для своей системы поменять путь триплета x64-linux на нужное):__
 ```bash
-mkdir build_release && cd build_release
-conan install .. --build missing -s compiler.libcxx=libstdc++11 -s build_type=Release
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_PREFIX_PATH=${VCPKG_ROOT}/installed/x64-linux/share/
 cmake --build .
+
 ```
 
 ---

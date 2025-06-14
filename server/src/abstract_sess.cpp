@@ -4,21 +4,22 @@ std::atomic_int AbstractSession::exempslars = 0;
 void AbstractSession::Read()
 {
     request_ = {};
+    if (!stream_)
+    {
+        ZyncPrint("STREAM SESSION IS DAMAGED........READ()");
+        return;
+    }
     //  ПРОВЕРЯЕМ ЖИВ ЛИ СОКЕТ
     if (!Service::IsAliveSocket(stream_->socket()))
     {
-        ZyncPrint("SOCKET IS DAMAGED");
+        ZyncPrint("SOCKET IS DAMAGED...........READ()");
         Service::ShutDownSocket(stream_->socket());
         return;
     }
-    if (!stream_)
-    {
-        ZyncPrint("STREAM SESSION IS DAMAGED");
-        return;
-    }
-
+      
     // Начинаем асинхронноен чтение
-    http::async_read(*stream_, readbuf_, request_,
+    //  std::lock_guard<std::mutex> lg(mtx_use_buf_);
+    http::async_read(*stream_, *readbuf_, request_,
                      beast::bind_front_handler(&AbstractSession::OnRead, shared_from_this())); // async read until
 };
 
@@ -26,35 +27,43 @@ void AbstractSession::OnRead(err ec, size_t bytes)
 {
     if (!ec)
     { // Обрабатываем прочитанные данные
-        StartAfterReadHandle();
+       StartAfterReadHandle();
+    }
+    else
+    {
+      ZyncPrint("ON READ----> " + ec.message());
     }
 };
 
 void AbstractSession::Run()
 {
    if(!stream_) {
-      ZyncPrint("THE STREAM IS DAMAGED");
+      ZyncPrint("THE STREAM IS DAMAGED...........RUN()");
       return;
    }
+    
     net::dispatch(stream_->get_executor(),
                   beast::bind_front_handler(
                       &AbstractSession::Read,
                       shared_from_this()));
 };
 
-void AbstractSession::Write(std::string responce_body, http::status status)
+void AbstractSession::Write(DIR dir,std::string responce_body, http::status status)
 {
     try
     {
+        std::lock_guard<std::mutex> lg(mtx_use_write_);
         response rsp(Service::MakeResponce(
             11, true,
-            status, std::move(responce_body)));
-        ZyncPrint(rsp.body());
-        Service::PrintUmap(Service::DeserializeUmap<std::string, std::string>(rsp.body()));
-
+            http::status::ok, std::move(responce_body)));
+       
+       
+       
         // ПИШЕМ В СОКЕТ
-        http::async_write(*stream_, std::move(rsp),
-                          beast::bind_front_handler(&AbstractSession::OnWrite, shared_from_this(), rsp.keep_alive())); // async writ
+      err ec;
+      auto bytes =  http::write(*stream_, std::move(rsp), ec); // async writ
+      OnWrite(dir, true, ec, bytes);
+    
     }
     catch (const std::exception &ex)
     {
@@ -62,7 +71,7 @@ void AbstractSession::Write(std::string responce_body, http::status status)
     }
 };
 
-void AbstractSession::OnWrite(bool keep_alive, beast::error_code ec, std::size_t bytes_transferred)
+void AbstractSession::OnWrite(DIR dir, bool keep_alive, beast::error_code ec, std::size_t bytes_transferred)
 {
     boost::ignore_unused(bytes_transferred);
 
@@ -70,15 +79,18 @@ void AbstractSession::OnWrite(bool keep_alive, beast::error_code ec, std::size_t
 
         if (!keep_alive)
         {
-            stream_->socket().close();
+            ZyncPrint("No Keep Alive, Closing.............");
+            Close();
+            return;
         }
     // Read another request
     ZyncPrint("WriteComplete.............");
-    request_ = {};
+  //  request_ = {};
+    if(dir == AbstractSession::DIR::OUTER) {return;}
     Read();
 }
 
-void AbstractSession::Сlose()
+void AbstractSession::Close()
 {
     beast::error_code ec;
     stream_->socket().shutdown(tcp::socket::shutdown_send, ec);
