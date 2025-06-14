@@ -15,6 +15,9 @@ find_package(Boost REQUIRED COMPONENTS log log_setup system filesystem thread js
 #настройка libpqxx
 find_package(libpqxx REQUIRED)
 
+#настройка OpenSSL для password_hasher, на стороне клиента
+find_package(OpenSSL REQUIRED)
+
 #настройка целей
 set(CLIENT_INCL client/include)
 set(CLIENT_SRC client/src)
@@ -56,4 +59,4 @@ target_include_directories(general_domain_lib PRIVATE ${DOMAIN_INCL})
 
 target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} general_domain_lib)
 target_link_libraries(Server PRIVATE ${Boost_LIBRARIES} libpqxx::pqxx general_domain_lib)
-target_link_libraries(general_domain_lib PRIVATE ${Boost_LIBRARIES})
+target_link_libraries(general_domain_lib PRIVATE ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
