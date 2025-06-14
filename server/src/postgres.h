@@ -114,6 +114,7 @@ public:
     std::vector<UserRecord> LoadAll() const;
     std::optional<UserRecord> FindByUsername(const std::string& username) const;
     std::vector<UserRecord> LoadPage(int offset, int limit) const;
+    std::unordered_map<std::string, std::string> LoadUserMap() const;
 
 private:
     pqxx::work& transaction_;

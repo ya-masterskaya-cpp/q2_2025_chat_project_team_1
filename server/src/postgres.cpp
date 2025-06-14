@@ -117,6 +117,18 @@ std::vector<UserRecord> UsersRepository::LoadPage(int offset, int limit) const
     return result;
 }
 
+std::unordered_map<std::string, std::string> UsersRepository::LoadUserMap() const
+{
+    std::unordered_map<std::string, std::string> result;
+    const pqxx::result query_result = transaction_.exec(
+        "SELECT username, password_hash FROM users"
+        );
+    for (const auto& row : query_result) {
+        result[row[0].as<std::string>()] = row[1].as<std::string>();
+    }
+    return result;
+}
+
 // ---- RoomsRepository ----
 
 RoomsRepository::RoomsRepository(pqxx::work &transaction) : transaction_(transaction) {}

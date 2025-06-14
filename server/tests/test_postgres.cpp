@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "postgres.h"
+#include "db_wrapper.h"
 #include <pqxx/pqxx>
 
 // Для каждого теста подготавливается чистая база
@@ -48,6 +49,47 @@ TEST_F(PostgresRepoTest, UsersRepository_SaveAndLoadAndFind) {
     EXPECT_FALSE(not_found.has_value());
 }
 
+TEST_F(PostgresRepoTest, UsersRepository_LoadPage) {
+    auto conn = db->GetTransaction();
+
+    for (int i = 1; i <= 5; ++i) {
+        pqxx::work txn(*conn);
+        postgres::UsersRepository repo(txn);
+        repo.Save("user" + std::to_string(i), "hash" + std::to_string(i));
+        txn.commit();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    pqxx::work txn(*conn);
+    postgres::UsersRepository repo(txn);
+    auto page1 = repo.LoadPage(0, 2);
+    auto page2 = repo.LoadPage(2, 2);
+    auto page3 = repo.LoadPage(4, 2); // Последняя страница (1 элемент)
+    txn.commit();
+
+    EXPECT_EQ(page1.size(), 2);
+    EXPECT_EQ(page2.size(), 2);
+    EXPECT_EQ(page3.size(), 1);
+    EXPECT_EQ(page1[0].username, "user5"); // DESC
+    EXPECT_EQ(page1[1].username, "user4");
+    EXPECT_EQ(page2[0].username, "user3");
+    EXPECT_EQ(page2[1].username, "user2");
+    EXPECT_EQ(page3[0].username, "user1");
+}
+
+TEST_F(PostgresRepoTest, UsersRepository_LoadUserMap) {
+    auto conn = db->GetTransaction();
+    pqxx::work txn(*conn);
+    postgres::UsersRepository repo(txn);
+
+    repo.Save("alice", "hash1");
+    repo.Save("bob", "hash2");
+
+    auto map = repo.LoadUserMap();
+    EXPECT_EQ(map.size(), 2);
+    EXPECT_EQ(map.at("alice"), "hash1");
+    EXPECT_EQ(map.at("bob"), "hash2");
+}
+
 // --- RoomsRepository ---
 TEST_F(PostgresRepoTest, RoomsRepository_SaveAndLoad) {
     auto conn = db->GetTransaction();
@@ -68,6 +110,29 @@ TEST_F(PostgresRepoTest, RoomsRepository_SaveAndLoad) {
         EXPECT_EQ(rooms[1].name, "room1");
         txn.commit();
     }
+}
+
+TEST_F(PostgresRepoTest, RoomsRepository_LoadPage) {
+    auto conn = db->GetTransaction();
+
+    for (int i = 1; i <= 4; ++i) {
+        pqxx::work txn(*conn);
+        postgres::RoomsRepository repo(txn);
+        repo.Save("room" + std::to_string(i));
+        txn.commit();
+    }
+    pqxx::work txn(*conn);
+    postgres::RoomsRepository repo(txn);
+    auto page1 = repo.LoadPage(0, 2);
+    auto page2 = repo.LoadPage(2, 2);
+    txn.commit();
+
+    EXPECT_EQ(page1.size(), 2);
+    EXPECT_EQ(page2.size(), 2);
+    EXPECT_EQ(page1[0].name, "room4");
+    EXPECT_EQ(page1[1].name, "room3");
+    EXPECT_EQ(page2[0].name, "room2");
+    EXPECT_EQ(page2[1].name, "room1");
 }
 
 // --- MessagesRepository ---
@@ -112,6 +177,43 @@ TEST_F(PostgresRepoTest, MessagesRepository_SaveAndLoadRecent) {
         EXPECT_EQ(one[0].message, "Second message");
         txn.commit();
     }
+}
+
+TEST_F(PostgresRepoTest, MessagesRepository_LoadPage) {
+    auto conn = db->GetTransaction();
+
+    pqxx::work txn1(*conn);
+    postgres::UsersRepository users(txn1);
+    users.Save("alice", "hashA");
+    auto user = users.FindByUsername("alice");
+    ASSERT_TRUE(user.has_value());
+
+    postgres::RoomsRepository rooms(txn1);
+    rooms.Save("main");
+    auto room = rooms.LoadAll().front();
+    txn1.commit();
+
+    for (int i = 1; i <= 6; ++i) {
+        pqxx::work txn(*conn);
+        postgres::MessagesRepository msgs(txn);
+        msgs.Save(user->id, room.id, "msg" + std::to_string(i));
+        txn.commit();
+    }
+
+    pqxx::work txn2(*conn);
+    postgres::MessagesRepository msgs(txn2);
+    auto page1 = msgs.LoadPage(room.id, 0, 3);
+    auto page2 = msgs.LoadPage(room.id, 3, 3);
+    txn2.commit();
+
+    EXPECT_EQ(page1.size(), 3);
+    EXPECT_EQ(page2.size(), 3);
+    EXPECT_EQ(page1[0].message, "msg6");
+    EXPECT_EQ(page1[1].message, "msg5");
+    EXPECT_EQ(page1[2].message, "msg4");
+    EXPECT_EQ(page2[0].message, "msg3");
+    EXPECT_EQ(page2[1].message, "msg2");
+    EXPECT_EQ(page2[2].message, "msg1");
 }
 
 // --- RoomMembersRepository ---
@@ -199,94 +301,26 @@ TEST_F(PostgresRepoTest, RoomMembersRepository_LoadRoomsByUser) {
     }
 }
 
-// --- UsersRepository::LoadPage ---
-TEST_F(PostgresRepoTest, UsersRepository_LoadPage) {
-    auto conn = db->GetTransaction();
+// --- IRCDBWrapper: AddUserToDB и GetAllUsers ---
+TEST_F(PostgresRepoTest, Wrapper_AddUserToDB_And_GetAllUsers) {
+    IRCDBWrapper wrapper("localhost", 5432, "test_db", "test_user", "test_password");
 
-    for (int i = 1; i <= 5; ++i) {
-        pqxx::work txn(*conn);
-        postgres::UsersRepository repo(txn);
-        repo.Save("user" + std::to_string(i), "hash" + std::to_string(i));
-        txn.commit();
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    }
-    pqxx::work txn(*conn);
-    postgres::UsersRepository repo(txn);
-    auto page1 = repo.LoadPage(0, 2);
-    auto page2 = repo.LoadPage(2, 2);
-    auto page3 = repo.LoadPage(4, 2); // Последняя страница (1 элемент)
-    txn.commit();
+    auto [ok1, err1] = wrapper.AddUserToDB("vasya", "pass_111");
+    EXPECT_TRUE(ok1);
+    EXPECT_EQ(err1, "");
 
-    EXPECT_EQ(page1.size(), 2);
-    EXPECT_EQ(page2.size(), 2);
-    EXPECT_EQ(page3.size(), 1);
-    EXPECT_EQ(page1[0].username, "user5"); // DESC
-    EXPECT_EQ(page1[1].username, "user4");
-    EXPECT_EQ(page2[0].username, "user3");
-    EXPECT_EQ(page2[1].username, "user2");
-    EXPECT_EQ(page3[0].username, "user1");
-}
+    auto [ok2, err2] = wrapper.AddUserToDB("petya", "pass_222");
+    EXPECT_TRUE(ok2);
 
-// --- RoomsRepository::LoadPage ---
-TEST_F(PostgresRepoTest, RoomsRepository_LoadPage) {
-    auto conn = db->GetTransaction();
+    // Попытка добавить того же пользователя
+    auto [ok3, err3] = wrapper.AddUserToDB("vasya", "pass_333");
+    EXPECT_FALSE(ok3);
+    EXPECT_EQ(err3, "User already exists");
 
-    for (int i = 1; i <= 4; ++i) {
-        pqxx::work txn(*conn);
-        postgres::RoomsRepository repo(txn);
-        repo.Save("room" + std::to_string(i));
-        txn.commit();
-    }
-    pqxx::work txn(*conn);
-    postgres::RoomsRepository repo(txn);
-    auto page1 = repo.LoadPage(0, 2);
-    auto page2 = repo.LoadPage(2, 2);
-    txn.commit();
-
-    EXPECT_EQ(page1.size(), 2);
-    EXPECT_EQ(page2.size(), 2);
-    EXPECT_EQ(page1[0].name, "room4");
-    EXPECT_EQ(page1[1].name, "room3");
-    EXPECT_EQ(page2[0].name, "room2");
-    EXPECT_EQ(page2[1].name, "room1");
-}
-
-// --- MessagesRepository::LoadPage ---
-TEST_F(PostgresRepoTest, MessagesRepository_LoadPage) {
-    auto conn = db->GetTransaction();
-
-    pqxx::work txn1(*conn);
-    postgres::UsersRepository users(txn1);
-    users.Save("alice", "hashA");
-    auto user = users.FindByUsername("alice");
-    ASSERT_TRUE(user.has_value());
-
-    postgres::RoomsRepository rooms(txn1);
-    rooms.Save("main");
-    auto room = rooms.LoadAll().front();
-    txn1.commit();
-
-    for (int i = 1; i <= 6; ++i) {
-        pqxx::work txn(*conn);
-        postgres::MessagesRepository msgs(txn);
-        msgs.Save(user->id, room.id, "msg" + std::to_string(i));
-        txn.commit();
-    }
-
-    pqxx::work txn2(*conn);
-    postgres::MessagesRepository msgs(txn2);
-    auto page1 = msgs.LoadPage(room.id, 0, 3);
-    auto page2 = msgs.LoadPage(room.id, 3, 3);
-    txn2.commit();
-
-    EXPECT_EQ(page1.size(), 3);
-    EXPECT_EQ(page2.size(), 3);
-    EXPECT_EQ(page1[0].message, "msg6");
-    EXPECT_EQ(page1[1].message, "msg5");
-    EXPECT_EQ(page1[2].message, "msg4");
-    EXPECT_EQ(page2[0].message, "msg3");
-    EXPECT_EQ(page2[1].message, "msg2");
-    EXPECT_EQ(page2[2].message, "msg1");
+    auto users = wrapper.GetAllUsers();
+    EXPECT_EQ(users.size(), 2);
+    EXPECT_EQ(users.at("vasya"), "pass_111");
+    EXPECT_EQ(users.at("petya"), "pass_222");
 }
 
 // --- TaggedUUID ---
