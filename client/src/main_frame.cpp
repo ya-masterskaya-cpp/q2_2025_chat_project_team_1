@@ -26,8 +26,7 @@ MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler* message_h
 
     //input
     message_input_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-
-    // input - enter
+    message_input_->SetHint("Write to Send");
     message_input_->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnSendButtonClicked, this);
 
     //buttons

@@ -3,6 +3,8 @@
 #include <const.h>
 #include <service.h>
 
+#include "create_room_frame.h"
+
 namespace gui {
 
 RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
@@ -11,32 +13,49 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
 
 
     wxPanel* panel = new wxPanel(this);
-    wxBoxSizer* general_sizer = new wxBoxSizer(wxVERTICAL);
-    wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* main_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* control_button_sizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* functional_sizer =  new wxBoxSizer(wxHORIZONTAL);
 
-    //список комнат
+    //rooms list
     rooms_list_ = new wxListBox(panel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                 wxArrayString{});
 
-    //кнопки
+    //buttons
     wxButton* reload_button = new wxButton(panel, wxID_ANY, "Reload");
+    reload_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnReloadButtonClicked,this);
     wxButton* login_button = new wxButton(panel, wxID_ANY, "Login");
     login_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnLoginButtonClicked,this);
+    wxButton* create_room_button = new wxButton(panel, wxID_ANY, "Create room");
+    create_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnCreateRoomButtonClicked,this);
+
+
     wxButton* ok_button = new wxButton(panel, wxID_ANY, "Ok");
     wxButton* cancel_button = new wxButton(panel, wxID_ANY, "Cancel");
 
 
-    //компоновщики
-    general_sizer->Add(rooms_list_,1,wxEXPAND | wxALL, 5);
-    general_sizer->Add(buttons_sizer, 0 , wxEXPAND | wxLEFT | wxRIGHT, 5);
+    //layouts
+    control_button_sizer->Add(reload_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
+    control_button_sizer->Add(login_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
+    control_button_sizer->Add(create_room_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
 
-    buttons_sizer->Add(reload_button, 0,  wxLEFT| wxBOTTOM, 5);
-    buttons_sizer->Add(login_button, 0,  wxLEFT| wxBOTTOM, 5);
-    buttons_sizer->AddStretchSpacer(1);
-    buttons_sizer->Add(ok_button, 0,  wxRIGHT | wxBOTTOM, 5);
-    buttons_sizer->Add(cancel_button, 0,  wxRIGHT | wxBOTTOM, 5);
+    main_buttons_sizer->Add(ok_button, 0,  wxLEFT | wxBOTTOM, 5);
+    main_buttons_sizer->Add(cancel_button, 0,  wxLEFT | wxBOTTOM, 5);
 
-    panel->SetSizer(general_sizer);
+
+    functional_sizer->Add(rooms_list_,1,wxEXPAND | wxALL, 5);
+    functional_sizer->Add(control_button_sizer);
+    main_sizer->Add(functional_sizer,1,wxEXPAND);
+    main_sizer->Add(main_buttons_sizer);
+
+    panel->SetSizer(main_sizer);
+
+    //-----------------------------------------------------------
+    rooms_list_->Append("test 1");
+    rooms_list_->Append("test 2");
+    rooms_list_->Append("test 3");
+    //-----------------------------------------------------------
 
     //transfer logic
     message_handler_->AddAction(CONSTANTS::ACT_ROOM_LIST, [self = this] (const std::unordered_map<std::string,std::string>& params) {
@@ -51,15 +70,26 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
             }
         }
     });
+
+    message_handler_->AddAction(CONSTANTS::ACT_CREATE_ROOM, [self = this] (const std::unordered_map<std::string,std::string>& params) {
+        if(params.at(CONSTANTS::LF_RESULT) == CONSTANTS::RF_ERROR) {
+            wxMessageBox("Create room", params.at(CONSTANTS::LF_REASON), wxOK | wxICON_WARNING);
+        } else {
+            wxMessageBox("Create room", "Room created", wxOK | wxICON_INFORMATION);
+            self->UpdateRoomsList();
+        }
+
+    });
     UpdateRoomsList();
 }
 
 void RoomsFrame::UpdateRoomsList() {
-    // try {
+    try {
         message_handler_->Send(UserInterface::US_SrvMakeObjRoomList());
-    // } catch(...) {
-
-    // }
+    } catch(const std::exception& e) {
+        wxMessageBox(e.what(), "On Update RoomsList", wxOK | wxICON_WARNING);
+        return;
+    }
 }
 
 std::vector<std::string> RoomsFrame::ParseRooms(std::string roomslist) {
@@ -82,4 +112,13 @@ void RoomsFrame::OnLoginButtonClicked(wxCommandEvent& event) {
     login_frame_->Show();
 }
 
+void RoomsFrame::OnReloadButtonClicked(wxCommandEvent& event) {
+    UpdateRoomsList();
 }
+
+void RoomsFrame::OnCreateRoomButtonClicked(wxCommandEvent& event) {
+    CreateRoomFrame* create_room_frame = new CreateRoomFrame(this,message_handler_);
+    create_room_frame->Show();
+}
+
+}   //namespace gui

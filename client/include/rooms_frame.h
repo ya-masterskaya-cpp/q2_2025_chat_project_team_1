@@ -15,6 +15,8 @@ public:
     RoomsFrame(wxWindow* parent, const wxString& title,
                transfer::MessagesHandler* message_handler, domain::UserData& user);
     void OnLoginButtonClicked(wxCommandEvent& event);
+    void OnReloadButtonClicked(wxCommandEvent& event);
+    void OnCreateRoomButtonClicked(wxCommandEvent& event);
     void UpdateRoomsList();
 
 private:

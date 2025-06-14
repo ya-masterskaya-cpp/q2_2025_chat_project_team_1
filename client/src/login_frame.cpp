@@ -1,11 +1,12 @@
 #include "login_frame.h"
 
+namespace gui {
+
 LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_handler,
                        domain::UserData& user)
     : wxDialog(parent, wxID_ANY, "Authorization", wxDefaultPosition, wxSize(450, 150)),
     message_handler_{message_handler} , user_{user} {
 
-    // Панель и менеджер размещения
     wxPanel* panel = new wxPanel(this);
 
     username_ctrl_ = new wxTextCtrl(panel, wxID_ANY);
@@ -50,3 +51,5 @@ void LoginFrame::OnLoginButtonClicked(wxCommandEvent& event) {
         wxMessageBox("Неверный логин или пароль", "Ошибка", wxOK | wxICON_ERROR);
     }
 }
+
+}   //namespace gui

@@ -6,6 +6,8 @@
 #include "domain.h"
 #include "messages_handler.h"
 
+namespace gui {
+
 class LoginFrame : public wxDialog {
 public:
     LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_handler,
@@ -21,5 +23,5 @@ private:
     wxTextCtrl* password_ctrl_;
 };
 
-
+}   //namespace gui
 #endif // LOGIN_FRAME_H
