@@ -36,4 +36,13 @@ void MessagesHandler::Send(const std::string& message) {
     tcp_client_.Send(message);
 }
 
+const transfer::TcpCLient& MessagesHandler::GetTcpClient() const {
+    return tcp_client_;
+}
+
+transfer::TcpCLient& MessagesHandler::GetTcpClient() {
+    return tcp_client_;
+}
+
+
 }   //namespace transfer

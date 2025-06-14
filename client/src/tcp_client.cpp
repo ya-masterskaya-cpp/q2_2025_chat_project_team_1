@@ -16,7 +16,6 @@ void TcpCLient::Connect(const std::string& host, unsigned short port) {
     }
 }
 
-//TODO: maybe exception change to boost::system::error_code
 void TcpCLient::Send(const std::string& message) {
     if (!IsConnected()) {
         throw std::runtime_error("Not connected");
@@ -30,7 +29,6 @@ void TcpCLient::Send(const std::string& message) {
     }
 }
 
-//TODO: Change throw to ErrorHandler template
 std::string TcpCLient::Receive(char delimeter) {
     if (!IsConnected()) {
         throw std::runtime_error("Not connected");

@@ -68,14 +68,12 @@ void SettingsFrame::Load() {
 
 
     if (file_configs_->HasEntry("IP")) {
-        std::cout << "ip" <<std::endl;
         wxString ip;
         file_configs_->Read("IP", &ip, "127.0.0.1");
         ip_->SetValue(ip);
     }
 
     if (file_configs_->HasEntry("Port")) {
-        std::cout << "port" <<std::endl;
         wxString port;
         file_configs_->Read("Port", &port, "3333");
         port_->SetValue(port);

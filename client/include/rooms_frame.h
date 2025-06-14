@@ -15,7 +15,7 @@ public:
     RoomsFrame(wxWindow* parent, const wxString& title,
                transfer::MessagesHandler* message_handler, domain::UserData& user);
     void OnLoginButtonClicked(wxCommandEvent& event);
-    std::vector<std::string> UpdateRoomsList();
+    void UpdateRoomsList();
 
 private:
     wxListBox* rooms_list_;
@@ -23,7 +23,7 @@ private:
     domain::UserData& user_;
     LoginFrame* login_frame_{nullptr};
 
-    void ParseRooms(std::string roomslist);
+    std::vector<std::string> ParseRooms(std::string roomslist);
 };
 
 }   //namespace gui

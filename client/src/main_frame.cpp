@@ -17,7 +17,7 @@ MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler* message_h
     wxString config_path = wxStandardPaths::Get().GetUserConfigDir() + "/" + "settings.ini";
     std::cout << config_path << std::endl;
 
-    configs_file_ = std::make_unique<wxFileConfig>("IRC-chat", wxEmptyString, config_path,
+    file_configs_ = std::make_unique<wxFileConfig>("IRC-chat", wxEmptyString, config_path,
                                                 wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
 
     // chat history
@@ -33,15 +33,19 @@ MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler* message_h
     //buttons
     wxButton* send_button = new wxButton(panel, wxID_ANY, "Send");
     send_button->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked, this);
-    wxButton* rooms_button = new wxButton(panel, wxID_ANY, "Rooms");
-    rooms_button->Bind(wxEVT_BUTTON, &MainFrame::OnRoomButtonClicked, this);
+    rooms_button_ = new wxButton(panel, wxID_ANY, "Rooms");
+    // rooms_button_->Enable(false);
+    rooms_button_->Bind(wxEVT_BUTTON, &MainFrame::OnRoomButtonClicked, this);
+    conection_button_ = new wxButton(panel, wxID_ANY, "Connect");
+    conection_button_->Bind(wxEVT_BUTTON, &MainFrame::OnConnectButtonClicked, this);
 
     //layouts
     general_sizer->Add(chat_history_, 1, wxEXPAND | wxALL, 5);
     general_sizer->Add(message_input_, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
     general_sizer->Add(buttons_sizer, 0 , wxEXPAND | wxLEFT | wxRIGHT, 5);
 
-    buttons_sizer->Add(rooms_button, 0,  wxLEFT| wxBOTTOM, 5);
+    buttons_sizer->Add(rooms_button_, 0,  wxLEFT| wxBOTTOM, 5);
+    buttons_sizer->Add(conection_button_, 0,  wxLEFT| wxBOTTOM, 5);
     buttons_sizer->AddStretchSpacer(1);
     buttons_sizer->Add(send_button, 0,  wxRIGHT | wxBOTTOM, 5);
 
@@ -58,6 +62,10 @@ MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler* message_h
 
     Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
 
+
+    //Load settings
+    Load();
+
     //transfer logic ---------------------------------------------------------------------------
     pausable_thread_.SetTask([self = this] () {
         self->message_handler_->DoOnReceive();
@@ -65,7 +73,8 @@ MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler* message_h
 
     message_handler_->AddAction(CONSTANTS::ACT_USER_MESSAGE,
                                [self = this](const std::unordered_map<std::string,std::string>& params) {
-                                   // self->
+                                   self->chat_history_->AppendText(params.at(CONSTANTS::LF_NAME) + ": " +
+                                        params.at(CONSTANTS::LF_MESSAGE));
     });
     message_handler_->AddAction(CONSTANTS::ACT_SEND_MESSAGE,
                                [self = this](const std::unordered_map<std::string,std::string>& params) {
@@ -76,8 +85,14 @@ MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler* message_h
 }
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
+    if(!connected_) {
+        chat_history_->AppendText("Server not connected\n");
+        message_input_->Clear();
+        return;
+    }
     try {
         message_handler_->Send(UserInterface::US_ChrMakeSendMessage(user_.token, message_input_->GetValue().utf8_string()));
+        message_input_->Clear();
     } catch(...) {
 
     }
@@ -92,12 +107,70 @@ void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
 
 void MainFrame::OnSettingsMenu(wxCommandEvent& event)
 {
-//     if(!settings_frame_) {
-//         settings_frame_ = new SettingsFrame{this};
-//     }
-//     settings_frame_->Show();
-    SettingsFrame* settings_frame = new SettingsFrame{this, configs_file_.get()};
+    SettingsFrame* settings_frame = new SettingsFrame{this, file_configs_.get()};
     settings_frame->Show();
+}
+
+void MainFrame::Save() {
+    file_configs_->SetPath("/MainFrame");
+    file_configs_->Write("Width", GetSize().GetWidth());
+    file_configs_->Write("Height", GetSize().GetHeight());
+}
+
+void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
+    if(!connected_) {
+        file_configs_->SetPath("/Transfer");
+
+        wxString ip;
+        file_configs_->Read("IP", &ip, "127.0.0.1");
+        int port;
+        file_configs_->Read("Port", &port, 3333);
+        try {
+            message_handler_->GetTcpClient().Connect(ip.ToStdString(),port);
+        } catch(const boost::system::system_error& e) {
+            wxMessageBox(e.what(), "Connection Error", wxOK | wxICON_WARNING);
+            return;
+        }
+
+        conection_button_->SetLabel("Disconnect");
+        rooms_button_->Enable(true);
+        pausable_thread_.Start();
+        connected_ = true;
+    } else {
+        //send disconect to server
+        message_handler_->Send(UserInterface::US_ChrMakeObjDisconnect(user_.token));
+
+        rooms_frame_->Close();
+        message_handler_->GetTcpClient().Close();
+        pausable_thread_.Stop();
+        conection_button_->SetLabel("Connect");
+        rooms_button_->Enable(false);
+        connected_ = false;
+    }
+
+}
+
+void MainFrame::Load() {
+    file_configs_->SetPath("/MainFrame");
+
+    int width = 300;
+    int height = 300;
+
+    if (file_configs_->HasEntry("Width")) {
+        file_configs_->Read("Width", &width);
+    }
+
+    if (file_configs_->HasEntry("Height")) {
+        file_configs_->Read("Height", &height);
+    }
+
+    SetSize(width,height);
+}
+
+
+
+MainFrame::~MainFrame() {
+    Save();
 }
 
 

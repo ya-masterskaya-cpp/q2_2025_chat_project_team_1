@@ -20,15 +20,22 @@ public:
     void OnSendButtonClicked(wxCommandEvent& event);
     void OnRoomButtonClicked(wxCommandEvent& event);
     void OnSettingsMenu(wxCommandEvent& event);
+    void OnConnectButtonClicked(wxCommandEvent& event);
+    void Save();
+    void Load();
+    ~MainFrame();
 
 private:
     transfer::MessagesHandler* message_handler_;
     domain::UserData user_;
     domain::PausableThread pausable_thread_;
-    std::unique_ptr<wxFileConfig> configs_file_;
+    std::unique_ptr<wxFileConfig> file_configs_;
+    bool connected_{false};
     //gui
     wxTextCtrl* chat_history_;
     wxTextCtrl* message_input_;
+    wxButton* rooms_button_{nullptr};
+    wxButton* conection_button_{nullptr};
     RoomsFrame* rooms_frame_{nullptr};
     SettingsFrame* settings_frame_{nullptr};
 };

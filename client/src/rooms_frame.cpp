@@ -45,22 +45,33 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
             self->rooms_list_->Append(std::move(params.at(CONSTANTS::LF_REASON)));
         } else {
             self->rooms_list_->Clear();
-            // std::vector<std::string> rooms = self->ParseRooms(std::move(params.at(CONSTANTS::ACT_ROOM_LIST)));
-            // for (auto& room : rooms) {
-            //     self->rooms_list_->Append(room);
-            // }
+            std::vector<std::string> rooms = self->ParseRooms(std::move(params.at(CONSTANTS::ACT_ROOM_LIST)));
+            for (auto& room : rooms) {
+                self->rooms_list_->Append(room + '\n');
+            }
         }
     });
-    // UpdateRoomsList();
-    std::cout << "r" << std::endl;
+    UpdateRoomsList();
 }
 
-std::vector<std::string> RoomsFrame::UpdateRoomsList() {
-    // message_handler_.Send(UserInterface::US_SrvMakeObjRoomList());
+void RoomsFrame::UpdateRoomsList() {
+    // try {
+        message_handler_->Send(UserInterface::US_SrvMakeObjRoomList());
+    // } catch(...) {
+
+    // }
 }
 
-void RoomsFrame::ParseRooms(std::string roomslist) {
+std::vector<std::string> RoomsFrame::ParseRooms(std::string roomslist) {
+    boost::json::value parsed = boost::json::parse(roomslist);
+    boost::json::array parsed_arr = parsed.as_array();
+    std::vector<std::string> res;
+    res.reserve(parsed_arr.size());
 
+    for(auto& room : parsed_arr) {
+        res.push_back(room.as_string().c_str());
+    }
+    return res;
 }
 
 void RoomsFrame::OnLoginButtonClicked(wxCommandEvent& event) {
