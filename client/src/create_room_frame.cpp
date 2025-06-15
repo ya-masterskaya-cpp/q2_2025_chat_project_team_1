@@ -9,7 +9,6 @@ CreateRoomFrame::CreateRoomFrame(wxWindow* parent, transfer::MessagesHandler* me
     : wxFrame(parent, wxID_ANY, "Create Room",{},{250,70},wxDEFAULT_FRAME_STYLE & ~wxRESIZE_BORDER),
                 message_handler_{message_handler} {
     Bind(wxEVT_CLOSE_WINDOW, &CreateRoomFrame::OnClose, this);
-    // ShowModal();
 
     wxPanel* panel = new wxPanel(this);
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);

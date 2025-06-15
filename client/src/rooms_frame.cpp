@@ -4,6 +4,7 @@
 #include <service.h>
 
 #include "create_room_frame.h"
+#include "rooms_users_frame.h"
 
 namespace gui {
 
@@ -29,6 +30,8 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
     login_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnLoginButtonClicked,this);
     wxButton* create_room_button = new wxButton(panel, wxID_ANY, "Create room");
     create_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnCreateRoomButtonClicked,this);
+    wxButton* get_users_button = new wxButton(panel, wxID_ANY, "Get users");
+    get_users_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnGetUsersButtonClicked,this);
 
 
     wxButton* ok_button = new wxButton(panel, wxID_ANY, "Ok");
@@ -39,6 +42,7 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
     control_button_sizer->Add(reload_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
     control_button_sizer->Add(login_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
     control_button_sizer->Add(create_room_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
+    control_button_sizer->Add(get_users_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
 
     main_buttons_sizer->Add(ok_button, 0,  wxLEFT | wxBOTTOM, 5);
     main_buttons_sizer->Add(cancel_button, 0,  wxLEFT | wxBOTTOM, 5);
@@ -80,6 +84,19 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
         }
 
     });
+
+    message_handler_->AddAction(CONSTANTS::ACT_GET_USERS, [self = this] (const std::unordered_map<std::string,std::string>& params) {
+        boost::json::value parsed = boost::json::parse(params.at(CONSTANTS::LF_USERS));
+        std::vector<std::string> res;
+        res.reserve(parsed.as_array().size());
+        for(auto& user : parsed.as_array()) {
+            res.push_back(user.as_string().c_str());
+        }
+        RoomsUsersFrame* rooms_users_frame = new RoomsUsersFrame(self,res);
+        rooms_users_frame->Show();
+
+    });
+
     UpdateRoomsList();
 }
 
@@ -119,6 +136,16 @@ void RoomsFrame::OnReloadButtonClicked(wxCommandEvent& event) {
 void RoomsFrame::OnCreateRoomButtonClicked(wxCommandEvent& event) {
     CreateRoomFrame* create_room_frame = new CreateRoomFrame(this,message_handler_);
     create_room_frame->Show();
+}
+
+void RoomsFrame::OnGetUsersButtonClicked(wxCommandEvent& event){
+    int index = rooms_list_->GetSelection();
+    try {
+        message_handler_->Send(UserInterface::US_SrvMakeObjGetUsers(rooms_list_->GetString(index).ToStdString()));
+    } catch(const std::exception& e) {
+        wxMessageBox(e.what(), "On Get Users", wxOK | wxICON_WARNING);
+        return;
+    }
 }
 
 }   //namespace gui
