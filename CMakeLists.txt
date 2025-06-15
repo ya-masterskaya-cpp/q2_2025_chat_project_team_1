@@ -59,6 +59,6 @@ add_library(general_domain_lib STATIC
 )
 target_include_directories(general_domain_lib PRIVATE ${DOMAIN_INCL})
 
-target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto general_domain_lib)
+target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} general_domain_lib)
 target_link_libraries(Server PRIVATE ${Boost_LIBRARIES} libpqxx::pqxx general_domain_lib)
-target_link_libraries(general_domain_lib PRIVATE ${Boost_LIBRARIES})
+target_link_libraries(general_domain_lib PRIVATE ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
