@@ -38,6 +38,7 @@ add_executable( Client
     ${CLIENT_INCL}/login_frame.h ${CLIENT_SRC}/login_frame.cpp
     ${CLIENT_INCL}/settings_frame.h ${CLIENT_SRC}/settings_frame.cpp
     ${CLIENT_INCL}/create_room_frame.h ${CLIENT_SRC}/create_room_frame.cpp
+    ${CLIENT_INCL}/rooms_users_frame.h ${CLIENT_SRC}/rooms_users_frame.cpp
     #transfer
     ${CLIENT_INCL}/transfer_interface.h
     ${CLIENT_INCL}/tcp_client.h ${CLIENT_SRC}/tcp_client.cpp

@@ -31,7 +31,6 @@ public:
     const transfer::TcpCLient& GetTcpClient() const;
     transfer::TcpCLient& GetTcpClient();
 
-
 private:
     transfer::TcpCLient& tcp_client_;
     std::unordered_map<std::string,action_function> actions_;

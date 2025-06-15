@@ -11,7 +11,7 @@ namespace gui {
 RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
                        transfer::MessagesHandler* message_handler, domain::UserData& user)
     : wxFrame(parent, wxID_ANY, title), message_handler_{message_handler}, user_{user} {
-
+    Bind(wxEVT_CLOSE_WINDOW, &RoomsFrame::OnClose, this);
 
     wxPanel* panel = new wxPanel(this);
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
@@ -94,8 +94,25 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
         }
         RoomsUsersFrame* rooms_users_frame = new RoomsUsersFrame(self,res);
         rooms_users_frame->Show();
-
     });
+
+    message_handler_->AddAction(CONSTANTS::ACT_CREATE_USER, [self = this] (const std::unordered_map<std::string,std::string>& params) {
+        if(params.contains(CONSTANTS::RF_ERROR)) {
+            wxMessageBox("Create user", params.at(CONSTANTS::LF_REASON), wxOK | wxICON_WARNING);
+        } else {
+            wxMessageBox("Create user", "User created", wxOK | wxICON_INFORMATION);
+        }
+    });
+
+    message_handler_->AddAction(CONSTANTS::ACT_LOGIN, [self = this] (const std::unordered_map<std::string,std::string>& params) {
+        if(params.contains(CONSTANTS::RF_ERROR)) {
+            wxMessageBox("Login user", params.at(CONSTANTS::LF_REASON), wxOK | wxICON_WARNING);
+        } else {
+            self->user_.token = params.at(CONSTANTS::LF_TOKEN);
+            wxMessageBox("Login user", "User log in", wxOK | wxICON_INFORMATION);
+        }
+    });
+
 
     UpdateRoomsList();
 }
@@ -123,7 +140,9 @@ std::vector<std::string> RoomsFrame::ParseRooms(std::string roomslist) {
 
 void RoomsFrame::OnLoginButtonClicked(wxCommandEvent& event) {
     if(!login_frame_) {
-        login_frame_ = new LoginFrame(this, message_handler_,user_);
+         int index = rooms_list_->GetSelection();
+        login_frame_ = new LoginFrame(this, message_handler_,
+                                       rooms_list_->GetString(index).ToStdString());
 
     }
     login_frame_->Show();

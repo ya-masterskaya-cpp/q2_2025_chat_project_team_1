@@ -17,6 +17,7 @@ public:
     void OnLoginButtonClicked(wxCommandEvent& event);
     void OnReloadButtonClicked(wxCommandEvent& event);
     void OnCreateRoomButtonClicked(wxCommandEvent& event);
+    void OnGetUsersButtonClicked(wxCommandEvent& event);
     void UpdateRoomsList();
 
 private:
@@ -26,6 +27,10 @@ private:
     LoginFrame* login_frame_{nullptr};
 
     std::vector<std::string> ParseRooms(std::string roomslist);
+    void OnClose(wxCloseEvent& event)
+    {
+        Hide();
+    }
 };
 
 }   //namespace gui

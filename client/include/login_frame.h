@@ -3,7 +3,6 @@
 
 #include <wx/wx.h>
 
-#include "domain.h"
 #include "messages_handler.h"
 
 namespace gui {
@@ -11,13 +10,13 @@ namespace gui {
 class LoginFrame : public wxDialog {
 public:
     LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_handler,
-                    domain::UserData& user);
+               const std::string& room_name);
     void OnSignUpButtonClicked(wxCommandEvent& event);
     void OnLoginButtonClicked(wxCommandEvent& event);
 
 private:
     transfer::MessagesHandler* message_handler_;
-    domain::UserData& user_;
+    const std::string room_name_;
 
     wxTextCtrl* username_ctrl_;
     wxTextCtrl* password_ctrl_;

@@ -1,11 +1,14 @@
 #include "login_frame.h"
 
+#include <service.h>
+#include <password_hasher.h>
+
 namespace gui {
 
 LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_handler,
-                       domain::UserData& user)
+                       const std::string& room_name)
     : wxDialog(parent, wxID_ANY, "Authorization", wxDefaultPosition, wxSize(450, 150)),
-    message_handler_{message_handler} , user_{user} {
+    message_handler_{message_handler}, room_name_{room_name} {
 
     wxPanel* panel = new wxPanel(this);
 
@@ -32,23 +35,27 @@ LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_hand
 
     panel->SetSizer(main_sizer);
 
-    //transfer logic
-    // message_handler.AddAction();
 }
 
 void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {
-
+    try {
+        message_handler_->Send(UserInterface::US_SrvMakeObjCreateUser(
+            username_ctrl_->GetValue().ToStdString(),
+                PasswordHasher::HashPassword(password_ctrl_->GetValue().ToStdString())));
+    } catch(const std::exception& e) {
+        wxMessageBox(e.what(), "On Sign up", wxOK | wxICON_WARNING);
+        return;
+    }
 }
 
 void LoginFrame::OnLoginButtonClicked(wxCommandEvent& event) {
-    wxString username = username_ctrl_->GetValue();
-    wxString password = password_ctrl_->GetValue();
-
-    // Пример простой проверки (заглушка)
-    if (username == "admin" && password == "1234") {
-        wxMessageBox("Добро пожаловать!", "Успех", wxOK | wxICON_INFORMATION);
-    } else {
-        wxMessageBox("Неверный логин или пароль", "Ошибка", wxOK | wxICON_ERROR);
+    try {
+        message_handler_->Send(UserInterface::US_SrvMakeObjLogin(
+            username_ctrl_->GetValue().ToStdString(),
+            PasswordHasher::HashPassword(password_ctrl_->GetValue().ToStdString()),room_name_));
+    } catch(const std::exception& e) {
+        wxMessageBox(e.what(), "On Login", wxOK | wxICON_WARNING);
+        return;
     }
 }
 
