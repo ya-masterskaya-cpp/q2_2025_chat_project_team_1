@@ -7,6 +7,7 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/attributes/current_thread_id.hpp>
 
+
 // Логер для сервера
 // TODO разбить на *.h/*.cpp 
 namespace logger {
@@ -26,7 +27,9 @@ public:
         return instance;
     }
 
-    static void Init(Level level = Logger::Level::Info, bool to_file = false, const std::string& path_to_file = "") { // флаг to_file для сохранения в файл, по умолчанию - вывод в консоль
+    static void Init(Level level = Logger::Level::Info, // INFO
+                     bool to_file = false, // по умолчанию в консоль
+                     const std::string& path_to_file = "") {
         namespace logging = boost::log;
         namespace keywords = boost::log::keywords;
 
