@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # для сервера:
 find_package(Drogon REQUIRED) 
-find_package(Boost REQUIRED COMPONENTS log log_setup) # для сервера TODO добавить ЛОГГИРОВАНИЕ
 # для клиента:
 find_package(cpr REQUIRED)
 find_package(jsoncpp REQUIRED)
@@ -38,7 +37,7 @@ add_executable(Server
 )
 
 target_include_directories(Server PRIVATE ${SERVER_INCL})
-target_link_libraries(Server PRIVATE Drogon::Drogon ${Boost_LIBRARIES} general_domain_lib)
+target_link_libraries(Server PRIVATE Drogon::Drogon general_domain_lib)
 
 # ------ CLIENT ------
 set(CLIENT_INCL ${CMAKE_SOURCE_DIR}/client/include)
