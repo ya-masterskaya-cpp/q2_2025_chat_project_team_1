@@ -6,6 +6,8 @@
 #include <string>
 
 
+namespace chat {
+
 class TokenGenerator {
 public:
     std::string GenerateHEXToken();
@@ -29,3 +31,5 @@ class Token {
 public:
     static TokenGenerator GENERATOR;
 };
+
+} // namespace chat

@@ -1,52 +1,35 @@
 #pragma once
 
+#include "chat_models.h"
+
 #include <algorithm>
+#include <memory>
 #include <mutex>
 #include <string>
-#include <vector>
 #include <unordered_map>
-#include <unordered_set>
+#include <vector>
 
 
-// Логика работы с комнатами для room_controller.h (REST API) + потокобезопасное хранилище комнат и клиентов
-
-namespace {
-    constexpr const char* GENERAL_ROOM = "general"; // TODO вынести в константы
-}
+namespace chat {
 
 class RoomManager {
 public:
-    static RoomManager& instance();
-
-    // Создание новой комнаты
-    bool CreateRoom(const std::string& room);
-
-    // Вход в комнату: удаляет из старой и добавляет в новую
-    bool JoinRoom(const std::string& user, const std::string& room);
-
-    // Выход из комнаты: перемещает в общую комнату
-    bool LeaveRoom(const std::string& user);
-
-    // Текущая комната пользователя
-    std::string GetRoomOfUser(const std::string& user);
-
-    // Наличие комнаты
-    bool HasRoom(const std::string& room);
-
-    // Список комнат
-    std::vector<std::string> ListRooms();
-
-    // Список пользователей в комнате
-    std::vector<std::string> GetUsersInRoom(const std::string& room);
-
-    // Удаление пользователя из комнаты
-    void RemoveUser(const std::string& user);
-
-private:
     RoomManager();
 
-    std::unordered_map<std::string, std::unordered_set<std::string>> room_to_users_;
-    std::unordered_map<std::string, std::string> user_to_room_;
-    std::mutex mutex_;
-    const std::string default_room = GENERAL_ROOM;
+    std::shared_ptr<Room> CreateRoom(const std::string& name);
+    std::shared_ptr<Room> GetRoomById(ID id) const;
+    std::shared_ptr<Room> GetRoomByName(const std::string& name) const;
+    std::vector<std::string> GetAllRoomNames() const;
+
+    bool MoveUserToRoom(ID user_id, const std::string& name);
+    bool AddUserToRoom(const std::shared_ptr<User>& user, ID room_id);
+    bool RemoveUserFromRoom(ID user_id);
+
+private:
+    mutable std::mutex mutex_;
+    ID next_room_id_ = 1;
+    std::unordered_map<ID, std::shared_ptr<Room>> id_to_room_;
+    std::unordered_map<std::string, std::shared_ptr<Room>> name_to_room_;
 };
+
+}  // namespace chat
