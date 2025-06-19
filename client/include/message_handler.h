@@ -37,6 +37,14 @@ private:
     std::string url_;
 
     bool ParseTokenFromJson(const std::string& jsonText);
+    template<typename Function>
+    ServerResponse ToRequest(Function function) {
+        auto res = function;
+        if(res.error) {
+            return {res.status_code == 200, res.text, res.error.message};
+        }
+        return {res.status_code == 200, res.text};
+    }
 
 };
 

@@ -4,8 +4,7 @@
 #include <wx/wx.h>
 
 #include "domain.h"
-#include "login_frame.h"
-#include "messages_handler.h"
+#include "message_handler.h"
 
 namespace gui {
 
@@ -13,8 +12,7 @@ class RoomsFrame : public wxFrame
 {
 public:
     RoomsFrame(wxWindow* parent, const wxString& title,
-               transfer::MessagesHandler* message_handler, domain::UserData& user);
-    void OnLoginButtonClicked(wxCommandEvent& event);
+               domain::MessageHandler* message_handler, domain::UserData& user);
     void OnReloadButtonClicked(wxCommandEvent& event);
     void OnCreateRoomButtonClicked(wxCommandEvent& event);
     void OnGetUsersButtonClicked(wxCommandEvent& event);
@@ -22,13 +20,11 @@ public:
 
 private:
     wxListBox* rooms_list_;
-    transfer::MessagesHandler* message_handler_;
+    domain::MessageHandler* message_handler_;
     domain::UserData& user_;
-    LoginFrame* login_frame_{nullptr};
 
     std::vector<std::string> ParseRooms(std::string roomslist);
-    void OnClose(wxCloseEvent& event)
-    {
+    void OnClose(wxCloseEvent& event){
         Hide();
     }
 };

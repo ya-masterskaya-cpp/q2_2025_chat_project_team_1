@@ -1,15 +1,12 @@
 #include "rooms_frame.h"
 
-#include <const.h>
-#include <service.h>
-
-#include "create_room_frame.h"
-#include "rooms_users_frame.h"
+// #include "create_room_frame.h"
+// #include "rooms_users_frame.h"
 
 namespace gui {
 
 RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
-                       transfer::MessagesHandler* message_handler, domain::UserData& user)
+                       domain::MessageHandler* message_handler, domain::UserData& user)
     : wxFrame(parent, wxID_ANY, title), message_handler_{message_handler}, user_{user} {
     Bind(wxEVT_CLOSE_WINDOW, &RoomsFrame::OnClose, this);
 
@@ -26,8 +23,6 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
     //buttons
     wxButton* reload_button = new wxButton(panel, wxID_ANY, "Reload");
     reload_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnReloadButtonClicked,this);
-    wxButton* login_button = new wxButton(panel, wxID_ANY, "Login");
-    login_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnLoginButtonClicked,this);
     wxButton* create_room_button = new wxButton(panel, wxID_ANY, "Create room");
     create_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnCreateRoomButtonClicked,this);
     wxButton* get_users_button = new wxButton(panel, wxID_ANY, "Get users");
@@ -40,7 +35,6 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
 
     //layouts
     control_button_sizer->Add(reload_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
-    control_button_sizer->Add(login_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
     control_button_sizer->Add(create_room_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
     control_button_sizer->Add(get_users_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
 
@@ -60,92 +54,60 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
     rooms_list_->Append("test 2");
     rooms_list_->Append("test 3");
     //-----------------------------------------------------------
-
-    //transfer logic
-    message_handler_->AddAction(CONSTANTS::ACT_ROOM_LIST, [self = this] (const std::unordered_map<std::string,std::string>& params) {
-        if(params.at(CONSTANTS::LF_RESULT) == CONSTANTS::RF_ERROR) {
-            self->rooms_list_->Clear();
-            self->rooms_list_->Append(std::move(params.at(CONSTANTS::LF_REASON)));
-        } else {
-            self->rooms_list_->Clear();
-            std::vector<std::string> rooms = self->ParseRooms(std::move(params.at(CONSTANTS::ACT_ROOM_LIST)));
-            for (auto& room : rooms) {
-                self->rooms_list_->Append(room + '\n');
-            }
-        }
-    });
-
-    message_handler_->AddAction(CONSTANTS::ACT_CREATE_ROOM, [self = this] (const std::unordered_map<std::string,std::string>& params) {
-        if(params.at(CONSTANTS::LF_RESULT) == CONSTANTS::RF_ERROR) {
-            wxMessageBox("Create room", params.at(CONSTANTS::LF_REASON), wxOK | wxICON_WARNING);
-        } else {
-            wxMessageBox("Create room", "Room created", wxOK | wxICON_INFORMATION);
-            self->UpdateRoomsList();
-        }
-
-    });
-
-    message_handler_->AddAction(CONSTANTS::ACT_GET_USERS, [self = this] (const std::unordered_map<std::string,std::string>& params) {
-        boost::json::value parsed = boost::json::parse(params.at(CONSTANTS::LF_USERS));
-        std::vector<std::string> res;
-        res.reserve(parsed.as_array().size());
-        for(auto& user : parsed.as_array()) {
-            res.push_back(user.as_string().c_str());
-        }
-        RoomsUsersFrame* rooms_users_frame = new RoomsUsersFrame(self,res);
-        rooms_users_frame->Show();
-    });
-
-    message_handler_->AddAction(CONSTANTS::ACT_CREATE_USER, [self = this] (const std::unordered_map<std::string,std::string>& params) {
-        if(params.contains(CONSTANTS::RF_ERROR)) {
-            wxMessageBox("Create user", params.at(CONSTANTS::LF_REASON), wxOK | wxICON_WARNING);
-        } else {
-            wxMessageBox("Create user", "User created", wxOK | wxICON_INFORMATION);
-        }
-    });
-
-    message_handler_->AddAction(CONSTANTS::ACT_LOGIN, [self = this] (const std::unordered_map<std::string,std::string>& params) {
-        if(params.contains(CONSTANTS::RF_ERROR)) {
-            wxMessageBox("Login user", params.at(CONSTANTS::LF_REASON), wxOK | wxICON_WARNING);
-        } else {
-            self->user_.token = params.at(CONSTANTS::LF_TOKEN);
-            wxMessageBox("Login user", "User log in", wxOK | wxICON_INFORMATION);
-        }
-    });
-
-
     UpdateRoomsList();
 }
 
 void RoomsFrame::UpdateRoomsList() {
-    try {
-        message_handler_->Send(UserInterface::US_SrvMakeObjRoomList());
-    } catch(const std::exception& e) {
-        wxMessageBox(e.what(), "On Update RoomsList", wxOK | wxICON_WARNING);
+    // try {
+    //     message_handler_->Send(UserInterface::US_SrvMakeObjRoomList());
+    // } catch(const std::exception& e) {
+    //     wxMessageBox(e.what(), "On Update RoomsList", wxOK | wxICON_WARNING);
+    //     return;
+    // }
+    rooms_list_->Clear();
+
+    auto res = message_handler_->ListRooms();
+
+    if (!res.error_msg.empty())  {
+        wxMessageBox(res.error_msg, "Error", wxOK | wxICON_ERROR);
         return;
     }
+
+    std::optional<Json::Value> parsed_val = domain::Parse(res.msg);
+    if(!parsed_val) {
+        wxMessageBox("Parse JSON Error", "Error", wxOK | wxICON_ERROR);
+        return;
+    }
+
+    if(res.status) {
+        std::vector<std::string> parsed_rooms = ParseRooms((*parsed_val)["error"].asString());
+        for(auto& room : parsed_rooms) {
+            rooms_list_->Append(room + '\n');
+        }
+    } else {
+        wxMessageBox((*parsed_val)["error"].asString(), "Error", wxOK | wxICON_ERROR);
+        return;
+    }
+
 }
 
 std::vector<std::string> RoomsFrame::ParseRooms(std::string roomslist) {
-    boost::json::value parsed = boost::json::parse(roomslist);
-    boost::json::array parsed_arr = parsed.as_array();
-    std::vector<std::string> res;
-    res.reserve(parsed_arr.size());
+    Json::CharReaderBuilder builder;
+    Json::Value parsed_val;
+    std::string err;
+    std::istringstream iss(roomslist);
 
-    for(auto& room : parsed_arr) {
-        res.push_back(room.as_string().c_str());
+    std::vector<std::string> res;
+
+    if (!Json::parseFromStream(builder, iss, &parsed_val,&err)) {
+        res.push_back(err);
+        return res;
+    }
+
+    for(auto& room: parsed_val) {
+        res.push_back(room.asString());
     }
     return res;
-}
-
-void RoomsFrame::OnLoginButtonClicked(wxCommandEvent& event) {
-    if(!login_frame_) {
-         int index = rooms_list_->GetSelection();
-        login_frame_ = new LoginFrame(this, message_handler_,
-                                       rooms_list_->GetString(index).ToStdString());
-
-    }
-    login_frame_->Show();
 }
 
 void RoomsFrame::OnReloadButtonClicked(wxCommandEvent& event) {
@@ -153,18 +115,18 @@ void RoomsFrame::OnReloadButtonClicked(wxCommandEvent& event) {
 }
 
 void RoomsFrame::OnCreateRoomButtonClicked(wxCommandEvent& event) {
-    CreateRoomFrame* create_room_frame = new CreateRoomFrame(this,message_handler_);
-    create_room_frame->Show();
+    // CreateRoomFrame* create_room_frame = new CreateRoomFrame(this,message_handler_);
+    // create_room_frame->Show();
 }
 
 void RoomsFrame::OnGetUsersButtonClicked(wxCommandEvent& event){
-    int index = rooms_list_->GetSelection();
-    try {
-        message_handler_->Send(UserInterface::US_SrvMakeObjGetUsers(rooms_list_->GetString(index).ToStdString()));
-    } catch(const std::exception& e) {
-        wxMessageBox(e.what(), "On Get Users", wxOK | wxICON_WARNING);
-        return;
-    }
+    // int index = rooms_list_->GetSelection();
+    // try {
+    //     message_handler_->Send(UserInterface::US_SrvMakeObjGetUsers(rooms_list_->GetString(index).ToStdString()));
+    // } catch(const std::exception& e) {
+    //     wxMessageBox(e.what(), "On Get Users", wxOK | wxICON_WARNING);
+    //     return;
+    // }
 }
 
 }   //namespace gui

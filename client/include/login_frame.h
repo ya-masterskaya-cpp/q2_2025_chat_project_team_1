@@ -20,8 +20,6 @@ private:
     wxTextCtrl* username_ctrl_;
     wxTextCtrl* password_ctrl_;
 
-
-    std::optional<Json::Value> Parse(const std::string& msg);
     void OnClose(wxCloseEvent& event);
 };
 

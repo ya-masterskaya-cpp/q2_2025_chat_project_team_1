@@ -61,7 +61,8 @@ MainFrame::MainFrame(const wxString& title)
 
     Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
 
-
+    //TO DELETE, FOR TESTING
+    message_handler_ = std::make_unique<domain::MessageHandler>(user_,"127.0.0.1:3333");
     //Load settings
     Load();
 }
@@ -72,31 +73,32 @@ void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
         message_input_->Clear();
         return;
     }
-    // try {
 
-        auto res = message_handler_->SendMessage(message_input_->GetValue().utf8_string());
-        message_input_->Clear();
-        if(!res.status) {
-            Json::CharReaderBuilder builder;
-            Json::Value parsed_val;
-            std::string err;
-            std::istringstream iss(res.msg);
-            if (Json::parseFromStream(builder, iss, &parsed_val,&err)) {
-                wxMessageBox(parsed_val["error"].asString(), "MainFrame error", wxOK | wxICON_WARNING);
-            } else {
-                wxMessageBox("Parse JSON response failed", "MainFrame Error", wxOK | wxICON_WARNING);
-            }
+    auto res = message_handler_->SendMessage(message_input_->GetValue().utf8_string());
+    message_input_->Clear();
+
+    if(!res.error_msg.empty()) {
+        wxMessageBox(res.error_msg, "Error", wxOK | wxICON_WARNING);
+    }
+
+    if(!res.status) {
+        Json::CharReaderBuilder builder;
+        Json::Value parsed_val;
+        std::string err;
+        std::istringstream iss(res.msg);
+        if (Json::parseFromStream(builder, iss, &parsed_val,&err)) {
+            wxMessageBox(parsed_val["error"].asString(), "MainFrame error", wxOK | wxICON_ERROR);
+        } else {
+            wxMessageBox("Parse JSON response failed", "MainFrame Error", wxOK | wxICON_ERROR);
         }
-    // } catch(...) {
-
-    // }
+    }
 }
 
 void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
-    // if(!rooms_frame_) {
-    //         rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_, user_);
-    // }
-    // rooms_frame_->Show();
+    if(!rooms_frame_) {
+            rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_.get(), user_);
+    }
+    rooms_frame_->Show();
 }
 
 void MainFrame::OnSettingsMenu(wxCommandEvent& event)
@@ -154,7 +156,7 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         message_handler_->LogoutUser();
         message_handler_.reset();
         ws_client_->Stop();
-        // rooms_frame_->Close();
+        rooms_frame_->Close();
 
     }
 

@@ -7,7 +7,7 @@
 
 #include "domain.h"
 #include "message_handler.h"
-// #include "rooms_frame.h"
+#include "rooms_frame.h"
 #include "settings_frame.h"
 #include "websocket_client.h"
 
@@ -37,7 +37,7 @@ private:
     wxTextCtrl* message_input_;
     wxButton* rooms_button_{nullptr};
     wxButton* conection_button_{nullptr};
-    // RoomsFrame* rooms_frame_{nullptr};
+    RoomsFrame* rooms_frame_{nullptr};
     SettingsFrame* settings_frame_{nullptr};
 };
 

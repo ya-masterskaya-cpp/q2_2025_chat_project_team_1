@@ -35,6 +35,11 @@ LoginFrame::LoginFrame(wxWindow* parent, domain::MessageHandler* message_handler
 }
 
 void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {
+    if(username_ctrl_->GetValue().empty() || password_ctrl_->GetValue().empty()) {
+        wxMessageBox("Empty user_name or password", "Warning", wxOK | wxICON_WARNING);
+        return;
+    }
+
     auto res = message_handler_->RegisterUser(username_ctrl_->GetValue().ToStdString(),
                                    password_ctrl_->GetValue().ToStdString());
 
@@ -43,7 +48,11 @@ void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {
         return;
     }
 
-    std::optional<Json::Value> parsed_val = Parse(res.msg);
+    std::optional<Json::Value> parsed_val = domain::Parse(res.msg);
+    if(!parsed_val) {
+    wxMessageBox("Parse JSON Error", "Error", wxOK | wxICON_ERROR);
+        return;
+    }
 
     if(res.status) {
         wxMessageBox((*parsed_val)["info"].asString(), "Info", wxOK | wxICON_INFORMATION);
@@ -53,6 +62,10 @@ void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {
 }
 
 void LoginFrame::OnLoginButtonClicked(wxCommandEvent& event) {
+    if(username_ctrl_->GetValue().empty() || password_ctrl_->GetValue().empty()) {
+        wxMessageBox("Empty user_name or password", "Warning", wxOK | wxICON_WARNING);
+        return;
+    }
     auto res = message_handler_->LoginUser(username_ctrl_->GetValue().ToStdString(),
                                            password_ctrl_->GetValue().ToStdString());
 
@@ -61,33 +74,19 @@ void LoginFrame::OnLoginButtonClicked(wxCommandEvent& event) {
         return;
     }
 
-    if(res.status) {
-        std::optional<Json::Value> parsed_val = Parse(res.msg);
-        if(parsed_val) {
-            wxMessageBox((*parsed_val)["info"].asString(), "Info", wxOK | wxICON_INFORMATION);
-            Close();
-        } else {
-            wxMessageBox("Parse JSON Error", "Error", wxOK | wxICON_WARNING);
-        }
-    } else {
-        std::optional<Json::Value> parsed_val = Parse(res.msg);
-        if(parsed_val) {
-            wxMessageBox((*parsed_val)["error"].asString(), "Warning", wxOK | wxICON_WARNING);
-        } else {
-            wxMessageBox("Parse JSON Error", "Error", wxOK | wxICON_WARNING);
-        }
+    std::optional<Json::Value> parsed_val = domain::Parse(res.msg);
+    if(!parsed_val) {
+        wxMessageBox("Parse JSON Error", "Error", wxOK | wxICON_ERROR);
+        return;
     }
-}
 
-std::optional<Json::Value> LoginFrame::Parse(const std::string& msg) {
-    Json::CharReaderBuilder builder;
-    Json::Value parsed_val;
-    std::string err;
-    std::istringstream iss(msg);
-    if (!Json::parseFromStream(builder, iss, &parsed_val,&err)) {
-        return std::nullopt;
+    if(res.status) {
+        wxMessageBox((*parsed_val)["info"].asString(), "Info", wxOK | wxICON_INFORMATION);
+        Close();
+    } else {
+        wxMessageBox((*parsed_val)["error"].asString(), "Error", wxOK | wxICON_ERROR);
+        return;
     }
-    return parsed_val;
 }
 
 void LoginFrame::OnClose(wxCloseEvent& event) {

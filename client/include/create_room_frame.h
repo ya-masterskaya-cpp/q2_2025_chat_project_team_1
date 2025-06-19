@@ -3,7 +3,8 @@
 
 #include <wx/wx.h>
 
-#include "messages_handler.h"
+#include "message_handler.h"
+
 namespace gui {
 
 class CreateRoomFrame : public wxFrame {

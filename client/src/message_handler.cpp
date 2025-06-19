@@ -65,19 +65,24 @@ ServerResponse MessageHandler::LogoutUser() {
 }
 
 ServerResponse MessageHandler::GetOnlineUsers() {
-    auto res = SendGetRequest(std::string(api::USERS_ONLINE));
-    return{res.status_code == 200, res.text};
+    // auto res = SendGetRequest(std::string(api::USERS_ONLINE));
+    // if(res.error) {
+    //     return {res.status_code == 200, res.text, res.error.message};
+    // }
+    // return{res.status_code == 200, res.text};
+    return ToRequest(SendGetRequest(std::string(api::USERS_ONLINE)));
 }
 
 ServerResponse MessageHandler::SendMessage(const std::string& text, const std::string& to) {
     Json::Value body;
     body["text"] = text;
     body["to"] = to;
-    auto res = SendPostRequest(url_ + std::string(api::MESSAGE_SEND), body);
-    if(res.error) {
-        return {res.status_code == 200, res.text, res.error.message};
-    }
-    return {res.status_code == 200,res.text};
+    // auto res = SendPostRequest(url_ + std::string(api::MESSAGE_SEND), body);
+    // if(res.error) {
+    //     return {res.status_code == 200, res.text, res.error.message};
+    // }
+    // return {res.status_code == 200,res.text};
+    return ToRequest(SendPostRequest(url_ + std::string(api::MESSAGE_SEND), body));
 }
 
 ServerResponse MessageHandler::CreateRoom(const std::string& name) {
@@ -93,47 +98,54 @@ ServerResponse MessageHandler::CreateRoom(const std::string& name) {
 ServerResponse MessageHandler::JoinRoom(const std::string& name) {
     Json::Value body;
     body["name"] = name;
-    auto res = SendPostRequest(url_ + std::string(api::ROOM_JOIN), body);
-    if(res.error) {
-        return {res.status_code == 200, res.text, res.error.message};
-    }
-    return {res.status_code == 200, res.text};
+    // auto res = SendPostRequest(url_ + std::string(api::ROOM_JOIN), body);
+    // if(res.error) {
+    //     return {res.status_code == 200, res.text, res.error.message};
+    // }
+    // return {res.status_code == 200, res.text};
+    return ToRequest(SendPostRequest(url_ + std::string(api::ROOM_JOIN), body));
 }
 
 ServerResponse MessageHandler::LeaveRoom() {
-    auto res = SendPostRequest(url_ + std::string(api::ROOM_LEAVE), Json::objectValue);
-    if(res.error) {
-        return {res.status_code == 200, res.text, res.error.message};
-    }
-    return {res.status_code == 200, res.text};
+    // auto res = SendPostRequest(url_ + std::string(api::ROOM_LEAVE), Json::objectValue);
+    // if(res.error) {
+    //     return {res.status_code == 200, res.text, res.error.message};
+    // }
+    // return {res.status_code == 200, res.text};
+    return ToRequest(SendPostRequest(url_ + std::string(api::ROOM_LEAVE), Json::objectValue));
 }
 
 ServerResponse MessageHandler::ListRooms() {
-    auto res = SendGetRequest(url_ + std::string(api::ROOM_LIST));
-    if(res.error) {
-        return {res.status_code == 200, res.text, res.error.message};
-    }
-    return {res.status_code == 200, res.text};
+    // auto res = SendGetRequest(url_ + std::string(api::ROOM_LIST));
+    // if(res.error) {
+    //     return {res.status_code == 200, res.text, res.error.message};
+    // }
+    // return {res.status_code == 200, res.text};
+    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_LIST)));
 }
 
 ServerResponse MessageHandler::GetCurrentRoom() {
-    auto res = SendGetRequest(url_ + std::string(api::ROOM_CURRENT));
-    if(res.error) {
-        return {res.status_code == 200, res.text, res.error.message};
-    }
-    return {res.status_code == 200, res.text};
+    // auto res = SendGetRequest(url_ + std::string(api::ROOM_CURRENT));
+    // if(res.error) {
+    //     return {res.status_code == 200, res.text, res.error.message};
+    // }
+    // return {res.status_code == 200, res.text};
+    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_CURRENT)));
 }
 
 ServerResponse MessageHandler::GetUsersInRoom(const std::string& roomName) {
-    auto res = SendGetRequest(url_ + std::string(api::ROOM_USERS) + "?name=" + roomName);
-    if(res.error) {
-        return {res.status_code == 200, res.text, res.error.message};
-    }
-    return {res.status_code == 200, res.text};
+    // auto res = SendGetRequest(url_ + std::string(api::ROOM_USERS) + "?name=" + roomName);
+    // if(res.error) {
+    //     return {res.status_code == 200, res.text, res.error.message};
+    // }
+    // return {res.status_code == 200, res.text};
+    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_USERS) + "?name=" + roomName));
 }
 
-void SetUrl(const std::string& url) {
-
+void MessageHandler::SetUrl(const std::string& url) {
+    url_ = url;
 }
+
+
 
 }//namespace domain

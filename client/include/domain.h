@@ -23,6 +23,8 @@ cpr::Response SendPostRequest(const std::string& endpoint, const Json::Value& bo
 cpr::Response SendGetRequest(const std::string& endpoint);
 cpr::Response SendGetRequest(const std::string& endpoint, const std::string& token);
 
+std::optional<Json::Value> Parse(const std::string& msg);
+
 }
 
 #endif //DOMAIN_H

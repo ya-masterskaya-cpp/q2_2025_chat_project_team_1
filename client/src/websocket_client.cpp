@@ -36,7 +36,6 @@ void WebSocketClient::Run() {
     ws_client_->start();
 }
 
-
 void WebSocketClient::Stop() {
     if (ws_client_) {
         ws_client_->stop();
@@ -60,9 +59,5 @@ void WebSocketClient::SetOnClose(Callback callback) {
 void WebSocketClient::SetOnError(Callback callback) {
     error_handler_ = callback;
 }
-
-
-
-
 
 }   //namespace transfer

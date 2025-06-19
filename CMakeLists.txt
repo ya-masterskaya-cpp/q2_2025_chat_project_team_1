@@ -39,7 +39,7 @@ add_executable( Client
     ${CLIENT_INCL}/message_handler.h ${CLIENT_SRC}/message_handler.cpp
     ${CLIENT_INCL}/client_interface.h
     ${CLIENT_INCL}/websocket_client.h ${CLIENT_SRC}/websocket_client.cpp
-#     ${CLIENT_INCL}/rooms_frame.h ${CLIENT_SRC}/rooms_frame.cpp
+    ${CLIENT_INCL}/rooms_frame.h ${CLIENT_SRC}/rooms_frame.cpp
     ${CLIENT_INCL}/login_frame.h ${CLIENT_SRC}/login_frame.cpp
 #     ${CLIENT_INCL}/settings_frame.h ${CLIENT_SRC}/settings_frame.cpp
 #     ${CLIENT_INCL}/create_room_frame.h ${CLIENT_SRC}/create_room_frame.cpp
