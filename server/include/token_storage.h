@@ -1,3 +1,5 @@
+// TODO удалить файл, новый файл token_manager.h, ветка server-business-logic
+
 #pragma once
 
 #include <mutex>
@@ -5,7 +7,7 @@
 #include <unordered_map>
 
 
-class TokenStorage {
+class TokenStorage { 
 public:
     static TokenStorage& instance();
 

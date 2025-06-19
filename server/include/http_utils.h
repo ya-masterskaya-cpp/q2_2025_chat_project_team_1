@@ -5,6 +5,7 @@
 #include <drogon/HttpResponse.h>
 #include <json/json.h>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -35,5 +36,16 @@ inline void RespondWithError(const std::string& message,
     drogon::app().getPlugin<LoggerPlugin>()->LogResponse(message); // TODO подумать, как вынести логирование
     callback(MakeJsonResponse(body, code));
 }
+
+inline std::optional<std::string> TryExtractToken(const drogon::HttpRequestPtr& req) {
+    const auto& authHeader = req->getHeader("Authorization");
+
+    if (authHeader.find("Bearer ") == 0) {
+        return authHeader.substr(7);
+    }
+
+    return std::nullopt;
+}
+
 
 }  // namespace http_utils

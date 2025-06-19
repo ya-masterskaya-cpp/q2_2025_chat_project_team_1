@@ -2,15 +2,14 @@
 
 
 void UserController::getOnlineUsers(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-    auto authHeader = req->getHeader("Authorization");
-    std::string token;
-    if (authHeader.find("Bearer ") == 0) {
-        token = authHeader.substr(7);
-    // Некорректный заголовок: токен нельзя извлечь, либо нет токена
-    } else {
+    // Токен авторизации не извлечен
+    auto token_opt = http_utils::TryExtractToken(req);
+    if (!token_opt) {
         http_utils::RespondWithError("Failed to extract token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
+
+    const std::string token = token_opt.value();
 
     // Токен авторизации не найден
     std::string user = "";
@@ -19,7 +18,7 @@ void UserController::getOnlineUsers(const drogon::HttpRequestPtr &req, std::func
         return;
     }
 
-    // Успех - отдаем список всех клиентов WebSocket
+    // Успех - отдаем список всех клиентов WebSocket // TODO заменить или дополнить методом списка зарегистрированных клиентов
     Json::Value result(Json::arrayValue);
 
     for (const auto& login : ChatWebSocket::GetConnectedUsers()) {

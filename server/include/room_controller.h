@@ -2,7 +2,8 @@
 
 #include "const_api.h"
 #include "http_utils.h"
-#include "room_manager.h"
+
+#include "room_manager.h" // // TODO ветка server-business-logic - обертка всех менеджеров chat_service.h
 #include "token_storage.h"
 
 #include <drogon/HttpController.h>
@@ -14,7 +15,7 @@
 class RoomController : public drogon::HttpController<RoomController> {
 public:
     METHOD_LIST_BEGIN
-        ADD_METHOD_TO(RoomController::CreateRoom, std::string(api::ROOM_CREATE), drogon::Post); // TODO вынести в константы
+        ADD_METHOD_TO(RoomController::CreateRoom, std::string(api::ROOM_CREATE), drogon::Post);
         ADD_METHOD_TO(RoomController::JoinRoom, std::string(api::ROOM_JOIN), drogon::Post);
         ADD_METHOD_TO(RoomController::LeaveRoom, std::string(api::ROOM_LEAVE), drogon::Post);
         ADD_METHOD_TO(RoomController::ListRooms, std::string(api::ROOM_LIST), drogon::Get);

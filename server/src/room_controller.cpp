@@ -1,117 +1,138 @@
 #include "room_controller.h"
 
 
-static std::string ExtractUserFromRequest(const drogon::HttpRequestPtr &req, drogon::HttpResponsePtr &resp) { // TODO вынести в отдельный файл
-    /*
-    auto authHeader = req->getHeader("Authorization");
-    std::string token;
-    if (authHeader.find("Bearer ") == 0) {
-        token = authHeader.substr(7);
-    // Некорректный заголовок: токен нельзя извлечь, либо нет токена
-    } else {
+void RoomController::CreateRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    // Токен авторизации не извлечен
+    auto token_opt = http_utils::TryExtractToken(req);
+    if (!token_opt) {
         http_utils::RespondWithError("Failed to extract token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
 
+    const std::string token = token_opt.value();
+
     // Токен авторизации не найден
-    std::string from = "";
-    if (!TokenStorage::instance().HasUserByToken(token, from)) { // если отправитель будет найден, то from сохранит имя
+    std::string user = "";
+    if (!TokenStorage::instance().HasUserByToken(token, user)) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
-    */
-    auto authHeader = req->getHeader("Authorization");
-    if (authHeader.find("Bearer ") != 0) {
-        resp->setStatusCode(drogon::k401Unauthorized);
-        resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-        resp->setBody("Missing token");
-        return "";
-    }
 
-    std::string token = authHeader.substr(7);
-    std::string user;
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
-        resp->setStatusCode(drogon::k401Unauthorized);
-        resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-        resp->setBody("Invalid token");
-        return "";
-    }
-    return user;
-}
-
-void RoomController::CreateRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    // нет нужных полей, невалидный json
     auto json = req->getJsonObject();
-    auto resp = drogon::HttpResponse::newHttpResponse();
-    std::string user = ExtractUserFromRequest(req, resp);
-    if (user.empty()) return callback(resp);
-
     if (!json || !json->isMember("name")) {
-        resp->setStatusCode(drogon::k400BadRequest);
-        resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-        resp->setBody("Missing room name");
-        callback(resp);
+        http_utils::RespondWithError("Invalid JSON format", drogon::k400BadRequest, std::move(callback));
         return;
     }
 
-    std::string name = (*json)["name"].asString();
+    const std::string name = (*json)["name"].asString();
+
+    // пустое поле json
+    if (name.empty()) {
+        http_utils::RespondWithError("Empty room name", drogon::k400BadRequest, std::move(callback));
+        return;
+    }
+
+    // комната с таким именем уже есть
     if (!RoomManager::instance().CreateRoom(name)) {
-        resp->setStatusCode(drogon::k400BadRequest);
-        resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-        resp->setBody("Invalid or duplicate room name");
-        callback(resp);
+        http_utils::RespondWithError("Room already created", drogon::k409Conflict, std::move(callback));
         return;
     }
 
-    resp->setStatusCode(drogon::k201Created);
-    resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-    resp->setBody("Room created");
-    callback(resp);
+    // успех
+    http_utils::RespondWithSuccess("Room created", drogon::k201Created, std::move(callback));
 }
 
 void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    // Токен авторизации не извлечен
+    auto token_opt = http_utils::TryExtractToken(req);
+    if (!token_opt) {
+        http_utils::RespondWithError("Failed to extract token", drogon::k401Unauthorized, std::move(callback));
+        return;
+    }
+
+    const std::string token = token_opt.value();
+
+    // Токен авторизации не найден
+    std::string user = "";
+    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+        http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
+        return;
+    }
+
+    // нет нужных полей, невалидный json
     auto json = req->getJsonObject();
-    auto resp = drogon::HttpResponse::newHttpResponse();
-    std::string user = ExtractUserFromRequest(req, resp);
-    if (user.empty()) return callback(resp);
-
     if (!json || !json->isMember("name")) {
-        resp->setStatusCode(drogon::k400BadRequest);
-        resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-        resp->setBody("Missing room name");
-        callback(resp);
+        http_utils::RespondWithError("Invalid JSON format", drogon::k400BadRequest, std::move(callback));
         return;
     }
 
-    std::string name = (*json)["name"].asString();
+    const std::string name = (*json)["name"].asString();
+
+    // пустое имя комнаты
+    if (name.empty()) {
+        http_utils::RespondWithError("Empty room name", drogon::k400BadRequest, std::move(callback));
+        return;
+    }
+
+    // нельзя перейти в ту же самую комнату или в несуществующую комнату
     if (!RoomManager::instance().JoinRoom(user, name)) {
-        resp->setStatusCode(drogon::k404NotFound);
-        resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-        resp->setBody("Room does not exist");
-        callback(resp);
+        http_utils::RespondWithError("Invalid room join", drogon::k400BadRequest, std::move(callback));
         return;
     }
 
-    resp->setStatusCode(drogon::k200OK);
-    resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-    resp->setBody("Joined room");
-    callback(resp);
+    // успех
+    http_utils::RespondWithSuccess("Joined room", drogon::k200OK, std::move(callback));
 }
 
+// возврат в GENERAL_ROOM
 void RoomController::LeaveRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-    auto resp = drogon::HttpResponse::newHttpResponse();
-    std::string user = ExtractUserFromRequest(req, resp);
-    if (user.empty()) {
-        return callback(resp);
+    // Токен авторизации не извлечен
+    auto token_opt = http_utils::TryExtractToken(req);
+    if (!token_opt) {
+        http_utils::RespondWithError("Failed to extract token", drogon::k401Unauthorized, std::move(callback));
+        return;
     }
 
-    RoomManager::instance().LeaveRoom(user); // TODO: можно вернуть false, если пользователь не в комнате
+    const std::string token = token_opt.value();
 
-    resp->setStatusCode(drogon::k200OK); // Успешно, без тела
-    callback(resp);
+    // Токен авторизации не найден
+    std::string user = "";
+    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+        http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
+        return;
+    }
+
+    // нельзя выйти из общей комнаты, находясь в ней
+    if (!RoomManager::instance().LeaveRoom(user)) {
+        http_utils::RespondWithError("Already in general room", drogon::k400BadRequest, std::move(callback));
+        return;
+    }
+
+    // успех
+    http_utils::RespondWithSuccess("Left to general room", drogon::k200OK, std::move(callback));
 }
 
 void RoomController::ListRooms(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    // Токен авторизации не извлечен
+    auto token_opt = http_utils::TryExtractToken(req);
+    if (!token_opt) {
+        http_utils::RespondWithError("Failed to extract token", drogon::k401Unauthorized, std::move(callback));
+        return;
+    }
+
+    const std::string token = token_opt.value();
+
+    // Токен авторизации не найден
+    std::string user = "";
+    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+        http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
+        return;
+    }
+
+    // успех - возвращаем список всех комнат
     Json::Value result(Json::arrayValue);
+
     for (const auto &name : RoomManager::instance().ListRooms()) {
         result.append(name);
     }
@@ -119,41 +140,69 @@ void RoomController::ListRooms(const drogon::HttpRequestPtr &req, std::function<
     auto resp = drogon::HttpResponse::newHttpJsonResponse(result);
     resp->setStatusCode(drogon::k200OK);
     callback(resp);
+    // http_utils::RespondWithSuccess(?); // TODO создать удобную обертку c логгированием
 }
 
 void RoomController::CurrentRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-    auto resp = drogon::HttpResponse::newHttpResponse();
-    std::string user = ExtractUserFromRequest(req, resp);
-    if (user.empty()) {
-        return callback(resp);
-    }
-
-    Json::Value json;
-    json["room"] = RoomManager::instance().GetRoomOfUser(user);
-
-    auto jsonResp = drogon::HttpResponse::newHttpJsonResponse(json);
-    jsonResp->setStatusCode(drogon::k200OK);
-    callback(jsonResp);
-}
-
-void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-    auto room = req->getParameter("name");
-
-    if (!RoomManager::instance().HasRoom(room)) {
-        auto resp = drogon::HttpResponse::newHttpResponse();
-        resp->setStatusCode(drogon::k404NotFound);
-        resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-        resp->setBody("Room not found");
-        callback(resp);
+    // Токен авторизации не извлечен
+    auto token_opt = http_utils::TryExtractToken(req);
+    if (!token_opt) {
+        http_utils::RespondWithError("Failed to extract token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
 
+    const std::string token = token_opt.value();
+
+    // Токен авторизации не найден
+    std::string user = "";
+    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+        http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
+        return;
+    }
+
+    // успех - возвращаем текущую комнату пользователя
+    Json::Value json;
+    json["room"] = RoomManager::instance().GetRoomOfUser(user);
+
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+    resp->setStatusCode(drogon::k200OK);
+    callback(resp);
+    // http_utils::RespondWithSuccess(?); // TODO создать удобную обертку c логгированием
+}
+
+void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    // Токен авторизации не извлечен
+    auto token_opt = http_utils::TryExtractToken(req);
+    if (!token_opt) {
+        http_utils::RespondWithError("Failed to extract token", drogon::k401Unauthorized, std::move(callback));
+        return;
+    }
+
+    const std::string token = token_opt.value();
+
+    // Токен авторизации не найден
+    std::string user = "";
+    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+        http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
+        return;
+    }
+
+    const std::string room = req->getParameter("name");
+
+    // комната не существует
+    if (!RoomManager::instance().HasRoom(room)) {
+        http_utils::RespondWithError("Room not found", drogon::k404NotFound, std::move(callback));
+        return;
+    }
+
+    // успех - возвращаем список пользователей в комнате
     Json::Value result(Json::arrayValue);
-    for (const auto &user : RoomManager::instance().GetUsersInRoom(room)) {
-        result.append(user);
+    for (const auto &username : RoomManager::instance().GetUsersInRoom(room)) {
+        result.append(username);
     }
 
     auto resp = drogon::HttpResponse::newHttpJsonResponse(result);
     resp->setStatusCode(drogon::k200OK);
     callback(resp);
+    // http_utils::RespondWithSuccess(?); // TODO создать удобную обертку c логгированием
 }

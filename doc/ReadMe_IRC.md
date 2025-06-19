@@ -14,8 +14,6 @@ curl -X POST http://localhost:8080/api/auth/register \
   -d '{"login":"alice", "password":"1234"}'
 ```
 
-Возможные ответы
-
 Успешная регистрация  
 **HTTP 201 Created**
 ```json
@@ -71,22 +69,6 @@ curl -X POST http://localhost:8080/api/auth/login \
 }
 ```
 
-При отсутствии имени или пароля
-**HTTP 400 Bad Request**
-```json
-{
-  "error":"Empty login or password"
-}
-```
-
-Нет данных о пользователе (логин и пароль не зарегистрированы)
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Invalid login or password"
-}
-```
-
 Запрещён вход при уже залогиненном пользователе
 **HTTP 403 Forbidden**
 ```json
@@ -109,27 +91,11 @@ curl -X POST http://localhost:8080/api/auth/logout \
 }
 ```
 
-Ошибка при извлечении токена авторизации
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Failed to extract token"
-}
-```
-
-Токен не действительный
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Invalid token"
-}
-```
-
 ---
 
 ### REST API для работы с пользователями
 
-#### Получить список активных участников
+#### Получить список всех подключенных клиентов WebSocket
 ```bash
 curl -X GET http://localhost:8080/api/users/online \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
@@ -144,22 +110,6 @@ curl -X GET http://localhost:8080/api/users/online \
 ]
 ```
 
-Ошибка при извлечении токена авторизации
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Failed to extract token"
-}
-```
-
-Токен не действительный
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Invalid token"
-}
-```
-
 ---
 
 ### REST API для работы с комнатами
@@ -167,11 +117,42 @@ curl -X GET http://localhost:8080/api/users/online \
 #### Создать новую комнату
 ```bash
 curl -X POST http://localhost:8080/api/room/create \
-  -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a" \
+  -H "Authorization: Bearer 536942b7d3c7b5a91fa34e8f4b24439a" \
   -H "Content-Type: application/json" \
   -d '{"name":"new_room"}'
 ```
-- Нельзя создать комнату с уже существующим именем
+
+Возврат при успешном запросе
+**HTTP 201 Created**
+```json
+{
+  "info":"Room created"
+}
+```
+
+Комната уже существует  
+**HTTP 409 Conflict**
+```json
+{
+  "error":"Room already created"
+}
+```
+
+Невалидный json
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Invalid JSON format"
+}
+```
+
+При отсутствии имени комнаты
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Empty room name"
+}
+```
 
 #### Присоединиться к комнате чата
 ```bash
@@ -180,15 +161,61 @@ curl -X POST http://localhost:8080/api/room/join \
   -H "Content-Type: application/json" \
   -d '{"name":"new_room"}'
 ```
-- Нельзя перейти в ту же самую комнату  
-- Нельзя перейти в несуществующую комнату (получаем 400 и сообщение "Room does not exist")
 
-#### Выйти в общую комнату (перейти в "general")
+Возврат при успешном запросе
+**HTTP 200**
+```json
+{
+  "info":"Joined room"
+}
+```
+
+Невалидный json
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Invalid JSON format"
+}
+```
+
+При отсутствии имени комнаты
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Empty room name"
+}
+```
+
+Комната не найдена или уже этой в комнате
+**HTTP 404 Not Found**
+```json
+{
+  "error":"Invalid room join"
+}
+```
+
+#### Выйти в общую комнату (перейти в комнату GENERAL_ROOM)
 ```bash
 curl -X POST http://localhost:8080/api/room/join \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a" \
   -H "Content-Type: application/json" \
   -d '{"name":"general"}'
+```
+
+Возврат при успешном запросе
+**HTTP 200**
+```json
+{
+  "info": "Left to general room"
+}
+```
+
+Уже в общей комнате GENERAL_ROOM
+**HTTP 404 Not Found**
+```json
+{
+  "error":"Already in general room"
+}
 ```
 
 #### Получить название текущей комнаты
@@ -197,21 +224,63 @@ curl -X GET http://localhost:8080/api/room/current \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
 ```
 
+Возврат json с название комнаты по полю room
+**HTTP 200**
+```json
+{
+  "room": "room_name"
+}
+```
+
 #### Получить список всех комнат
 ```bash
 curl -X GET http://localhost:8080/api/room/list \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
 ```
 
+Возврат массива json при успешном запросе
+**HTTP 200**
+```json
+["general", "new_room"]
+```
+
 #### Получить список участников комнаты
 ```bash
 curl -X GET "http://localhost:8080/api/room/users?name=general" \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
-
-curl -X GET "http://localhost:8080/api/room/users?name=new_room" \
-  -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
 ```
-- Нельзя получить список участников несуществующей комнаты (получаем 400)
+
+Комната не найдена  
+**HTTP 404 Not Found**
+```json
+{
+  "error":"Room not found"
+}
+```
+
+Возврат массива json при успешном запросе
+**HTTP 200**
+```json
+["alice", "bob"]
+```
+
+#### Ошибки при получении списка участников комнаты
+
+- Ошибка извлечения токена  
+**HTTP 401 Unauthorized**
+```json
+{
+  "error":"Failed to extract token"
+}
+```
+
+- Недействительный токен  
+**HTTP 401 Unauthorized**
+```json
+{
+  "error":"Invalid token"
+}
+```
 
 ---
 
@@ -230,22 +299,6 @@ curl -X POST http://localhost:8080/api/messages \
 ```json
 {
   "info":"Message sent"
-}
-```
-
-Ошибка при извлечении токена авторизации
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Failed to extract token"
-}
-```
-
-Токен не действительный
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Invalid token"
 }
 ```
 
@@ -268,6 +321,26 @@ curl -X POST http://localhost:8080/api/messages \
 Отправка сообщения через WebSocket - пример:
 ```bash
 wscat -c "ws://localhost:8080/chat?token=2a3d8e712bcebc2da7416dc67cf9103a"
+```
+
+---
+
+### Общие ошибки для всех запросов с авторизацией по токену
+
+Ошибка извлечения токена 
+**HTTP 401 Unauthorized**
+```json
+{
+  "error":"Failed to extract token"
+}
+```
+
+Недействительный токен, нет на сервере
+**HTTP 401 Unauthorized**
+```json
+{
+  "error":"Invalid token"
+}
 ```
 
 ---

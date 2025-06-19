@@ -11,7 +11,7 @@ public:
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 
-    // События REST API
+    // События REST API // TODO нужны будут дополнительные обёртки помимо LogResponse
     void LogResponse(const std::string& text);
 
 private:

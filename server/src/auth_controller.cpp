@@ -79,19 +79,18 @@ void AuthController::LoginUser(const drogon::HttpRequestPtr &req, std::function<
 }
 
 void AuthController::LogoutUser(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-    auto authHeader = req->getHeader("Authorization");
-    std::string token;
-    if (authHeader.find("Bearer ") == 0) {
-        token = authHeader.substr(7);
-    // Некорректный заголовок: токен нельзя извлечь, либо нет токена
-    } else {
+    // Токен авторизации не извлечен
+    auto token_opt = http_utils::TryExtractToken(req);
+    if (!token_opt) {
         http_utils::RespondWithError("Failed to extract token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
 
+    const std::string token = token_opt.value();
+
     // Токен авторизации не найден
     std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    if (!TokenStorage::instance().HasUserByToken(token, user)) { 
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
