@@ -22,8 +22,7 @@ private:
     wxTextCtrl* port_;
 
 
-    void OnClose(wxCloseEvent& event)
-    {
+    void OnClose(wxCloseEvent& event) {
         Destroy();
     }
 };

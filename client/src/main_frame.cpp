@@ -1,14 +1,14 @@
 #include "main_frame.h"
 
 #include <wx/stdpaths.h>
+#include <json/json.h>
 
-#include "const.h"
-#include "service.h"
+#include "login_frame.h"
 
 namespace gui {
 
-MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler* message_handler)
-    : wxFrame(nullptr, wxID_ANY, title), message_handler_{message_handler}, pausable_thread_{} {
+MainFrame::MainFrame(const wxString& title)
+    : wxFrame(nullptr, wxID_ANY, title) {
     wxPanel* panel = new wxPanel(this);
     wxBoxSizer* general_sizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -64,23 +64,6 @@ MainFrame::MainFrame(const wxString& title, transfer::MessagesHandler* message_h
 
     //Load settings
     Load();
-
-    //transfer logic ---------------------------------------------------------------------------
-    pausable_thread_.SetTask([self = this] () {
-        self->message_handler_->DoOnReceive();
-    });
-
-    message_handler_->AddAction(CONSTANTS::ACT_USER_MESSAGE,
-                               [self = this](const std::unordered_map<std::string,std::string>& params) {
-                                   self->chat_history_->AppendText(params.at(CONSTANTS::LF_NAME) + ": " +
-                                        params.at(CONSTANTS::LF_MESSAGE));
-    });
-    message_handler_->AddAction(CONSTANTS::ACT_SEND_MESSAGE,
-                               [self = this](const std::unordered_map<std::string,std::string>& params) {
-                                   if(params.at(CONSTANTS::LF_RESULT) == CONSTANTS::RF_ERROR) {
-                                       self->chat_history_->AppendText(params.at(CONSTANTS::LF_REASON));
-                                   }
-                               });
 }
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
@@ -89,25 +72,37 @@ void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
         message_input_->Clear();
         return;
     }
-    try {
-        message_handler_->Send(UserInterface::US_ChrMakeSendMessage(user_.token, message_input_->GetValue().utf8_string()));
-        message_input_->Clear();
-    } catch(...) {
+    // try {
 
-    }
+        auto res = message_handler_->SendMessage(message_input_->GetValue().utf8_string());
+        message_input_->Clear();
+        if(!res.status) {
+            Json::CharReaderBuilder builder;
+            Json::Value parsed_val;
+            std::string err;
+            std::istringstream iss(res.msg);
+            if (Json::parseFromStream(builder, iss, &parsed_val,&err)) {
+                wxMessageBox(parsed_val["error"].asString(), "MainFrame error", wxOK | wxICON_WARNING);
+            } else {
+                wxMessageBox("Parse JSON response failed", "MainFrame Error", wxOK | wxICON_WARNING);
+            }
+        }
+    // } catch(...) {
+
+    // }
 }
 
 void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
-    if(!rooms_frame_) {
-            rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_, user_);
-    }
-    rooms_frame_->Show();
+    // if(!rooms_frame_) {
+    //         rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_, user_);
+    // }
+    // rooms_frame_->Show();
 }
 
 void MainFrame::OnSettingsMenu(wxCommandEvent& event)
 {
-    SettingsFrame* settings_frame = new SettingsFrame{this, file_configs_.get()};
-    settings_frame->Show();
+    // SettingsFrame* settings_frame = new SettingsFrame{this, file_configs_.get()};
+    // settings_frame->Show();
 }
 
 void MainFrame::Save() {
@@ -124,27 +119,43 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         file_configs_->Read("IP", &ip, "127.0.0.1");
         int port;
         file_configs_->Read("Port", &port, 3333);
-        try {
-            message_handler_->GetTcpClient().Connect(ip.ToStdString(),port);
-        } catch(const boost::system::system_error& e) {
-            wxMessageBox(e.what(), "Connection Error", wxOK | wxICON_WARNING);
+
+        message_handler_ = std::make_unique<domain::MessageHandler>(user_,ip.ToStdString() +":" + std::to_string(port));
+
+        LoginFrame* login_frame = new LoginFrame(this,message_handler_.get());
+        login_frame->ShowModal();
+
+        if(user_.token.empty()) {
+            message_handler_.reset();
             return;
         }
 
-        conection_button_->SetLabel("Disconnect");
-        rooms_button_->Enable(true);
-        pausable_thread_.Start();
-        connected_ = true;
-    } else {
-        //send disconect to server
-        message_handler_->Send(UserInterface::US_ChrMakeObjDisconnect(user_.token));
+        ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
+        ws_client_->SetOnOpen([self = this](const std::string& msg) {
+            self->conection_button_->SetLabel("Disconnect");
+            self->rooms_button_->Enable(true);
+            self->connected_ = true;
+        });
+        ws_client_->SetOnClose([self = this](const std::string& msg) {
+            self->conection_button_->SetLabel("Connect");
+            self->rooms_button_->Enable(false);
+            self->connected_ = false;
+        });
+        ws_client_->SetOnError([self = this](const std::string& msg) {
+            wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
+        });
+        ws_client_->SetOnMessage([self = this](const std::string& msg) {
+            self->chat_history_->AppendText(msg);
+        });
 
-        rooms_frame_->Close();
-        message_handler_->GetTcpClient().Close();
-        pausable_thread_.Stop();
-        conection_button_->SetLabel("Connect");
-        rooms_button_->Enable(false);
-        connected_ = false;
+
+        ws_client_->Run();
+    } else {
+        message_handler_->LogoutUser();
+        message_handler_.reset();
+        ws_client_->Stop();
+        // rooms_frame_->Close();
+
     }
 
 }
@@ -165,7 +176,6 @@ void MainFrame::Load() {
 
     SetSize(width,height);
 }
-
 
 
 MainFrame::~MainFrame() {

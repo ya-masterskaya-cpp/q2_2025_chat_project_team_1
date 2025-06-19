@@ -3,23 +3,26 @@
 
 #include <wx/wx.h>
 
-#include "messages_handler.h"
+#include "message_handler.h"
 
 namespace gui {
 
 class LoginFrame : public wxDialog {
 public:
-    LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_handler,
-               const std::string& room_name);
+    LoginFrame(wxWindow* parent, domain::MessageHandler* message_handler);
     void OnSignUpButtonClicked(wxCommandEvent& event);
     void OnLoginButtonClicked(wxCommandEvent& event);
 
 private:
-    transfer::MessagesHandler* message_handler_;
-    const std::string room_name_;
+    domain::MessageHandler* message_handler_;
+    bool is_login_;
 
     wxTextCtrl* username_ctrl_;
     wxTextCtrl* password_ctrl_;
+
+
+    std::optional<Json::Value> Parse(const std::string& msg);
+    void OnClose(wxCloseEvent& event);
 };
 
 }   //namespace gui

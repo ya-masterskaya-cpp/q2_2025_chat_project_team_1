@@ -1,6 +1,7 @@
 #include "settings_frame.h"
 
 #include <wx/notebook.h>
+#include <regex>
 
 namespace gui {
 
@@ -52,6 +53,14 @@ SettingsFrame::SettingsFrame(wxWindow* parent, wxFileConfig* file_configs)
 }
 
 void SettingsFrame::OnSaveButtonClicked(wxCommandEvent& event) {
+    // std::regex ipRegex(R"(^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)
+    //         {3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(3[0-2]|[1-2]?\d))?$)");
+    // if (std::regex_match(std::string(ip_->GetValue().ToStdString()), ipRegex)) {
+    //     ip_->SetBackgroundColour(*wxWHITE);
+    // } else {
+    //     ip_->SetBackgroundColour(*wxRED);
+    // }
+
     Save();
 }
 

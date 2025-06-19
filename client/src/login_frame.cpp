@@ -1,19 +1,17 @@
 #include "login_frame.h"
 
-#include <service.h>
-#include <password_hasher.h>
-
 namespace gui {
 
-LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_handler,
-                       const std::string& room_name)
+LoginFrame::LoginFrame(wxWindow* parent, domain::MessageHandler* message_handler)
     : wxDialog(parent, wxID_ANY, "Authorization", wxDefaultPosition, wxSize(450, 150)),
-    message_handler_{message_handler}, room_name_{room_name} {
+    message_handler_{message_handler} {
+    Bind(wxEVT_CLOSE_WINDOW, &LoginFrame::OnClose, this);
 
     wxPanel* panel = new wxPanel(this);
 
     username_ctrl_ = new wxTextCtrl(panel, wxID_ANY);
-    password_ctrl_ = new wxTextCtrl(panel, wxID_ANY);
+    password_ctrl_ = new wxTextCtrl(panel, wxID_ANY,"",wxDefaultPosition,
+                                    wxDefaultSize,wxTE_PASSWORD);
 
     wxFlexGridSizer* main_sizer = new wxFlexGridSizer(3, 2, 5, 5);
     main_sizer->Add(new wxStaticText(panel, wxID_ANY, "Login:"),1);
@@ -34,29 +32,66 @@ LoginFrame::LoginFrame(wxWindow* parent, transfer::MessagesHandler* message_hand
 
 
     panel->SetSizer(main_sizer);
-
 }
 
 void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {
-    try {
-        message_handler_->Send(UserInterface::US_SrvMakeObjCreateUser(
-            username_ctrl_->GetValue().ToStdString(),
-                PasswordHasher::HashPassword(password_ctrl_->GetValue().ToStdString())));
-    } catch(const std::exception& e) {
-        wxMessageBox(e.what(), "On Sign up", wxOK | wxICON_WARNING);
+    auto res = message_handler_->RegisterUser(username_ctrl_->GetValue().ToStdString(),
+                                   password_ctrl_->GetValue().ToStdString());
+
+    if (!res.error_msg.empty())  {
+        wxMessageBox(res.error_msg, "Error", wxOK | wxICON_WARNING);
         return;
+    }
+
+    std::optional<Json::Value> parsed_val = Parse(res.msg);
+
+    if(res.status) {
+        wxMessageBox((*parsed_val)["info"].asString(), "Info", wxOK | wxICON_INFORMATION);
+    } else {
+        wxMessageBox((*parsed_val)["error"].asString(), "Warning", wxOK | wxICON_WARNING);
     }
 }
 
 void LoginFrame::OnLoginButtonClicked(wxCommandEvent& event) {
-    try {
-        message_handler_->Send(UserInterface::US_SrvMakeObjLogin(
-            username_ctrl_->GetValue().ToStdString(),
-            PasswordHasher::HashPassword(password_ctrl_->GetValue().ToStdString()),room_name_));
-    } catch(const std::exception& e) {
-        wxMessageBox(e.what(), "On Login", wxOK | wxICON_WARNING);
+    auto res = message_handler_->LoginUser(username_ctrl_->GetValue().ToStdString(),
+                                           password_ctrl_->GetValue().ToStdString());
+
+    if (!res.error_msg.empty())  {
+        wxMessageBox(res.error_msg, "Error", wxOK | wxICON_WARNING);
         return;
     }
+
+    if(res.status) {
+        std::optional<Json::Value> parsed_val = Parse(res.msg);
+        if(parsed_val) {
+            wxMessageBox((*parsed_val)["info"].asString(), "Info", wxOK | wxICON_INFORMATION);
+            Close();
+        } else {
+            wxMessageBox("Parse JSON Error", "Error", wxOK | wxICON_WARNING);
+        }
+    } else {
+        std::optional<Json::Value> parsed_val = Parse(res.msg);
+        if(parsed_val) {
+            wxMessageBox((*parsed_val)["error"].asString(), "Warning", wxOK | wxICON_WARNING);
+        } else {
+            wxMessageBox("Parse JSON Error", "Error", wxOK | wxICON_WARNING);
+        }
+    }
+}
+
+std::optional<Json::Value> LoginFrame::Parse(const std::string& msg) {
+    Json::CharReaderBuilder builder;
+    Json::Value parsed_val;
+    std::string err;
+    std::istringstream iss(msg);
+    if (!Json::parseFromStream(builder, iss, &parsed_val,&err)) {
+        return std::nullopt;
+    }
+    return parsed_val;
+}
+
+void LoginFrame::OnClose(wxCloseEvent& event) {
+    Destroy();
 }
 
 }   //namespace gui

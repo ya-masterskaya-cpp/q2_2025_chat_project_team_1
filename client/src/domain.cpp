@@ -1,0 +1,30 @@
+#include "domain.h"
+
+namespace domain {
+
+cpr::Response SendPostRequest(const std::string& endpoint, const Json::Value& body) {
+    Json::StreamWriterBuilder writer;
+    cpr::Header headers = {{"Content-Type", "application/json"}};
+    return cpr::Post(cpr::Url{endpoint}, headers, cpr::Body{Json::writeString(writer, body)},cpr::Timeout{2000});
+}
+
+cpr::Response SendPostRequest(const std::string& endpoint, const Json::Value& body,
+                                    const std::string& token) {
+    Json::StreamWriterBuilder writer;
+    cpr::Header headers = {{"Content-Type", "application/json"}};
+    headers["Authorization"] = "Bearer " + token;
+    return cpr::Post(cpr::Url{endpoint}, headers, cpr::Body{Json::writeString(writer, body)},cpr::Timeout{2000});
+}
+
+cpr::Response SendGetRequest(const std::string& endpoint) {
+    cpr::Header headers;
+    return cpr::Get(cpr::Url{endpoint}, headers,cpr::Timeout{2000});
+}
+
+cpr::Response SendGetRequest(const std::string& endpoint, const std::string& token) {
+    cpr::Header headers;
+    headers["Authorization"] = "Bearer " + token;
+    return cpr::Get(cpr::Url{endpoint}, headers,cpr::Timeout{2000});
+}
+
+}   //namespace domain
