@@ -32,7 +32,8 @@ public:
     bool LeaveRoom(const std::string& token);
     std::vector<std::string> GetRoomNames() const;
     std::string GetCurrentRoomName(const std::string& token) const;
-    std::vector<std::string> GetUserNamesInCurrentRoom(const std::string& token) const;
+    std::vector<std::string> GetUserNamesInCurrentRoom(const std::string& token) const; // TODO проверить избыточность метода
+    std::vector<std::string> GetUserNamesInRoom(const std::string& room_name) const;
 
 private:
     std::shared_ptr<User> GetUserByToken(const std::string& token) const;

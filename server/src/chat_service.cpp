@@ -103,6 +103,14 @@ std::vector<std::string> ChatService::GetUserNamesInCurrentRoom(const std::strin
     return room ? room->GetUserNames() : std::vector<std::string>{};
 }
 
+std::vector<std::string> ChatService::GetUserNamesInRoom(const std::string& room_name) const {
+    auto room = room_manager_->GetRoomByName(room_name);
+    if (!room) {
+        return {};
+    }
+    return room->GetUserNames();
+}
+
 std::shared_ptr<User> ChatService::GetUserByToken(const std::string& token) const {
     auto user_id_opt = token_manager_->GetUserIdByToken(token);
     if (!user_id_opt.has_value()) {
