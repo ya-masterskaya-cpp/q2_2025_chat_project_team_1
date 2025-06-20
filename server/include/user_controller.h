@@ -3,8 +3,8 @@
 #include "const_api.h"
 #include "http_utils.h"
 
-#include "token_storage.h" // TODO ветка server-business-logic - обертка всех менеджеров chat_service.h
-#include "chat_websocket.h" // список всех активных клиентов websocket
+#include "chat_service_plugin.h"
+#include "chat_websocket.h"
 
 #include <drogon/HttpController.h>
 #include <json/json.h>

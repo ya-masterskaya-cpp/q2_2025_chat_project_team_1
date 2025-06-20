@@ -1,7 +1,6 @@
 #pragma once
 
-#include "token_storage.h"
-#include "room_manager.h"
+#include "chat_service_plugin.h"
 
 #include <drogon/WebSocketController.h>
 #include <json/json.h>
@@ -28,7 +27,10 @@ public:
     static std::vector<std::string> GetConnectedUsers();
 
     // Рассылает сообщения: если to = "" - рассылка сообщения всем клиентам в комнате
-    static void Broadcast(const std::string& from, const std::string& to, const std::string& message);
+    //static void Broadcast(const std::string& from, const std::string& to, const std::string& message);
+
+    // Рассылка всем клиентам в комнате отправителя (токен для отправителя)
+    static void Broadcast(const std::string& token, const std::string& text);
 
     WS_PATH_LIST_BEGIN
         WS_PATH_ADD("/ws/chat", drogon::Get);

@@ -1,20 +1,29 @@
 #pragma once
 
+#include "chat_models.h"
+
+#include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
-#include <mutex>
+#include <vector>
 
 
-// Логика работы с клиентами для user_controller.h (REST API) + потокобезопасное хранилище клиентов
+namespace chat {
 
 class UserManager {
 public:
-    static UserManager& instance();
-
-    bool RegisterUser(const std::string& login, const std::string& password);
-    bool HasUser(const std::string& login, const std::string& password);
+    std::shared_ptr<User> RegisterUser(const std::string& name, const std::string& password_hash);
+    std::shared_ptr<User> GetUserById(ID id) const;
+    std::shared_ptr<User> GetUserByName(const std::string& name) const;
+    std::vector<std::shared_ptr<User>> GetAllUsers() const;
+    void RemoveUser(ID user_id);
 
 private:
-    std::unordered_map<std::string, std::string> users_db_; // TODO разнести и не хранить вместе имя и хэш пароля
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
+    ID next_user_id_ = 1;
+    std::unordered_map<ID, std::shared_ptr<User>> id_to_user_;
+    std::unordered_map<std::string, std::shared_ptr<User>> name_to_user_;
 };
+
+}  // namespace chat

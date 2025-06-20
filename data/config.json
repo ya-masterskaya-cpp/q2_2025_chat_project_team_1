@@ -14,6 +14,10 @@
     {
       "name": "LoggerPlugin",
       "type": "Global"
+    },
+    {
+      "name": "ChatServicePlugin",
+      "type": "Global"
     }
   ]
 }

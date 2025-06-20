@@ -2,6 +2,8 @@
 
 
 void RoomController::CreateRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    auto chat_service = ChatServicePlugin::GetService();
+
     // Токен авторизации не извлечен
     auto token_opt = http_utils::TryExtractToken(req);
     if (!token_opt) {
@@ -12,8 +14,7 @@ void RoomController::CreateRoom(const drogon::HttpRequestPtr &req, std::function
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    if (!chat_service->GetUserByToken(token)) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
@@ -34,7 +35,7 @@ void RoomController::CreateRoom(const drogon::HttpRequestPtr &req, std::function
     }
 
     // комната с таким именем уже есть
-    if (!RoomManager::instance().CreateRoom(name)) {
+    if (!chat_service->CreateRoom(name)) {
         http_utils::RespondWithError("Room already created", drogon::k409Conflict, std::move(callback));
         return;
     }
@@ -44,6 +45,8 @@ void RoomController::CreateRoom(const drogon::HttpRequestPtr &req, std::function
 }
 
 void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    auto chat_service = ChatServicePlugin::GetService();
+
     // Токен авторизации не извлечен
     auto token_opt = http_utils::TryExtractToken(req);
     if (!token_opt) {
@@ -54,8 +57,7 @@ void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<v
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    if (!chat_service->GetUserByToken(token)) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
@@ -76,7 +78,7 @@ void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<v
     }
 
     // нельзя перейти в ту же самую комнату или в несуществующую комнату
-    if (!RoomManager::instance().JoinRoom(user, name)) {
+    if (!chat_service->JoinRoom(token, name)) {
         http_utils::RespondWithError("Invalid room join", drogon::k400BadRequest, std::move(callback));
         return;
     }
@@ -87,6 +89,8 @@ void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<v
 
 // возврат в GENERAL_ROOM
 void RoomController::LeaveRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    auto chat_service = ChatServicePlugin::GetService();
+
     // Токен авторизации не извлечен
     auto token_opt = http_utils::TryExtractToken(req);
     if (!token_opt) {
@@ -97,14 +101,13 @@ void RoomController::LeaveRoom(const drogon::HttpRequestPtr &req, std::function<
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    if (!chat_service->GetUserByToken(token)) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
 
     // нельзя выйти из общей комнаты, находясь в ней
-    if (!RoomManager::instance().LeaveRoom(user)) {
+    if (!chat_service->LeaveRoom(token)) {
         http_utils::RespondWithError("Already in general room", drogon::k400BadRequest, std::move(callback));
         return;
     }
@@ -114,6 +117,8 @@ void RoomController::LeaveRoom(const drogon::HttpRequestPtr &req, std::function<
 }
 
 void RoomController::ListRooms(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    auto chat_service = ChatServicePlugin::GetService();
+
     // Токен авторизации не извлечен
     auto token_opt = http_utils::TryExtractToken(req);
     if (!token_opt) {
@@ -124,16 +129,14 @@ void RoomController::ListRooms(const drogon::HttpRequestPtr &req, std::function<
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    if (!chat_service->GetUserByToken(token)) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
 
     // успех - возвращаем список всех комнат
     Json::Value result(Json::arrayValue);
-
-    for (const auto &name : RoomManager::instance().ListRooms()) {
+    for (const auto &name : chat_service->GetRoomNames()) {
         result.append(name);
     }
 
@@ -144,6 +147,8 @@ void RoomController::ListRooms(const drogon::HttpRequestPtr &req, std::function<
 }
 
 void RoomController::CurrentRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    auto chat_service = ChatServicePlugin::GetService();
+
     // Токен авторизации не извлечен
     auto token_opt = http_utils::TryExtractToken(req);
     if (!token_opt) {
@@ -154,15 +159,14 @@ void RoomController::CurrentRoom(const drogon::HttpRequestPtr &req, std::functio
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    if (!chat_service->GetUserByToken(token)) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
 
     // успех - возвращаем текущую комнату пользователя
     Json::Value json;
-    json["room"] = RoomManager::instance().GetRoomOfUser(user);
+    json["room"] = chat_service->GetCurrentRoomName(token_opt.value());
 
     auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
     resp->setStatusCode(drogon::k200OK);
@@ -171,6 +175,8 @@ void RoomController::CurrentRoom(const drogon::HttpRequestPtr &req, std::functio
 }
 
 void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    auto chat_service = ChatServicePlugin::GetService();
+
     // Токен авторизации не извлечен
     auto token_opt = http_utils::TryExtractToken(req);
     if (!token_opt) {
@@ -181,8 +187,7 @@ void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::fun
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    if (!chat_service->GetUserByToken(token)) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
@@ -190,14 +195,17 @@ void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::fun
     const std::string room = req->getParameter("name");
 
     // комната не существует
-    if (!RoomManager::instance().HasRoom(room)) {
+    
+    if (!chat_service->HasRoom(room)) {
         http_utils::RespondWithError("Room not found", drogon::k404NotFound, std::move(callback));
         return;
     }
 
-    // успех - возвращаем список пользователей в комнате
+    // успех - список пользователей в указанной комнате
+    const auto users = chat_service->GetUserNamesInRoom(room);
+
     Json::Value result(Json::arrayValue);
-    for (const auto &username : RoomManager::instance().GetUsersInRoom(room)) {
+    for (const auto &username : users) {
         result.append(username);
     }
 

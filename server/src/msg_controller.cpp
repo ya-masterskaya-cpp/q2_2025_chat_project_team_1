@@ -2,6 +2,8 @@
 
 
 void MessageController::SendMessage(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+    auto chat_service = ChatServicePlugin::GetService();
+
     // Токен авторизации не извлечен
     auto token_opt = http_utils::TryExtractToken(req);
     if (!token_opt) {
@@ -12,8 +14,8 @@ void MessageController::SendMessage(const drogon::HttpRequestPtr &req, std::func
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    auto user = chat_service->GetUserByToken(token);
+    if (!user) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
@@ -25,7 +27,7 @@ void MessageController::SendMessage(const drogon::HttpRequestPtr &req, std::func
         return;
     }
 
-    std::string from = user; // имя было найдено HasUserByToken
+    std::string from = user->GetName();
     std::string text = (*json)["text"].asString(); // парсим текст
     std::string to = json->get("to", "").asString(); // находим получателя (рассылка внутри команты отправителя)
 
@@ -41,7 +43,8 @@ void MessageController::SendMessage(const drogon::HttpRequestPtr &req, std::func
     msg["text"] = text;
     std::string serialized = Json::FastWriter().write(msg); 
 
-    ChatWebSocket::Broadcast(from, to, serialized); // рассылка через WebSocket
+    //ChatWebSocket::Broadcast(from, to, serialized); // рассылка через WebSocket
+    ChatWebSocket::Broadcast(token, serialized);
 
     http_utils::RespondWithSuccess("Message sent", drogon::k200OK, std::move(callback));
 }

@@ -17,7 +17,8 @@ void ChatWebSocket::handleNewConnection(const drogon::HttpRequestPtr &req, const
     const std::string &token = it->second;
     std::string user;
 
-    if (!TokenStorage::instance().HasUserByToken(token, user)) {
+    auto chat_service = ChatServicePlugin::GetService();
+    if (!chat_service->GetUserByToken(token)) {
         conn->shutdown();
         std::cout << "[ChatWS] invalid token\n";
         return;
@@ -28,10 +29,11 @@ void ChatWebSocket::handleNewConnection(const drogon::HttpRequestPtr &req, const
         connections_[user] = conn;
     }
 
-    RoomManager::instance().JoinRoom(user, GENERAL_ROOM); // при логине пользователь появляется в общей комнате
+    // TODO!!! проверить появление пользователя в general есть ли в методе LOGIN? (если первое появление при входе и появление при входе после выхода)
+    //chat_service->JoinRoom(token, "general"); // при логине пользователь появляется в общей комнате 
 
-    std::cout << "[ChatWS] connected: " << user << "\n";
-    std::cout << "[ChatWS] client in room: " << RoomManager::instance().GetRoomOfUser(user) << "\n";
+    std::cout << "[ChatWS] connected: " << user << "\n"; // TODO отладка, нужны логи
+    std::cout << "[ChatWS] client in room: " << chat_service->GetCurrentRoomName(token) << "\n"; // TODO отладка, нужны логи
 }
 
 void ChatWebSocket::handleNewMessage(const drogon::WebSocketConnectionPtr &ws_conn, std::string &&message, const drogon::WebSocketMessageType &) {
@@ -42,31 +44,44 @@ void ChatWebSocket::handleNewMessage(const drogon::WebSocketConnectionPtr &ws_co
     }
 
     const std::string text = root.get("text", "").asString();
-    const std::string to = root.get("to", "").asString();
+    if (text.empty()) {
+        return;
+    }
 
-    std::string from;
+    std::string token;
+    
     {
         std::lock_guard<std::mutex> lock(conn_mutex_);
         for (const auto &[user, conn] : connections_) {
             if (conn == ws_conn) {
-                from = user;
+                // найти токен по имени пользователя
+                auto chat_service = ChatServicePlugin::GetService();
+                auto token_opt = chat_service->GetTokenByUserName(user);
+                if (token_opt) {
+                    token = token_opt.value();
+                }
                 break;
             }
         }
     }
-    if (from.empty()) {
+
+    if (token.empty()) {
         return;
     }
 
+    // сериализуем ответ
+    auto chat_service = ChatServicePlugin::GetService();
+    auto user_ptr = chat_service->GetUserByToken(token);
+    if (!user_ptr) return;
+
     Json::Value response;
-    response["from"] = from;
+    response["from"] = user_ptr->GetName();
     response["text"] = text;
 
     std::string serialized = Json::FastWriter().write(response);
 
-    std::cout << "[ChatWS] message received: " << text << " to " << (to.empty() ? "all" : to) << "\n";
-
-    Broadcast(from, to, serialized);
+    std::cout << "[ChatWS] message received: " << text << "\n"; // TODO отладка, нужны логи
+    Broadcast(token, serialized);
 }
 
 void ChatWebSocket::handleConnectionClosed(const drogon::WebSocketConnectionPtr &conn) {
@@ -74,7 +89,7 @@ void ChatWebSocket::handleConnectionClosed(const drogon::WebSocketConnectionPtr 
     for (auto it = connections_.begin(); it != connections_.end(); ++it) {
         if (it->second == conn) {
             std::cout << "[ChatWS] client disconnected: " << it->first << "\n";
-            RoomManager::instance().LeaveRoom(it->first);
+            //RoomManager::instance().LeaveRoom(it->first); // удаление по выходу в Logout
             connections_.erase(it);
             break;
         }
@@ -90,38 +105,19 @@ std::vector<std::string> ChatWebSocket::GetConnectedUsers() {
     return users;
 }
 
-void ChatWebSocket::Broadcast(const std::string &from, const std::string &to, const std::string &message) {
+//void ChatWebSocket::Broadcast(const std::string &from, const std::string &to, const std::string &message) {
+void ChatWebSocket::Broadcast(const std::string& token, const std::string& message) {
     std::lock_guard<std::mutex> lock(conn_mutex_);
-    const std::string fromRoom = RoomManager::instance().GetRoomOfUser(from);
 
-    // по умолчанию - сообщение рассылается всем клиентам в комнате
-    if (to.empty()) {
-        std::cout << "[ChatWS] broadcast to room: " << fromRoom << "\n";
-        for (const auto &[user, conn] : connections_) {
-            if (RoomManager::instance().GetRoomOfUser(user) == fromRoom) {
-                conn->send(message);
-            }
-        }
-    // опция - ищем конкретного клиента в комнате, для персонального сообщения
-    } else {
-        auto it = connections_.find(to);
-        if (it != connections_.end()) {
-            const std::string toRoom = RoomManager::instance().GetRoomOfUser(to);
-            if (toRoom == fromRoom) {
-                std::cout << "[ChatWS] send message to: " << to << "\n";
-                it->second->send(message);
-            } else {
-                std::cout << "[ChatWS] unnable send to " << to << ": different room\n";
-                auto senderIt = connections_.find(from);
-                if (senderIt != connections_.end()) {
-                    Json::Value warn;
-                    warn["from"] = "system";
-                    warn["text"] = "unnable send message to " + to + " different room\n";
-                    senderIt->second->send(Json::FastWriter().write(warn));
-                }
-            }
-        } else {
-            std::cout << "[ChatWS] client not connected: " << to << "\n";
+    auto chat_service = ChatServicePlugin::GetService();
+    auto room_name = chat_service->GetCurrentRoomName(token);
+
+    std::cout << "[ChatWS] broadcast in room: " << room_name << "\n"; // TODO отладка, нужны логи
+
+    auto room_user_names = chat_service->GetUserNamesInCurrentRoom(token);
+    for (const auto &[user, conn] : connections_) {
+        if (std::find(room_user_names.begin(), room_user_names.end(), user) != room_user_names.end()) {
+            conn->send(message);
         }
     }
 }

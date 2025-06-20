@@ -21,7 +21,8 @@ void AuthController::RegisterUser(const drogon::HttpRequestPtr &req, std::functi
     }
 
     // пользователь уже зарегистрирован
-    if (!UserManager::instance().RegisterUser(login, password)) {
+    auto chat_service = ChatServicePlugin::GetService();
+    if (!chat_service->Register(login, password)) {
         http_utils::RespondWithError("User already registred", drogon::k409Conflict, std::move(callback));
         return;
     }
@@ -30,7 +31,8 @@ void AuthController::RegisterUser(const drogon::HttpRequestPtr &req, std::functi
     http_utils::RespondWithSuccess("Registration successful", drogon::k201Created, std::move(callback));
 }
 
-void AuthController::LoginUser(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+void AuthController::LoginUser(const drogon::HttpRequestPtr &req,
+                                std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
     auto json = req->getJsonObject();
 
     // нет нужных полей, невалидный json
@@ -48,30 +50,17 @@ void AuthController::LoginUser(const drogon::HttpRequestPtr &req, std::function<
         return;
     }
 
-    // пользователь ранее не был зарегистрирован
-    if (!UserManager::instance().HasUser(login, password)) {
+    // TODO удалить случай "User already logged in"
+    auto chat_service = ChatServicePlugin::GetService();
+    auto token_opt = chat_service->Login(login, password); // выполняем вход и получаем токен
+    if (!token_opt.has_value()) {
         http_utils::RespondWithError("Invalid login or password", drogon::k401Unauthorized, std::move(callback));
         return;
     }
 
-    std::string empty_password = ""; // достаточно проверить по имени
-
-    // пользователь не может войти, если не вышел из чата (токен не был анулирован)
-    if (TokenStorage::instance().HasTokenByUser(login, empty_password)) {
-        http_utils::RespondWithError("User already logged in", drogon::k403Forbidden, std::move(callback));
-        return;
-    }
-
     // успешный вход // TODO исправить проблему, когда валидный запрос шлёт залогиненный клиент
-    const std::string token = Token::GENERATOR.GenerateHEXToken(); // 1. генерим новый токен
-
-    std::cout << "User: " << login << " has token:" << token << "\n"; // Для отладки в консоли
-    std::cout << "User: " << login << " has password hash:" << password << "\n"; // Для отладки в консоли
-
-    TokenStorage::instance().SaveToken(login, token); // 2. сохраняем токен, старый токен удаляется
-
     Json::Value result;
-    result["token"] = token;
+    result["token"] = token_opt.value();
     auto resp = drogon::HttpResponse::newHttpJsonResponse(result);
     resp->setStatusCode(drogon::k200OK);
     callback(resp);
@@ -89,14 +78,11 @@ void AuthController::LogoutUser(const drogon::HttpRequestPtr &req, std::function
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    std::string user = "";
-    if (!TokenStorage::instance().HasUserByToken(token, user)) { 
+    auto chat_service = ChatServicePlugin::GetService();
+    if (!chat_service->Logout(token)) { 
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
-
-    // Успешный выход из чата (удаляем токен и пользователя из комнаты)
-    TokenStorage::instance().RemoveToken(token); // удаляем токен из user_to_token_, token_to_user_
 
     http_utils::RespondWithSuccess("Logged out", drogon::k200OK, std::move(callback));
 }

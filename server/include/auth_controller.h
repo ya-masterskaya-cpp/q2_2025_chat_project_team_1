@@ -3,10 +3,7 @@
 #include "const_api.h"
 #include "http_utils.h"
 
-#include "user_manager.h" // TODO ветка server-business-logic - обертка всех менеджеров chat_service.h
-#include "token_generator.h"
-#include "token_storage.h"
-#include "room_manager.h"
+#include "chat_service_plugin.h"
 
 #include <drogon/HttpController.h>
 #include <json/json.h>
