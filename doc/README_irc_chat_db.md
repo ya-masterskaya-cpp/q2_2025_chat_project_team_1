@@ -41,13 +41,25 @@
   - `Save(const std::string& username, const std::string& password_hash)`
   - `std::vector<UserRecord> LoadAll() const`
   - `std::optional<UserRecord> FindByUsername(const std::string&) const`
+  - `std::optional<UserRecord> FindById(const UserId&) const`
+  - `void DeleteByUsername(const std::string&) const`
   - `std::vector<UserRecord> LoadPage(int offset, int limit) const;`
+  - `std::unordered_map<std::string, std::string> LoadUserMap() const;`
 
 #### `RoomsRepository`
-- **Методы:** `Save`, `LoadAll`, `LoadPage`
+- **Методы:**
+  - `Save(const std::string&)`
+  - `std::vector<RoomRecord> LoadAll() const`
+  - `std::optional<RoomRecord> FindByName(const std::string&) const`
+  - `void DeleteById(const RoomId&) const`
+  - `std::vector<RoomRecord> LoadPage(int offset, int limit) const`
 
 #### `MessagesRepository`
-- **Методы:** `Save`, `LoadRecent`, `LoadPage`
+- **Методы:**
+  - `Save(const UserId&, const RoomId&, const std::string&)`
+  - `std::vector<MessageRecord> LoadRecent(const RoomId&, int max_items) const`
+  - `std::vector<MessageRecord> LoadPage(const RoomId&, int offset, int limit) const`
+  - `void DeleteById(const MessageId&) const`
 
 #### `RoomMembersRepository`
 - **Методы:**
@@ -63,53 +75,73 @@
 - **Назначение:** Инициализация и миграция базы данных (создание таблиц), предоставление транзакций.
 - **Метод:** `GetTransaction()` — получить соединение для транзакции.
 
-### 6. `IRCDBWrapper` (обертка для работы с БД)
+---
 
-- **Назначение:** Упрощённый высокоуровневый класс для базовых операций с БД без прямого взаимодействия с репозиториями.
+### 6. `IRCDBWrapper` (высокоуровневая обёртка для работы с БД)
+
+- **Назначение:** Класс для базовых операций с БД без прямого взаимодействия с репозиториями.
 - **Основные методы:**
-    - `IRCDBWrapper(host, port, dbname, user, password[, pool_size])` - конструктор.
-    - `AddUserToDB(name, pass_hash)` - добавить пользователя; возвращает {удачно, описание ошибки}.
-    - `GetAllUsers()` - получить всех пользователей в виде unordered_map<имя, хеш>.
-- **Особенности:** Внутри автоматически инициализирует таблицы при первом создании.
+
+#### Работа с пользователями
+- `AddUserToDB(name, pass_hash)` — добавить пользователя.
+- `GetAllUsers()` — получить map<имя, хеш>.
+- `FindUserByName(username)` — найти пользователя по имени.
+- `FindUserById(id)` — найти пользователя по id.
+- `DeleteUserByName(username)` — удалить пользователя по имени.
+
+#### Работа с комнатами
+- `AddRoomToDB(room_name)` — создать комнату.
+- `FindRoomByName(room_name)` — найти комнату по имени.
+- `DeleteRoomByName(room_name)` — удалить комнату по имени.
+- `GetAllRooms()` — все комнаты.
+- `GetRoomsPage(offset, limit)` — пагинация комнат.
+
+#### Участие в комнатах
+- `AddUserToRoomByName(username, roomname)` — добавить пользователя в комнату по именам.
+- `RemoveUserFromRoomByName(username, roomname)` — удалить пользователя из комнаты по именам.
+
+#### Работа с сообщениями
+- `AddMessage(username, roomname, text)` — добавить сообщение от пользователя в комнату.
+- `GetRecentMessages(roomname, max_items)` — последние N сообщений комнаты.
+- `GetRoomMessagesPage(roomname, offset, limit)` — сообщения комнаты с пагинацией.
+- `DeleteMessageById(message_id)` — удалить сообщение по id.
 
 ---
 
 ## 🔄 Пагинация (постраничная выборка)
 
-В репозиториях пользователей, комнат и сообщений теперь доступны методы **постраничной выборки** (пагинации):
-
-### Методы пагинации
-
-#### `UsersRepository`
-- `std::vector<UserRecord> LoadPage(int offset, int limit) const`
-    - Загружает пользователей, начиная с позиции `offset`, не более `limit` штук (сортировка: самые новые сначала).
-
-#### `RoomsRepository`
-- `std::vector<RoomRecord> LoadPage(int offset, int limit) const`
-    - Загружает комнаты постранично по аналогии с пользователями.
-
-#### `MessagesRepository`
-- `std::vector<MessageRecord> LoadPage(const RoomId& room_id, int offset, int limit) const`
-    - Получает сообщения из заданной комнаты постранично (от новых к старым).
+В репозиториях пользователей, комнат и сообщений доступны методы постраничной выборки (пагинации):
+- `UsersRepository::LoadPage(offset, limit)`
+- `RoomsRepository::LoadPage(offset, limit)`
+- `MessagesRepository::LoadPage(room_id, offset, limit)`
 
 ---
 
-### Пример использования пагинации
+## 🛠️ Примеры использования
 
 ```cpp
-pqxx::work tx(*conn);
+IRCDBWrapper db("host=localhost dbname=test_db user=test_user password=test_password");
 
-// --- Пагинация пользователей
-UsersRepository users_repo(tx);
-auto users_page = users_repo.LoadPage(0, 20); // первые 20 пользователей
+// Пользователи
+db.AddUserToDB("alice", "hash");
+auto user = db.FindUserByName("alice");
+db.DeleteUserByName("alice");
 
-// --- Пагинация комнат
-RoomsRepository rooms_repo(tx);
-auto rooms_page = rooms_repo.LoadPage(20, 10); // начиная с 21-й комнаты, 10 штук
+// Комнаты
+db.AddRoomToDB("main");
+auto room = db.FindRoomByName("main");
+db.DeleteRoomByName("main");
+auto all_rooms = db.GetAllRooms();
+auto page = db.GetRoomsPage(0, 2);
 
-// --- Пагинация сообщений в комнате
-MessagesRepository messages_repo(tx);
-auto messages_page = messages_repo.LoadPage(room_id, 0, 50); // первые 50 сообщений в комнате
+// Участие в комнатах
+db.AddUserToRoomByName("alice", "main");
+db.RemoveUserFromRoomByName("alice", "main");
+
+// Сообщения
+db.AddMessage("alice", "main", "Hello, chat!");
+auto msgs = db.GetRecentMessages("main", 5);
+if (!msgs.empty()) db.DeleteMessageById(msgs[0].id);
 ```
 
 ---
@@ -130,15 +162,15 @@ CREATE TABLE IF NOT EXISTS rooms (
 );
 CREATE TABLE IF NOT EXISTS messages (
     id UUID PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES users(id),
-    room_id UUID NOT NULL REFERENCES rooms(id),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     message TEXT NOT NULL,
     sent_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS room_members (
     id UUID PRIMARY KEY,
-    room_id UUID NOT NULL REFERENCES rooms(id),
-    user_id UUID NOT NULL REFERENCES users(id),
+    room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     joined_at TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE(room_id, user_id)
 );
@@ -146,173 +178,20 @@ CREATE TABLE IF NOT EXISTS room_members (
 
 ---
 
-## 🛠️ Примеры использования
-
-### Инициализация
-
-```cpp
-auto db = std::make_shared<postgres::Database>(
-    std::make_shared<postgres::ConnectionPool>(num_threads, []() {
-        return std::make_shared<pqxx::connection>("<Строка подключения>");
-    }));
-```
-
-### Добавление пользователя
-
-```cpp
-#include <openssl/sha.h>
-#include <iomanip>
-#include <sstream>
-
-std::string HashPassword(const std::string& password) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256(reinterpret_cast<const unsigned char*>(password.c_str()), password.size(), hash);
-    std::ostringstream oss;
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
-        oss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-    return oss.str();
-}
-
-auto conn = db->GetTransaction();
-pqxx::work tx(*conn);
-UsersRepository users_repo(tx);
-users_repo.Save("alice", HashPassword("secure_password"));
-tx.commit();
-```
-
-### Проверка пароля
-
-```cpp
-pqxx::work tx(*conn);
-UsersRepository users_repo(tx);
-auto user = users_repo.FindByUsername("alice");
-if (user && user->password_hash == HashPassword("secure_password")) {
-    // Успешная авторизация
-}
-```
-
-### Работа с комнатами и участниками
-
-```cpp
-RoomsRepository rooms_repo(tx);
-rooms_repo.Save("general");
-auto rooms = rooms_repo.LoadAll();
-
-RoomMembersRepository members_repo(tx);
-members_repo.Save(user->id, rooms[0].id); // Добавить пользователя в комнату
-auto members = members_repo.LoadMembers(rooms[0].id);
-```
-
-### Сообщения
-
-```cpp
-MessagesRepository messages_repo(tx);
-messages_repo.Save(user->id, rooms[0].id, "Hello, world!");
-auto recent = messages_repo.LoadRecent(rooms[0].id, 10);
-```
-
----
-
 ## 🧪 Тестирование
 
-### Сведения
-
-- Покрытие: все основные репозитории и бизнес-операции.
-- Проверка: создание, выборка, корректность данных, ошибки, граничные ситуации.
-
-### Для тестирования
-
-- Используется изолированная тестовая база (Docker-контейнер легко сбрасывать между тестами).
-- Не использовать production-базу для тестов!
-
-### 🐳 Использование Docker для базы данных
-
-Контейнер с PostgreSQL разворачивается с помощью Docker Compose.
-
-#### Конфигурация
-
-В корне проекта: [`docker-compose.yml`](./docker-compose.yml).
-
-##### Пример содержимого:
-
-```yaml
-version: "3.8"
-services:
-  postgres:
-    image: postgres:15
-    container_name: irc_chat_postgres
-    environment:
-      POSTGRES_USER: test_user
-      POSTGRES_PASSWORD: test_password
-      POSTGRES_DB: test_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-volumes:
-  pgdata:
-```
-
-#### Запуск и остановка
-
-- **Запуск:** `docker compose up -d`
-- **Остановка:** `docker compose down`
-- **Удаление данных:** `docker compose down -v`
-
-#### Подключение из кода
-
-```cpp
-pqxx::connection conn("host=localhost port=5432 user=test_user password=test_password dbname=test_db");
-```
-
----
-
-#### Сборка и запуск тестов
-
-1. **Сборка:**
-    ```sh
-    mkdir build
-    cd build
-    cmake ..
-    make
-    ```
-   (Если используешь vcpkg, добавь `-DCMAKE_TOOLCHAIN_FILE=.../vcpkg/scripts/buildsystems/vcpkg.cmake`)
-
-2. **Запуск:**
-    ```sh
-    docker compose up -d
-    ./run_tests
-    ```
-   Пример вывода:
-    ```
-    [==========] Running X tests from Y test suites.
-    ...
-    [  PASSED  ] X tests.
-    [  FAILED  ] Y tests.
-    ```
-
-3. **Фильтрация тестов:**
-    ```sh
-    ./run_tests --gtest_filter=PostgresRepoTest.UsersRepository_SaveAndLoadAndFind
-    ./run_tests --gtest_filter=PostgresRepoTest.*
-    ```
-
-4. **Отладка:**  
-   Поддерживается в IDE (CLion, VS Code, tagget `run_tests`).
-
-### Важно
-
-- Тесты используют отдельную тестовую базу.
-- Перед запуском тестов — база должна быть “чистой” или запускаться в отдельном контейнере.
-- Все миграции и создание таблиц — через `IF NOT EXISTS`.
+- Все основные методы обёртки `IRCDBWrapper` (пользователи, комнаты, участие, сообщения) покрыты автотестами в `test_postgres.cpp`.
+- Тесты учитывают особенности временных меток: для корректной сортировки между вставками используется пауза (`std::this_thread::sleep_for`).
+- Используется отдельная тестовая база (Docker-контейнер легко сбрасывать между тестами).
+- Перед запуском тестов база должна быть “чистой” или запускаться в отдельном контейнере.
 
 ---
 
 ## 📚 Архитектурные принципы
 
-- **Repository Pattern**: каждый репозиторий — только для своей сущности, бизнес-логика вне.
-- **Thread-safe Connection Pool**: многопоточность из коробки.
-- **UUID everywhere**: идентификаторы только через типизированные UUID.
+- **Repository Pattern:** каждый репозиторий — только для своей сущности, бизнес-логика вне.
+- **Thread-safe Connection Pool:** многопоточность из коробки.
+- **UUID everywhere:** идентификаторы только через типизированные UUID.
 - **Хеширование паролей:** не хранить пароли в открытом виде.
 
 ---
@@ -332,3 +211,5 @@ pqxx::connection conn("host=localhost port=5432 user=test_user password=test_pas
 - `tagged_uuid.h` — UUID для сущностей
 - `postgres.h/.cpp` — репозитории, пул соединений, Database
 - `db_wrapper.h/.cpp` — обёртка для высокоуровневого доступа к пользователям ([см. отдельный README](README_db_wrapper.md))
+
+---

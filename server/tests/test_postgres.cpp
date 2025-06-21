@@ -303,7 +303,7 @@ TEST_F(PostgresRepoTest, RoomMembersRepository_LoadRoomsByUser) {
 
 // --- IRCDBWrapper: AddUserToDB и GetAllUsers ---
 TEST_F(PostgresRepoTest, Wrapper_AddUserToDB_And_GetAllUsers) {
-    IRCDBWrapper wrapper("localhost", 5432, "test_db", "test_user", "test_password");
+    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
 
     auto [ok1, err1] = wrapper.AddUserToDB("vasya", "pass_111");
     EXPECT_TRUE(ok1);
@@ -321,6 +321,117 @@ TEST_F(PostgresRepoTest, Wrapper_AddUserToDB_And_GetAllUsers) {
     EXPECT_EQ(users.size(), 2);
     EXPECT_EQ(users.at("vasya"), "pass_111");
     EXPECT_EQ(users.at("petya"), "pass_222");
+}
+
+// --- IRCDBWrapper: User find by id/name, remove by name ---
+TEST_F(PostgresRepoTest, Wrapper_FindUserByIdAndByName_And_DeleteUser) {
+    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+
+    wrapper.AddUserToDB("u1", "h1");
+    wrapper.AddUserToDB("u2", "h2");
+    auto user = wrapper.FindUserByName("u1");
+    ASSERT_TRUE(user);
+    auto user_by_id = wrapper.FindUserById(user->id);
+    ASSERT_TRUE(user_by_id);
+    EXPECT_EQ(user_by_id->username, "u1");
+
+    // Delete
+    bool deleted = wrapper.DeleteUserByName("u1");
+    EXPECT_TRUE(deleted);
+    EXPECT_FALSE(wrapper.FindUserByName("u1"));
+    EXPECT_FALSE(wrapper.DeleteUserByName("u1")); // Повторно — не найден
+}
+
+// --- IRCDBWrapper: Room create/find/delete, get all, page ---
+TEST_F(PostgresRepoTest, Wrapper_AddRoom_FindRoom_DeleteRoom_GetAllRooms_Pagination) {
+    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+
+    // Add two rooms
+    auto [ok1, err1] = wrapper.AddRoomToDB("r1");
+    EXPECT_TRUE(ok1);
+    EXPECT_EQ(err1, "");
+    auto [ok2, err2] = wrapper.AddRoomToDB("r2");
+    EXPECT_TRUE(ok2);
+
+    // Повтор — комната уже есть
+    auto [ok3, err3] = wrapper.AddRoomToDB("r1");
+    EXPECT_FALSE(ok3);
+
+    // Поиск по имени
+    auto room = wrapper.FindRoomByName("r2");
+    ASSERT_TRUE(room);
+    EXPECT_EQ(room->name, "r2");
+
+    // Get all
+    auto rooms = wrapper.GetAllRooms();
+    EXPECT_EQ(rooms.size(), 2);
+
+    // Пагинация
+    auto page = wrapper.GetRoomsPage(0, 1);
+    EXPECT_EQ(page.size(), 1);
+    EXPECT_EQ(page[0].name, "r2"); // Последняя созданная (DESC)
+
+    // Удаление
+    auto [okdel, errdel] = wrapper.DeleteRoomByName("r2");
+    EXPECT_TRUE(okdel);
+    EXPECT_FALSE(wrapper.FindRoomByName("r2"));
+}
+
+// --- IRCDBWrapper: User add/remove to/from room by name ---
+TEST_F(PostgresRepoTest, Wrapper_AddAndRemoveUserToRoomByName) {
+    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    wrapper.AddUserToDB("alice", "pa");
+    wrapper.AddRoomToDB("main");
+
+    auto [addok, adderr] = wrapper.AddUserToRoomByName("alice", "main");
+    EXPECT_TRUE(addok);
+
+    // Повтор — не вызывает ошибку (ON CONFLICT DO NOTHING)
+    auto [addok2, adderr2] = wrapper.AddUserToRoomByName("alice", "main");
+    EXPECT_TRUE(addok2);
+
+    // Удаление
+    auto [remok, remerr] = wrapper.RemoveUserFromRoomByName("alice", "main");
+    EXPECT_TRUE(remok);
+
+    // Повторное удаление — не ошибка (просто нет связи)
+    auto [remok2, remerr2] = wrapper.RemoveUserFromRoomByName("alice", "main");
+    EXPECT_TRUE(remok2);
+}
+
+// --- IRCDBWrapper: Add and get messages, pagination, delete message ---
+TEST_F(PostgresRepoTest, Wrapper_AddMessage_GetMessages_DeleteMessage) {
+    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    wrapper.AddUserToDB("bob", "p1");
+    wrapper.AddRoomToDB("talk");
+    wrapper.AddUserToRoomByName("bob", "talk");
+
+    // Несколько сообщений — в разных транзакциях, чтобы метки времени отличались!
+    std::vector<postgres::MessageId> ids;
+    for (int i = 0; i < 3; ++i) {
+        auto [ok, err] = wrapper.AddMessage("bob", "talk", "msg" + std::to_string(i + 1));
+        EXPECT_TRUE(ok);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    auto msgs = wrapper.GetRecentMessages("talk", 10);
+    ASSERT_EQ(msgs.size(), 3);
+    EXPECT_EQ(msgs[0].message, "msg3");
+    EXPECT_EQ(msgs[1].message, "msg2");
+    EXPECT_EQ(msgs[2].message, "msg1");
+
+    // Пагинация
+    auto page = wrapper.GetRoomMessagesPage("talk", 1, 2);
+    EXPECT_EQ(page.size(), 2);
+    EXPECT_EQ(page[0].message, "msg2");
+    EXPECT_EQ(page[1].message, "msg1");
+
+    // Удаление сообщения
+    auto id = msgs[1].id; // id второго сообщения (msg2)
+    EXPECT_TRUE(wrapper.DeleteMessageById(id));
+    auto after_del = wrapper.GetRecentMessages("talk", 10);
+    ASSERT_EQ(after_del.size(), 2);
+    EXPECT_EQ(after_del[0].message, "msg3");
+    EXPECT_EQ(after_del[1].message, "msg1");
 }
 
 // --- TaggedUUID ---

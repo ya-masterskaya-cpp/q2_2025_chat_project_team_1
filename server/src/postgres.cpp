@@ -81,6 +81,23 @@ std::vector<UserRecord> UsersRepository::LoadAll() const {
     return result;
 }
 
+std::optional<UserRecord> UsersRepository::FindById(const UserId &id) const
+{
+    const pqxx::result res = transaction_.exec(
+        "SELECT id, username, password_hash, registered_at FROM users WHERE id = $1;",
+        pqxx::params(id.ToString())
+    );
+    if (res.empty())
+        return std::nullopt;
+    const auto& row = res[0];
+    return UserRecord{
+        UserId::FromString(row[0].as<std::string>()),
+        row[1].as<std::string>(),
+        row[2].as<std::string>(),
+        row[3].as<std::string>()
+    };
+}
+
 std::optional<UserRecord> UsersRepository::FindByUsername(const std::string &username) const
 {
     const pqxx::result res = transaction_.exec(
@@ -95,6 +112,15 @@ std::optional<UserRecord> UsersRepository::FindByUsername(const std::string &use
         row[2].as<std::string>(), // password_hash
         row[3].as<std::string>()
     };
+}
+
+bool UsersRepository::DeleteByUsername(const std::string &username) const
+{
+    auto res = transaction_.exec(
+        "DELETE FROM users WHERE username = $1;",
+        pqxx::params(username)
+    );
+    return res.affected_rows() > 0;
 }
 
 std::vector<UserRecord> UsersRepository::LoadPage(int offset, int limit) const
@@ -140,6 +166,22 @@ void RoomsRepository::Save(const std::string &name) const {
     );
 }
 
+std::optional<RoomRecord> RoomsRepository::FindByName(const std::string &name) const
+{
+    const pqxx::result res = transaction_.exec(
+        "SELECT id, name, created_at FROM rooms WHERE name = $1;",
+        pqxx::params(name)
+        );
+    if (res.empty())
+        return std::nullopt;
+    const auto& row = res[0];
+    return RoomRecord{
+        RoomId::FromString(row[0].as<std::string>()),
+        row[1].as<std::string>(),
+        row[2].as<std::string>()
+    };
+}
+
 std::vector<RoomRecord> RoomsRepository::LoadAll() const {
     std::vector<RoomRecord> result;
     const pqxx::result query_result = transaction_.exec(
@@ -171,6 +213,14 @@ std::vector<RoomRecord> RoomsRepository::LoadPage(int offset, int limit) const {
         });
     }
     return result;
+}
+
+void RoomsRepository::DeleteById(const RoomId &id) const
+{
+    transaction_.exec(
+        "DELETE FROM rooms WHERE id = $1;",
+        pqxx::params(id.ToString())
+    );
 }
 
 // ---- MessagesRepository ----
@@ -224,6 +274,14 @@ std::vector<MessageRecord> MessagesRepository::LoadPage(const RoomId& room_id, i
         });
     }
     return result;
+}
+
+void MessagesRepository::DeleteById(const MessageId &id) const
+{
+    transaction_.exec(
+        "DELETE FROM messages WHERE id = $1;",
+        pqxx::params(id.ToString())
+    );
 }
 
 // ---- RoomMembersRepository ----
@@ -309,8 +367,8 @@ Database::Database(std::shared_ptr<ConnectionPool> pool_ptr)
             CREATE INDEX IF NOT EXISTS idx_rooms_created_at ON rooms(created_at);
             CREATE TABLE IF NOT EXISTS messages (
                 id UUID PRIMARY KEY,
-                user_id UUID NOT NULL REFERENCES users(id),
-                room_id UUID NOT NULL REFERENCES rooms(id),
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
                 message TEXT NOT NULL,
                 sent_at TIMESTAMP NOT NULL DEFAULT clock_timestamp()
             );
@@ -318,8 +376,8 @@ Database::Database(std::shared_ptr<ConnectionPool> pool_ptr)
             CREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);
             CREATE TABLE IF NOT EXISTS room_members (
                 id UUID PRIMARY KEY,
-                room_id UUID NOT NULL REFERENCES rooms(id),
-                user_id UUID NOT NULL REFERENCES users(id),
+                room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 joined_at TIMESTAMP NOT NULL DEFAULT clock_timestamp(),
                 UNIQUE(room_id, user_id)
             );
