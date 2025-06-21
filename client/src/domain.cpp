@@ -26,14 +26,13 @@ cpr::Response SendGetRequest(const std::string& endpoint, const std::string& tok
     headers["Authorization"] = "Bearer " + token;
     return cpr::Get(cpr::Url{endpoint}, headers,cpr::Timeout{2000});
 }
-
-std::optional<Json::Value> Parse(const std::string& msg) {
+Json::Value Parse(const std::string& msg) {
     Json::CharReaderBuilder builder;
     Json::Value parsed_val;
     std::string err;
     std::istringstream iss(msg);
     if (!Json::parseFromStream(builder, iss, &parsed_val,&err)) {
-        return std::nullopt;
+        assert(false);
     }
     return parsed_val;
 }

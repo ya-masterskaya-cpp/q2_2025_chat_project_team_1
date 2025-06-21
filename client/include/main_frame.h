@@ -35,6 +35,8 @@ private:
     //gui
     wxTextCtrl* chat_history_;
     wxTextCtrl* message_input_;
+    wxStatusBar* status_bar_;
+
     wxButton* rooms_button_{nullptr};
     wxButton* conection_button_{nullptr};
     RoomsFrame* rooms_frame_{nullptr};

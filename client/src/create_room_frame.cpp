@@ -1,11 +1,9 @@
 #include "create_room_frame.h"
 
-#include <service.h>
-
 namespace  gui {
 
 
-CreateRoomFrame::CreateRoomFrame(wxWindow* parent, transfer::MessagesHandler* message_handler)
+CreateRoomFrame::CreateRoomFrame(wxWindow* parent, domain::MessageHandler* message_handler)
     : wxFrame(parent, wxID_ANY, "Create Room",{},{250,70},wxDEFAULT_FRAME_STYLE & ~wxRESIZE_BORDER),
                 message_handler_{message_handler} {
     Bind(wxEVT_CLOSE_WINDOW, &CreateRoomFrame::OnClose, this);
@@ -27,15 +25,34 @@ CreateRoomFrame::CreateRoomFrame(wxWindow* parent, transfer::MessagesHandler* me
 }
 
 void CreateRoomFrame::OnEnterButtonClicked(wxCommandEvent& event) {
-    std::string value = room_name_input_->GetValue().ToStdString();
-    if(!value.empty()) {
-        try {
-            message_handler_->Send(UserInterface::US_SrvMakeObjCreateRoom(value));
-        } catch(const std::exception& e) {
-            wxMessageBox(e.what(), "On Room name send", wxOK | wxICON_WARNING);
+
+    std::string room_name = room_name_input_->GetValue().ToStdString();
+
+    if(room_name.empty()) {
+        wxMessageBox("Empty room name" , "Error", wxOK | wxICON_ERROR);
+        return;
+    }
+
+    auto res = message_handler_->CreateRoom(room_name);
+
+    if (!res.error_msg.empty())  {
+        wxMessageBox(res.error_msg, "Error", wxOK | wxICON_ERROR);
+        return;
+    }
+
+    Json::Value parsed_val = domain::Parse(res.msg);
+
+
+    if(res.status) {
+        if(on_update_) {
+            (*on_update_)();
         }
         Close();
+    } else {
+        wxMessageBox(parsed_val["error"].asString(), "Error", wxOK | wxICON_ERROR);
+        return;
     }
+
 }
 
 }   //namespace gui

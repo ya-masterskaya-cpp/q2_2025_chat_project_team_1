@@ -7,17 +7,23 @@
 
 namespace gui {
 
+using ObserveFunc = std::optional<std::function<void()>>;
+
 class CreateRoomFrame : public wxFrame {
 public:
-    CreateRoomFrame(wxWindow* parent, transfer::MessagesHandler* message_handler);
+    CreateRoomFrame(wxWindow* parent, domain::MessageHandler* message_handler);
     void OnEnterButtonClicked(wxCommandEvent& event);
 
-private:
-    transfer::MessagesHandler* message_handler_;
-    wxTextCtrl* room_name_input_;
+    void SetOnUpdate(std::function<void()> on_update) {
+        on_update_ = on_update;
+    }
 
-    void OnClose(wxCloseEvent& event)
-    {
+private:
+    domain::MessageHandler* message_handler_;
+    wxTextCtrl* room_name_input_;
+    ObserveFunc on_update_;
+
+    void OnClose(wxCloseEvent& event){
         Destroy();
     }
 };

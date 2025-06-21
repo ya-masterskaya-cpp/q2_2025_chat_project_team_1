@@ -15,10 +15,11 @@ MainFrame::MainFrame(const wxString& title)
 
     //settings
     wxString config_path = wxStandardPaths::Get().GetUserConfigDir() + "/" + "settings.ini";
-    std::cout << config_path << std::endl;
 
     file_configs_ = std::make_unique<wxFileConfig>("IRC-chat", wxEmptyString, config_path,
                                                 wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
+
+    Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
 
     // chat history
     chat_history_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxSize(400, 300),
@@ -59,7 +60,16 @@ MainFrame::MainFrame(const wxString& title)
 
     SetMenuBar(menuBar);
 
-    Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
+    //StatusBar
+    status_bar_ = CreateStatusBar(2);
+    int widths[] = {150, 150};
+    status_bar_->SetStatusWidths(2, widths);
+    status_bar_->Show();
+    status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"),0);
+    status_bar_->SetStatusText(std::string("Room: ") + std::string("None"),1);
+
+    SetStatusBar(status_bar_);
+
 
     //TO DELETE, FOR TESTING
     message_handler_ = std::make_unique<domain::MessageHandler>(user_,"127.0.0.1:3333");
@@ -82,15 +92,8 @@ void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
     }
 
     if(!res.status) {
-        Json::CharReaderBuilder builder;
-        Json::Value parsed_val;
-        std::string err;
-        std::istringstream iss(res.msg);
-        if (Json::parseFromStream(builder, iss, &parsed_val,&err)) {
-            wxMessageBox(parsed_val["error"].asString(), "MainFrame error", wxOK | wxICON_ERROR);
-        } else {
-            wxMessageBox("Parse JSON response failed", "MainFrame Error", wxOK | wxICON_ERROR);
-        }
+        Json::Value parsed_val = domain::Parse(res.msg);
+        wxMessageBox(parsed_val["error"].asString(), "MainFrame error", wxOK | wxICON_ERROR);
     }
 }
 
