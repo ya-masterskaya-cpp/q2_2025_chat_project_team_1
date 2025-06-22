@@ -35,6 +35,7 @@ add_executable(Server
     ${SERVER_SRC_FILES}
     ${SERVER_INCL_FILES}
 )
+target_include_directories(Server PRIVATE ${SERVER_INCL})
 
 target_include_directories(Server PRIVATE ${SERVER_INCL})
 target_link_libraries(Server PRIVATE Drogon::Drogon general_domain_lib)
