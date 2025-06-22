@@ -84,7 +84,8 @@ void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<v
     }
 
     // успех
-    http_utils::RespondWithSuccess("Joined room", drogon::k200OK, std::move(callback));
+    http_utils::RespondWithSuccess(name, drogon::k200OK, std::move(callback)); // {"info" : room_name} или заменить на  {"room" : room_name} ?
+    //http_utils::RespondWithSuccess("Joined room", drogon::k200OK, std::move(callback));
 }
 
 // возврат в GENERAL_ROOM

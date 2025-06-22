@@ -71,8 +71,8 @@ std::vector<std::shared_ptr<User>> Room::GetUsers() const {
 }
 
 std::vector<std::string> Room::GetUserNames() const {
-    std::lock_guard<std::mutex> lock(mutex_);
     std::vector<std::string> names;
+    std::lock_guard<std::mutex> lock(mutex_);
     names.reserve(users_.size());
     for (const auto& user : users_) {
         names.push_back(user->GetName());

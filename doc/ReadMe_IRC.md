@@ -57,6 +57,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 **HTTP 200**
 ```json
 {
+  "user": "alice",
   "token":"96b1f594eb48c7026d90a1601eca4ce7"
 }
 ```
@@ -66,14 +67,6 @@ curl -X POST http://localhost:8080/api/auth/login \
 ```json
 {
   "error":"Invalid JSON format"
-}
-```
-
-Запрещён вход при уже залогиненном пользователе
-**HTTP 403 Forbidden**
-```json
-{
-  "error":"User already logged in"
 }
 ```
 
@@ -162,11 +155,11 @@ curl -X POST http://localhost:8080/api/room/join \
   -d '{"name":"new_room"}'
 ```
 
-Возврат при успешном запросе
+Возврат при успешном запросе перехода в "room_1"
 **HTTP 200**
 ```json
 {
-  "info":"Joined room"
+  "info": "room_1" 
 }
 ```
 

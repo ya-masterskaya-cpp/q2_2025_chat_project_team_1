@@ -60,6 +60,7 @@ void AuthController::LoginUser(const drogon::HttpRequestPtr &req,
 
     // успешный вход // TODO исправить проблему, когда валидный запрос шлёт залогиненный клиент
     Json::Value result;
+    result["user"] = login; // TODO не безопасно отправлять одновременно вместе с токеном
     result["token"] = token_opt.value();
     auto resp = drogon::HttpResponse::newHttpJsonResponse(result);
     resp->setStatusCode(drogon::k200OK);
