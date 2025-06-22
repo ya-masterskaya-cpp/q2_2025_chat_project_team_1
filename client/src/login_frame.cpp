@@ -73,7 +73,7 @@ void LoginFrame::OnLoginButtonClicked(wxCommandEvent& event) {
     Json::Value parsed_val = domain::Parse(res.msg);
 
     if(res.status) {
-        wxMessageBox(parsed_val["info"].asString(), "Info", wxOK | wxICON_INFORMATION);
+        wxMessageBox(parsed_val["user"].asString(), "Info", wxOK | wxICON_INFORMATION);
         Close();
     } else {
         wxMessageBox(parsed_val["error"].asString(), "Error", wxOK | wxICON_ERROR);

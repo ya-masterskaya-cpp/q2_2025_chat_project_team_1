@@ -7,11 +7,13 @@
 #include "application.h"
 #include "main_frame.h"
 
+#include <X11/Xlib.h>
+
 
 wxIMPLEMENT_APP(Application);
 
 bool Application::OnInit() {
-
+    XInitThreads();
     gui::MainFrame* frame = new gui::MainFrame("IRC-chat");
     frame->Show();
     return true;

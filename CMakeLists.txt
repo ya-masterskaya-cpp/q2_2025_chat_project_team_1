@@ -17,6 +17,7 @@ find_package(OpenSSL REQUIRED)
 find_package(wxWidgets REQUIRED COMPONENTS core base)
 set(wxBUILD_SHARED ON)
 include(${wxWidgets_USE_FILE})
+find_package(X11 REQUIRED)
 
 # ----- DOMAIN ------
 set(DOMAIN_INCL ${CMAKE_SOURCE_DIR}/domain/include)
@@ -57,4 +58,4 @@ add_executable(Client
 )
 
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
-target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib)
+target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib ${X11_LIBRARIES})

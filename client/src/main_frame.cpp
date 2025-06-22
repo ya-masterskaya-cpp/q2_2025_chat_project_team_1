@@ -161,7 +161,6 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
             self->chat_history_->AppendText(msg);
         });
 
-
         ws_client_->Run();
     } else {
         message_handler_->LogoutUser();

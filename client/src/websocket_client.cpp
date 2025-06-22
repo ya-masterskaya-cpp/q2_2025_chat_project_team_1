@@ -4,7 +4,7 @@ namespace transfer {
 
 WebSocketClient::WebSocketClient(const std::string& ip, int port, const std::string& token)
     : token_{token} {
-    url_ = "http://" + ip + ":" + std::to_string(port);
+    url_ = "ws://" + ip + ":" + std::to_string(port);
 
 }
 
