@@ -7,7 +7,7 @@
 
 namespace gui {
 
-using ObserveFunc = std::optional<std::function<void()>>;
+using ObserveFunc = std::function<void()>;
 
 class CreateRoomFrame : public wxFrame {
 public:

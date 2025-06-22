@@ -45,7 +45,7 @@ void CreateRoomFrame::OnEnterButtonClicked(wxCommandEvent& event) {
 
     if(res.status) {
         if(on_update_) {
-            (*on_update_)();
+            on_update_();
         }
         Close();
     } else {

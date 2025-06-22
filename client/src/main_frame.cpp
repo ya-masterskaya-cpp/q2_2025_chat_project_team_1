@@ -99,15 +99,23 @@ void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
 
 void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
     if(!rooms_frame_) {
-            rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_.get(), user_);
+        rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_.get(), user_);
+        rooms_frame_->OnJoinRoomUpdate([self = this](const std::string& room_name) {
+            self->status_bar_->SetStatusText(std::string("Room: ") + std::string(room_name),1);
+            self->chat_history_->AppendText("Room " +  room_name +":\n");
+        });
+        rooms_frame_->OnLeaveRoomUpdate([self = this]() {
+            self->status_bar_->SetStatusText(std::string("Room: ") + std::string("General"),1);
+            self->chat_history_->AppendText("Room General:\n");
+        });
     }
     rooms_frame_->Show();
 }
 
 void MainFrame::OnSettingsMenu(wxCommandEvent& event)
 {
-    // SettingsFrame* settings_frame = new SettingsFrame{this, file_configs_.get()};
-    // settings_frame->Show();
+    SettingsFrame* settings_frame = new SettingsFrame{this, file_configs_.get()};
+    settings_frame->Show();
 }
 
 void MainFrame::Save() {

@@ -23,8 +23,8 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
                                 wxArrayString{});
 
     //buttons
-    wxButton* reload_button = new wxButton(panel, wxID_ANY, "Reload");
-    reload_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnReloadButtonClicked,this);
+    wxButton* get_rooms_button = new wxButton(panel, wxID_ANY, "Get rooms");
+    get_rooms_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnGetRoomsButtonClicked,this);
     wxButton* create_room_button = new wxButton(panel, wxID_ANY, "Create room");
     create_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnCreateRoomButtonClicked,this);
     wxButton* join_room_button = new wxButton(panel, wxID_ANY, "Join room");
@@ -40,7 +40,7 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
 
 
     //layouts
-    control_button_sizer->Add(reload_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
+    control_button_sizer->Add(get_rooms_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
     control_button_sizer->Add(create_room_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
     control_button_sizer->Add(join_room_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
     control_button_sizer->Add(leave_room_button, 0,  wxLEFT | wxRIGHT | wxTOP, 5);
@@ -58,15 +58,15 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
     panel->SetSizer(main_sizer);
 
     //-----------------------------------------------------------
-    main_list_->Append("test 1");
-    main_list_->Append("test 2");
-    main_list_->Append("test 3");
+    // main_list_->Append("test 1");
+    // main_list_->Append("test 2");
+    // main_list_->Append("test 3");
     //-----------------------------------------------------------
     UpdateRoomsList();
 }
 
 void RoomsFrame::UpdateRoomsList() {
-    // rooms_list_->Clear();
+    main_list_->Clear();
 
     auto res = message_handler_->ListRooms();
 
@@ -79,6 +79,7 @@ void RoomsFrame::UpdateRoomsList() {
 
     if(res.status) {
         std::vector<std::string> parsed_rooms = ParseRooms(parsed_val["error"].asString());
+        main_list_->Append("Rooms:\n");
         for(auto& room : parsed_rooms) {
             main_list_->Append(room + '\n');
         }
@@ -107,7 +108,7 @@ std::vector<std::string> RoomsFrame::ParseRooms(std::string roomslist) {
     return res;
 }
 
-void RoomsFrame::OnReloadButtonClicked(wxCommandEvent& event) {
+void RoomsFrame::OnGetRoomsButtonClicked(wxCommandEvent& event) {
     UpdateRoomsList();
 }
 
@@ -132,7 +133,8 @@ void RoomsFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
 
     if(res.status) {
         if(onjoinroom_callback_) {
-            onjoinroom_callback_();
+            // onjoinroom_callback_(main_list_->GetString(index).ToStdString());
+            onjoinroom_callback_(parsed_val["info"].asString());
         }
     } else {
         wxMessageBox(parsed_val["error"].asString(), "Warning", wxOK | wxICON_WARNING);
