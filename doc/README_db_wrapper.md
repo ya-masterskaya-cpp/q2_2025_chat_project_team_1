@@ -12,7 +12,12 @@
 ```cpp
 #include "db_wrapper.h"
 
-IRCDBWrapper db("host=localhost dbname=test_db user=test_user password=test_password");
+const char* conn_str = std::getenv("IRC_CHAT_DB_URL");
+if (!conn_str) {
+    throw std::runtime_error("Environment variable IRC_CHAT_DB_URL is not set!");
+}
+
+IRCDBWrapper db(conn_str);
 
 // Добавление пользователя
 auto [ok, err] = db.AddUserToDB("alice", "hashed_password");
