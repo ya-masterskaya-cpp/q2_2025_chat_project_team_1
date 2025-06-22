@@ -46,6 +46,7 @@ add_executable( Client
     # ${CLIENT_INCL}/rooms_users_frame.h ${CLIENT_SRC}/rooms_users_frame.cpp
 
 )
+target_include_directories(Client PRIVATE ${CLIENT_INCL})
 
 # add_executable(Client ${CLIENT_SOURCES})
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
