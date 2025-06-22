@@ -1,0 +1,23 @@
+{
+  "listeners": [
+    {
+      "address": "127.0.0.1",
+      "port": 8080
+    }
+  ],
+  "log": {
+    "log_level": "ERROR",
+    "log_path": "./logs",
+    "log_file": "server.log"
+  },
+  "plugins": [
+    {
+      "name": "LoggerPlugin",
+      "type": "Global"
+    },
+    {
+      "name": "ChatServicePlugin",
+      "type": "Global"
+    }
+  ]
+}

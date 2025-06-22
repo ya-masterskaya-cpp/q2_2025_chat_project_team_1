@@ -1,68 +1,60 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.16)
 project(IRC-chat)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Находим зависимости
+
+# для сервера:
+find_package(Drogon CONFIG REQUIRED)
+# для клиента:
+find_package(cpr REQUIRED)
+find_package(jsoncpp REQUIRED)
+find_package(ixwebsocket REQUIRED)
+find_package(OpenSSL REQUIRED)
 # Настройка wxWidgets
 find_package(wxWidgets REQUIRED COMPONENTS core base)
 set(wxBUILD_SHARED ON)
 include(${wxWidgets_USE_FILE})
 
-#настройка boost
-find_package(Boost REQUIRED COMPONENTS system filesystem json serialization)
+# ----- DOMAIN ------
+set(DOMAIN_INCL ${CMAKE_SOURCE_DIR}/domain/include)
+set(DOMAIN_SRC ${CMAKE_SOURCE_DIR}/domain/src)
 
-#настройка libpqxx
-find_package(libpqxx REQUIRED)
+file(GLOB_RECURSE DOMAIN_SOURCES "${DOMAIN_SRC}/*.cpp" "${DOMAIN_INCL}/*.h")
 
-# OpenSSL для password_hasher, на стороне клиента
-find_package(cpr REQUIRED)
-find_package(jsoncpp REQUIRED)
-find_package(ixwebsocket REQUIRED)
-find_package(OpenSSL REQUIRED)
+add_library(general_domain_lib STATIC ${DOMAIN_SOURCES})
+target_include_directories(general_domain_lib PUBLIC ${DOMAIN_INCL})
+target_link_libraries(general_domain_lib PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
-#настройка целей
-set(CLIENT_INCL client/include)
-set(CLIENT_SRC client/src)
-set(SERVER_INCL server/include)
-set(SERVER_SRC server/src)
-set(DOMAIN_INCL domain/include)
-set(DOMAIN_SRC domain/src)
-file(GLOB DOMAIN_SOURCES "domain/src/*.cpp" "domain/include/*.h")
-# file(GLOB CLIENT_SOURCES "client/src/*.cpp" "client/include/*.h")
+# ----- SERVER ------
+set(SERVER_INCL ${CMAKE_SOURCE_DIR}/server/include)
+set(SERVER_SRC  ${CMAKE_SOURCE_DIR}/server/src)
 
-add_executable( Client
-    ${CLIENT_SRC}/main.cpp
-    ${CLIENT_INCL}/application.h
-    ${CLIENT_INCL}/domain.h  ${CLIENT_SRC}/domain.cpp
-    ${CLIENT_INCL}/main_frame.h ${CLIENT_SRC}/main_frame.cpp
-    ${CLIENT_INCL}/message_handler.h ${CLIENT_SRC}/message_handler.cpp
-    ${CLIENT_INCL}/client_interface.h
-    ${CLIENT_INCL}/websocket_client.h ${CLIENT_SRC}/websocket_client.cpp
-    ${CLIENT_INCL}/rooms_frame.h ${CLIENT_SRC}/rooms_frame.cpp
-    ${CLIENT_INCL}/login_frame.h ${CLIENT_SRC}/login_frame.cpp
-    ${CLIENT_INCL}/create_room_frame.h ${CLIENT_SRC}/create_room_frame.cpp
-    ${CLIENT_INCL}/settings_frame.h ${CLIENT_SRC}/settings_frame.cpp
-    # ${CLIENT_INCL}/rooms_users_frame.h ${CLIENT_SRC}/rooms_users_frame.cpp
-
-)
-target_include_directories(Client PRIVATE ${CLIENT_INCL})
-
-# add_executable(Client ${CLIENT_SOURCES})
-target_include_directories(Client PRIVATE ${CLIENT_INCL})
-target_include_directories(Client PRIVATE ${DOMAIN_INCL})
+file(GLOB_RECURSE SERVER_INCL_FILES ${SERVER_INCL}/*.h)
+file(GLOB_RECURSE SERVER_SRC_FILES  ${SERVER_SRC}/*.cpp)
 
 add_executable(Server
-    ${SERVER_SRC}/main.cpp
+    ${SERVER_SRC_FILES}
+    ${SERVER_INCL_FILES}
 )
 target_include_directories(Server PRIVATE ${SERVER_INCL})
 
+target_include_directories(Server PRIVATE ${SERVER_INCL})
+target_link_libraries(Server PRIVATE Drogon::Drogon general_domain_lib)
 
-add_library(general_domain_lib STATIC
-    ${DOMAIN_SOURCES}
+# ------ CLIENT ------
+set(CLIENT_INCL ${CMAKE_SOURCE_DIR}/client/include)
+set(CLIENT_SRC  ${CMAKE_SOURCE_DIR}/client/src)
+
+file(GLOB_RECURSE CLIENT_INCL_FILES ${CLIENT_INCL}/*.h)
+file(GLOB_RECURSE CLIENT_SRC_FILES  ${CLIENT_SRC}/*.cpp)
+
+add_executable(Client
+    ${CLIENT_SRC_FILES}
+    ${CLIENT_INCL_FILES}
 )
-target_include_directories(general_domain_lib PRIVATE ${DOMAIN_INCL})
 
+target_include_directories(Client PRIVATE ${CLIENT_INCL})
 target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib)
-target_link_libraries(Server PRIVATE ${Boost_LIBRARIES} libpqxx::pqxx general_domain_lib)
-target_link_libraries(general_domain_lib PRIVATE ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
