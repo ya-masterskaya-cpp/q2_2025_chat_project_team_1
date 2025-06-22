@@ -131,7 +131,7 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         wxString ip;
         file_configs_->Read("IP", &ip, "127.0.0.1");
         int port;
-        file_configs_->Read("Port", &port, 3333);
+        file_configs_->Read("Port", &port, 8080);
 
         message_handler_ = std::make_unique<domain::MessageHandler>(user_,ip.ToStdString() +":" + std::to_string(port));
 
