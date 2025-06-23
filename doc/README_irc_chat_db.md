@@ -98,6 +98,7 @@
 
 #### Участие в комнатах
 - `AddUserToRoomByName(username, roomname)` — добавить пользователя в комнату по именам.
+- `GetRoomMembersByName(roomname)` — получить список пользователей в комнате по её имени.
 - `RemoveUserFromRoomByName(username, roomname)` — удалить пользователя из комнаты по именам.
 
 #### Работа с сообщениями
@@ -136,6 +137,7 @@ auto page = db.GetRoomsPage(0, 2);
 
 // Участие в комнатах
 db.AddUserToRoomByName("alice", "main");
+auto members = db.GetRoomMembersByName("general");
 db.RemoveUserFromRoomByName("alice", "main");
 
 // Сообщения

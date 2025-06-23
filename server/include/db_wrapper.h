@@ -31,6 +31,8 @@ public:
 
     std::vector<postgres::RoomRecord> GetRoomsPage(int offset, int limit);
 
+    std::vector<postgres::UserRecord> GetRoomMembersByName(const std::string& roomname);
+
     std::pair<bool, std::string> DeleteRoomByName(const std::string& roomname);
 
     std::pair<bool, std::string> AddMessage(const std::string& username, const std::string& roomname, const std::string& text);
