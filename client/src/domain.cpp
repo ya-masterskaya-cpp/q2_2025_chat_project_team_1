@@ -26,6 +26,7 @@ cpr::Response SendGetRequest(const std::string& endpoint, const std::string& tok
     headers["Authorization"] = "Bearer " + token;
     return cpr::Get(cpr::Url{endpoint}, headers,cpr::Timeout{2000});
 }
+
 Json::Value Parse(const std::string& msg) {
     Json::CharReaderBuilder builder;
     Json::Value parsed_val;

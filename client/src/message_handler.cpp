@@ -54,7 +54,7 @@ bool MessageHandler::ParseTokenFromJson(const std::string& jsonText) {
 }
 
 ServerResponse MessageHandler::LogoutUser() {
-    auto res = SendPostRequest(url_ + std::string(api::AUTH_LOGOUT), Json::objectValue);
+    auto res = SendPostRequest(url_ + std::string(api::AUTH_LOGOUT), Json::objectValue, user_.token);
     if(res.error) {
         return {res.status_code == 200, res.text, res.error.message};
     }
@@ -72,13 +72,13 @@ ServerResponse MessageHandler::SendMessage(const std::string& text, const std::s
     Json::Value body;
     body["text"] = text;
     body["to"] = to;
-    return ToRequest(SendPostRequest(url_ + std::string(api::MESSAGE_SEND), body));
+    return ToRequest(SendPostRequest(url_ + std::string(api::MESSAGE_SEND), body,user_.token));
 }
 
 ServerResponse MessageHandler::CreateRoom(const std::string& name) {
     Json::Value body;
     body["name"] = name;
-    auto res = SendPostRequest(url_ + std::string(api::ROOM_CREATE), body);
+    auto res = SendPostRequest(url_ + std::string(api::ROOM_CREATE), body, user_.token);
     if(res.error) {
         return {res.status_code == 200, res.text, res.error.message};
     }
@@ -96,7 +96,7 @@ ServerResponse MessageHandler::LeaveRoom() {
 }
 
 ServerResponse MessageHandler::ListRooms() {
-    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_LIST)));
+    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_LIST),user_.token));
 }
 
 ServerResponse MessageHandler::GetCurrentRoom() {

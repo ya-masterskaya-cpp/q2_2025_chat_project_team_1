@@ -83,7 +83,7 @@ MainFrame::MainFrame(const wxString& title)
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
     message_input_->Clear();
 
-    auto res = message_handler_->SendMessage(message_input_->GetValue().utf8_string());
+    auto res = message_handler_->SendMessage(message_input_->GetValue().ToStdString());
 
     if(!res.error_msg.empty()) {
         chat_history_->AppendText(res.error_msg + '\n');
@@ -124,44 +124,43 @@ void MainFrame::Save() {
 }
 
 void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
-    // if(!connected_) {
-        file_configs_->SetPath("/Transfer");
+    file_configs_->SetPath("/Transfer");
 
-        wxString ip;
-        file_configs_->Read("IP", &ip, "127.0.0.1");
-        int port;
-        file_configs_->Read("Port", &port, 8080);
+    wxString ip;
+    file_configs_->Read("IP", &ip, "127.0.0.1");
+    int port;
+    file_configs_->Read("Port", &port, 8080);
 
-        message_handler_ = std::make_unique<domain::MessageHandler>(user_,ip.ToStdString() +":" + std::to_string(port));
+    message_handler_ = std::make_unique<domain::MessageHandler>(user_,ip.ToStdString() +":" + std::to_string(port));
 
-        LoginFrame* login_frame = new LoginFrame(this,message_handler_.get());
-        login_frame->ShowModal();
+    LoginFrame* login_frame = new LoginFrame(this,message_handler_.get());
+    login_frame->ShowModal();
 
-        if(user_.token.empty()) {
-            message_handler_.reset();
-            return;
-        }
-        ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
-        ws_client_->SetOnOpen([self = this](const std::string& msg) {
-            self->send_button_->Enable(true);
-            self->rooms_button_->Enable(true);
-            self->disconection_button_->Enable(true);
-            self->conection_button_->Enable(false);
-        });
-        ws_client_->SetOnClose([self = this](const std::string& msg) {
-            self->send_button_->Enable(false);
-            self->rooms_button_->Enable(false);
-            self->disconection_button_->Enable(false);
-            self->conection_button_->Enable(true);
-        });
-        ws_client_->SetOnError([self = this](const std::string& msg) {
-            wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
-        });
-        ws_client_->SetOnMessage([self = this](const std::string& msg) {
-            self->chat_history_->AppendText(msg);
-        });
+    if(user_.token.empty()) {
+        message_handler_.reset();
+        return;
+    }
+    ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
+    ws_client_->SetOnOpen([self = this](const std::string& msg) {
+        self->send_button_->Enable(true);
+        self->rooms_button_->Enable(true);
+        self->disconection_button_->Enable(true);
+        self->conection_button_->Enable(false);
+    });
+    ws_client_->SetOnClose([self = this](const std::string& msg) {
+        self->send_button_->Enable(false);
+        self->rooms_button_->Enable(false);
+        self->disconection_button_->Enable(false);
+        self->conection_button_->Enable(true);
+    });
+    ws_client_->SetOnError([self = this](const std::string& msg) {
+        wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
+    });
+    ws_client_->SetOnMessage([self = this](const std::string& msg) {
+        self->chat_history_->AppendText(msg);
+    });
 
-        ws_client_->Run();
+    ws_client_->Run();
 }
 
 void MainFrame::OnDisconnectButtonClicked(wxCommandEvent& event) {

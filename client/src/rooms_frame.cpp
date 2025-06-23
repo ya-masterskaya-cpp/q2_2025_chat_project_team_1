@@ -28,9 +28,9 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
     wxButton* create_room_button = new wxButton(panel, wxID_ANY, "Create room");
     create_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnCreateRoomButtonClicked,this);
     wxButton* join_room_button = new wxButton(panel, wxID_ANY, "Join room");
-    create_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnJoinRoomButtonClicked,this);
+    join_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnJoinRoomButtonClicked,this);
     wxButton* leave_room_button = new wxButton(panel, wxID_ANY, "Leave room");
-    create_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnLeaveRoomButtonClicked,this);
+    leave_room_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnLeaveRoomButtonClicked,this);
     wxButton* get_users_button = new wxButton(panel, wxID_ANY, "Get users");
     get_users_button->Bind(wxEVT_BUTTON, &RoomsFrame::OnGetUsersButtonClicked,this);
 
@@ -57,11 +57,6 @@ RoomsFrame::RoomsFrame(wxWindow* parent,const wxString& title,
 
     panel->SetSizer(main_sizer);
 
-    //-----------------------------------------------------------
-    // main_list_->Append("test 1");
-    // main_list_->Append("test 2");
-    // main_list_->Append("test 3");
-    //-----------------------------------------------------------
     UpdateRoomsList();
 }
 
@@ -78,10 +73,9 @@ void RoomsFrame::UpdateRoomsList() {
     Json::Value parsed_val = domain::Parse(res.msg);
 
     if(res.status) {
-        std::vector<std::string> parsed_rooms = ParseRooms(parsed_val["error"].asString());
         main_list_->Append("Rooms:\n");
-        for(auto& room : parsed_rooms) {
-            main_list_->Append(room + '\n');
+        for(auto& room : parsed_val) {
+            main_list_->Append(room.asString() + '\n');
         }
     } else {
         wxMessageBox(parsed_val["error"].asString(), "Error", wxOK | wxICON_ERROR);

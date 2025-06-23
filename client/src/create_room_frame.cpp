@@ -45,6 +45,7 @@ void CreateRoomFrame::OnEnterButtonClicked(wxCommandEvent& event) {
 
     if(res.status) {
         if(on_update_) {
+            std::cout << "on enter button" << std::endl;
             on_update_();
         }
         Close();
@@ -52,7 +53,6 @@ void CreateRoomFrame::OnEnterButtonClicked(wxCommandEvent& event) {
         wxMessageBox(parsed_val["error"].asString(), "Error", wxOK | wxICON_ERROR);
         return;
     }
-
 }
 
 }   //namespace gui
