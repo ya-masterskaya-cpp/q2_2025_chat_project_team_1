@@ -3,6 +3,7 @@
 
 #include <ixwebsocket/IXWebSocket.h>
 #include <memory>
+#include <optional>
 
 using Callback = std::function<void(const std::string& msg)>;
 

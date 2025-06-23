@@ -44,7 +44,7 @@ bool RoomManager::MoveUserToRoom(ID user_id, const std::string& name) {
 
     auto it = name_to_room_.find(name);
     if (it == name_to_room_.end()) {
-        return false;
+        return true; // Уже в нужной комнате
     }
     std::shared_ptr<Room> to_room = it->second;
 

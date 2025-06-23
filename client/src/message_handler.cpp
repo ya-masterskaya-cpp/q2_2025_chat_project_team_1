@@ -65,7 +65,7 @@ ServerResponse MessageHandler::LogoutUser() {
 }
 
 ServerResponse MessageHandler::GetOnlineUsers() {
-    return ToRequest(SendGetRequest(std::string(api::USERS_ONLINE)));
+    return ToRequest(SendGetRequest(std::string(api::USERS_ONLINE), user_.token));
 }
 
 ServerResponse MessageHandler::SendMessage(const std::string& text, const std::string& to) {
@@ -88,23 +88,23 @@ ServerResponse MessageHandler::CreateRoom(const std::string& name) {
 ServerResponse MessageHandler::JoinRoom(const std::string& name) {
     Json::Value body;
     body["name"] = name;
-    return ToRequest(SendPostRequest(url_ + std::string(api::ROOM_JOIN), body));
+    return ToRequest(SendPostRequest(url_ + std::string(api::ROOM_JOIN), body, user_.token));
 }
 
 ServerResponse MessageHandler::LeaveRoom() {
-    return ToRequest(SendPostRequest(url_ + std::string(api::ROOM_LEAVE), Json::objectValue));
+    return ToRequest(SendPostRequest(url_ + std::string(api::ROOM_LEAVE), Json::objectValue, user_.token));
 }
 
 ServerResponse MessageHandler::ListRooms() {
-    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_LIST),user_.token));
+    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_LIST), user_.token));
 }
 
 ServerResponse MessageHandler::GetCurrentRoom() {
-    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_CURRENT)));
+    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_CURRENT), user_.token));
 }
 
 ServerResponse MessageHandler::GetUsersInRoom(const std::string& roomName) {
-    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_USERS) + "?name=" + roomName));
+    return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_USERS) + "?name=" + roomName, user_.token));
 }
 
 void MessageHandler::SetUrl(const std::string& url) {
