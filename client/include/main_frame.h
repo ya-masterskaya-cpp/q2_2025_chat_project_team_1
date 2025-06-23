@@ -21,6 +21,7 @@ public:
     void OnRoomButtonClicked(wxCommandEvent& event);
     void OnSettingsMenu(wxCommandEvent& event);
     void OnConnectButtonClicked(wxCommandEvent& event);
+    void OnDisconnectButtonClicked(wxCommandEvent& event);
     void Save();
     void Load();
     ~MainFrame();
@@ -29,7 +30,7 @@ private:
     domain::UserData user_;
     std::unique_ptr<domain::MessageHandler> message_handler_;
     std::unique_ptr<wxFileConfig> file_configs_;
-    bool connected_{false};
+    // bool connected_{false};
     std::unique_ptr<transfer::WebSocketClient> ws_client_;
 
     //gui
@@ -37,8 +38,10 @@ private:
     wxTextCtrl* message_input_;
     wxStatusBar* status_bar_;
 
+    wxButton* send_button_{nullptr};
     wxButton* rooms_button_{nullptr};
     wxButton* conection_button_{nullptr};
+    wxButton* disconection_button_{nullptr};
     RoomsFrame* rooms_frame_{nullptr};
     SettingsFrame* settings_frame_{nullptr};
 };

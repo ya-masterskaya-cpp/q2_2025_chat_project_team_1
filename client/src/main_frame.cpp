@@ -9,6 +9,7 @@ namespace gui {
 
 MainFrame::MainFrame(const wxString& title)
     : wxFrame(nullptr, wxID_ANY, title) {
+
     wxPanel* panel = new wxPanel(this);
     wxBoxSizer* general_sizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -31,13 +32,17 @@ MainFrame::MainFrame(const wxString& title)
     message_input_->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnSendButtonClicked, this);
 
     //buttons
-    wxButton* send_button = new wxButton(panel, wxID_ANY, "Send");
-    send_button->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked, this);
+    send_button_ = new wxButton(panel, wxID_ANY, "Send");
+    send_button_->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked, this);
+    send_button_->Enable(false);
     rooms_button_ = new wxButton(panel, wxID_ANY, "Rooms");
-    // rooms_button_->Enable(false);
+    rooms_button_->Enable(false);
     rooms_button_->Bind(wxEVT_BUTTON, &MainFrame::OnRoomButtonClicked, this);
     conection_button_ = new wxButton(panel, wxID_ANY, "Connect");
     conection_button_->Bind(wxEVT_BUTTON, &MainFrame::OnConnectButtonClicked, this);
+    disconection_button_ = new wxButton(panel, wxID_ANY, "Disconnect");
+    disconection_button_->Bind(wxEVT_BUTTON, &MainFrame::OnDisconnectButtonClicked, this);
+    disconection_button_->Enable(false);
 
     //layouts
     general_sizer->Add(chat_history_, 1, wxEXPAND | wxALL, 5);
@@ -46,8 +51,9 @@ MainFrame::MainFrame(const wxString& title)
 
     buttons_sizer->Add(rooms_button_, 0,  wxLEFT| wxBOTTOM, 5);
     buttons_sizer->Add(conection_button_, 0,  wxLEFT| wxBOTTOM, 5);
+    buttons_sizer->Add(disconection_button_, 0,  wxLEFT| wxBOTTOM, 5);
     buttons_sizer->AddStretchSpacer(1);
-    buttons_sizer->Add(send_button, 0,  wxRIGHT | wxBOTTOM, 5);
+    buttons_sizer->Add(send_button_, 0,  wxRIGHT | wxBOTTOM, 5);
 
     panel->SetSizer(general_sizer);
 
@@ -70,25 +76,18 @@ MainFrame::MainFrame(const wxString& title)
 
     SetStatusBar(status_bar_);
 
-
-    //TO DELETE, FOR TESTING
-    message_handler_ = std::make_unique<domain::MessageHandler>(user_,"127.0.0.1:3333");
     //Load settings
     Load();
 }
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
-    if(!connected_) {
-        chat_history_->AppendText("Server not connected\n");
-        message_input_->Clear();
-        return;
-    }
-
-    auto res = message_handler_->SendMessage(message_input_->GetValue().utf8_string());
     message_input_->Clear();
 
+    auto res = message_handler_->SendMessage(message_input_->GetValue().utf8_string());
+
     if(!res.error_msg.empty()) {
-        wxMessageBox(res.error_msg, "Error", wxOK | wxICON_WARNING);
+        chat_history_->AppendText(res.error_msg + '\n');
+        return;
     }
 
     if(!res.status) {
@@ -125,7 +124,7 @@ void MainFrame::Save() {
 }
 
 void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
-    if(!connected_) {
+    // if(!connected_) {
         file_configs_->SetPath("/Transfer");
 
         wxString ip;
@@ -142,17 +141,18 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
             message_handler_.reset();
             return;
         }
-
         ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
         ws_client_->SetOnOpen([self = this](const std::string& msg) {
-            self->conection_button_->SetLabel("Disconnect");
+            self->send_button_->Enable(true);
             self->rooms_button_->Enable(true);
-            self->connected_ = true;
+            self->disconection_button_->Enable(true);
+            self->conection_button_->Enable(false);
         });
         ws_client_->SetOnClose([self = this](const std::string& msg) {
-            self->conection_button_->SetLabel("Connect");
+            self->send_button_->Enable(false);
             self->rooms_button_->Enable(false);
-            self->connected_ = false;
+            self->disconection_button_->Enable(false);
+            self->conection_button_->Enable(true);
         });
         ws_client_->SetOnError([self = this](const std::string& msg) {
             wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
@@ -162,13 +162,15 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         });
 
         ws_client_->Run();
-    } else {
-        message_handler_->LogoutUser();
-        message_handler_.reset();
-        ws_client_->Stop();
-        rooms_frame_->Close();
+}
 
+void MainFrame::OnDisconnectButtonClicked(wxCommandEvent& event) {
+    message_handler_->LogoutUser();
+    message_handler_.reset();
+    if(rooms_frame_) {
+        rooms_frame_->Close();
     }
+    ws_client_->Stop();
 
 }
 
