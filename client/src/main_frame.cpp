@@ -1,0 +1,199 @@
+#include "main_frame.h"
+
+#include <wx/stdpaths.h>
+#include <json/json.h>
+
+#include "login_frame.h"
+
+namespace gui {
+
+MainFrame::MainFrame(const wxString& title)
+    : wxFrame(nullptr, wxID_ANY, title) {
+
+    wxPanel* panel = new wxPanel(this);
+    wxBoxSizer* general_sizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+    //settings
+    wxString config_path = wxStandardPaths::Get().GetUserConfigDir() + "/" + "settings.ini";
+
+    file_configs_ = std::make_unique<wxFileConfig>("IRC-chat", wxEmptyString, config_path,
+                                                wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
+
+    Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
+
+    // chat history
+    chat_history_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxSize(400, 300),
+                                 wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH);
+
+    //input
+    message_input_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    message_input_->SetHint("Write to Send");
+    message_input_->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnSendButtonClicked, this);
+
+    //buttons
+    send_button_ = new wxButton(panel, wxID_ANY, "Send");
+    send_button_->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked, this);
+    send_button_->Enable(false);
+    rooms_button_ = new wxButton(panel, wxID_ANY, "Rooms");
+    rooms_button_->Enable(false);
+    rooms_button_->Bind(wxEVT_BUTTON, &MainFrame::OnRoomButtonClicked, this);
+    conection_button_ = new wxButton(panel, wxID_ANY, "Connect");
+    conection_button_->Bind(wxEVT_BUTTON, &MainFrame::OnConnectButtonClicked, this);
+    disconection_button_ = new wxButton(panel, wxID_ANY, "Disconnect");
+    disconection_button_->Bind(wxEVT_BUTTON, &MainFrame::OnDisconnectButtonClicked, this);
+    disconection_button_->Enable(false);
+
+    //layouts
+    general_sizer->Add(chat_history_, 1, wxEXPAND | wxALL, 5);
+    general_sizer->Add(message_input_, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
+    general_sizer->Add(buttons_sizer, 0 , wxEXPAND | wxLEFT | wxRIGHT, 5);
+
+    buttons_sizer->Add(rooms_button_, 0,  wxLEFT| wxBOTTOM, 5);
+    buttons_sizer->Add(conection_button_, 0,  wxLEFT| wxBOTTOM, 5);
+    buttons_sizer->Add(disconection_button_, 0,  wxLEFT| wxBOTTOM, 5);
+    buttons_sizer->AddStretchSpacer(1);
+    buttons_sizer->Add(send_button_, 0,  wxRIGHT | wxBOTTOM, 5);
+
+    panel->SetSizer(general_sizer);
+
+    //menu
+    wxMenu* settings_menu = new wxMenu;
+    settings_menu->Append(1001, "Settings");
+
+    wxMenuBar* menuBar = new wxMenuBar;
+    menuBar->Append(settings_menu, "File");
+
+    SetMenuBar(menuBar);
+
+    //StatusBar
+    status_bar_ = CreateStatusBar(2);
+    int widths[] = {150, 150};
+    status_bar_->SetStatusWidths(2, widths);
+    status_bar_->Show();
+    status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"),0);
+    status_bar_->SetStatusText(std::string("Room: ") + std::string("None"),1);
+
+    SetStatusBar(status_bar_);
+
+    //Load settings
+    Load();
+}
+
+void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
+    message_input_->Clear();
+
+    auto res = message_handler_->SendMessage(message_input_->GetValue().ToStdString());
+
+    if(!res.error_msg.empty()) {
+        chat_history_->AppendText(res.error_msg + '\n');
+        return;
+    }
+
+    if(!res.status) {
+        Json::Value parsed_val = domain::Parse(res.msg);
+        wxMessageBox(parsed_val["error"].asString(), "MainFrame error", wxOK | wxICON_ERROR);
+    }
+}
+
+void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
+    if(!rooms_frame_) {
+        rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_.get(), user_);
+        rooms_frame_->OnJoinRoomUpdate([self = this](const std::string& room_name) {
+            self->status_bar_->SetStatusText(std::string("Room: ") + std::string(room_name),1);
+            self->chat_history_->AppendText("Room " +  room_name +":\n");
+        });
+        rooms_frame_->OnLeaveRoomUpdate([self = this]() {
+            self->status_bar_->SetStatusText(std::string("Room: ") + std::string("General"),1);
+            self->chat_history_->AppendText("Room General:\n");
+        });
+    }
+    rooms_frame_->Show();
+}
+
+void MainFrame::OnSettingsMenu(wxCommandEvent& event)
+{
+    SettingsFrame* settings_frame = new SettingsFrame{this, file_configs_.get()};
+    settings_frame->Show();
+}
+
+void MainFrame::Save() {
+    file_configs_->SetPath("/MainFrame");
+    file_configs_->Write("Width", GetSize().GetWidth());
+    file_configs_->Write("Height", GetSize().GetHeight());
+}
+
+void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
+    file_configs_->SetPath("/Transfer");
+
+    wxString ip;
+    file_configs_->Read("IP", &ip, "127.0.0.1");
+    int port;
+    file_configs_->Read("Port", &port, 8080);
+
+    message_handler_ = std::make_unique<domain::MessageHandler>(user_,ip.ToStdString() +":" + std::to_string(port));
+
+    LoginFrame* login_frame = new LoginFrame(this,message_handler_.get());
+    login_frame->ShowModal();
+
+    if(user_.token.empty()) {
+        message_handler_.reset();
+        return;
+    }
+    ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
+    ws_client_->SetOnOpen([self = this](const std::string& msg) {
+        self->send_button_->Enable(true);
+        self->rooms_button_->Enable(true);
+        self->disconection_button_->Enable(true);
+        self->conection_button_->Enable(false);
+    });
+    ws_client_->SetOnClose([self = this](const std::string& msg) {
+        self->send_button_->Enable(false);
+        self->rooms_button_->Enable(false);
+        self->disconection_button_->Enable(false);
+        self->conection_button_->Enable(true);
+    });
+    ws_client_->SetOnError([self = this](const std::string& msg) {
+        wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
+    });
+    ws_client_->SetOnMessage([self = this](const std::string& msg) {
+        self->chat_history_->AppendText(msg);
+    });
+
+    ws_client_->Run();
+}
+
+void MainFrame::OnDisconnectButtonClicked(wxCommandEvent& event) {
+    message_handler_->LogoutUser();
+    message_handler_.reset();
+    if(rooms_frame_) {
+        rooms_frame_->Close();
+    }
+    ws_client_->Stop();
+
+}
+
+void MainFrame::Load() {
+    file_configs_->SetPath("/MainFrame");
+
+    int width = 300;
+    int height = 300;
+
+    if (file_configs_->HasEntry("Width")) {
+        file_configs_->Read("Width", &width);
+    }
+
+    if (file_configs_->HasEntry("Height")) {
+        file_configs_->Read("Height", &height);
+    }
+
+    SetSize(width,height);
+}
+
+
+MainFrame::~MainFrame() {
+    Save();
+}
+
+
+}   //namespace gui

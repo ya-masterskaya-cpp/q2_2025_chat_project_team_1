@@ -7,12 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Находим зависимости
 
 # для сервера:
-find_package(Drogon REQUIRED) 
+find_package(Drogon CONFIG REQUIRED)
 # для клиента:
 find_package(cpr REQUIRED)
 find_package(jsoncpp REQUIRED)
 find_package(ixwebsocket REQUIRED)
 find_package(OpenSSL REQUIRED)
+# Настройка wxWidgets
+find_package(wxWidgets REQUIRED COMPONENTS core base)
+set(wxBUILD_SHARED ON)
+include(${wxWidgets_USE_FILE})
 
 # ----- DOMAIN ------
 set(DOMAIN_INCL ${CMAKE_SOURCE_DIR}/domain/include)
@@ -53,4 +57,12 @@ add_executable(Client
 )
 
 target_include_directories(Client PRIVATE ${CLIENT_INCL})
-target_link_libraries(Client PRIVATE cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib)
+target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib)
+
+
+if(UNIX)
+    find_package(X11 REQUIRED)
+    target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib ${X11_LIBRARIES})
+else()
+    target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib)
+endif()
