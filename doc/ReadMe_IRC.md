@@ -70,6 +70,14 @@ curl -X POST http://localhost:8080/api/auth/login \
 }
 ```
 
+При отсутствии регистрации пользователя, либо при уже выполненном входе
+**HTTP 401 Unauthorized**
+```json
+{
+  "error":"User is not registered or User already logged in"
+}
+```
+
 #### Выход (токен аннулируется)
 ```bash
 curl -X POST http://localhost:8080/api/auth/logout \

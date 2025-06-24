@@ -23,6 +23,11 @@ std::optional<std::string> ChatService::Login(const std::string& name, const std
         return std::nullopt;
     }
 
+    // Важно!!! Если комната указана - пользователь уже залогинен. Повторный логин невозможен.
+    if (user->GetRoom() != nullptr) {
+        return std::nullopt;
+    }
+
     auto general_room = room_manager_->GetRoomByName("general");
     if (general_room) {
         general_room->AddUser(user);
@@ -36,10 +41,16 @@ std::optional<std::string> ChatService::Login(const std::string& name, const std
 
 bool ChatService::Logout(const std::string& token) {
     auto user_id_opt = token_manager_->GetUserIdByToken(token);
-    if (!user_id_opt.has_value()) return false;
 
-    token_manager_->RemoveTokenByToken(token);
-    return room_manager_->RemoveUserFromRoom(user_id_opt.value());
+    if (!user_id_opt.has_value()) {
+        return false;
+    }
+
+    auto user_id = user_id_opt.value();
+    
+    user_manager_->GetUserById(user_id)->SetRoom(nullptr); // Сбрасываем комнату
+    token_manager_->RemoveTokenByToken(token); // Удаляем токен
+    return room_manager_->RemoveUserFromRoom(user_id);
 }
 
 std::vector<std::string> ChatService::GetOnlineUserNames() const {
