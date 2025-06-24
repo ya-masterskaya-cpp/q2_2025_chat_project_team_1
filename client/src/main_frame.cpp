@@ -81,9 +81,9 @@ MainFrame::MainFrame(const wxString& title)
 }
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
-    message_input_->Clear();
 
     auto res = message_handler_->SendMessage(message_input_->GetValue().ToStdString());
+    message_input_->Clear();
 
     if(!res.error_msg.empty()) {
         chat_history_->AppendText(res.error_msg + '\n');
