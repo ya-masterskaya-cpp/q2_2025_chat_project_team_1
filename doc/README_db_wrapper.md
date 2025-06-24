@@ -78,6 +78,9 @@ for (const auto& [name, hash] : users) {
 - **`std::pair<bool, std::string> AddUserToRoomByName(const std::string& username, const std::string& roomname)`**  
   Добавить пользователя в комнату по именам.
 
+- **`std::vector<postgres::UserRecord> GetRoomMembersByName(const std::string& roomname)`**  
+  Получить список всех пользователей, состоящих в комнате (по имени комнаты).
+
 - **`std::pair<bool, std::string> RemoveUserFromRoomByName(const std::string& username, const std::string& roomname)`**  
   Удалить пользователя из комнаты по именам.
 
@@ -120,6 +123,7 @@ auto all_rooms = db.GetAllRooms();
 db.AddUserToDB("alice", "hash");
 db.AddRoomToDB("general");
 db.AddUserToRoomByName("alice", "general");
+auto members = db.GetRoomMembersByName("general");
 db.RemoveUserFromRoomByName("alice", "general");
 
 // --- Сообщения ---

@@ -434,6 +434,27 @@ TEST_F(PostgresRepoTest, Wrapper_AddMessage_GetMessages_DeleteMessage) {
     EXPECT_EQ(after_del[1].message, "msg1");
 }
 
+TEST_F(PostgresRepoTest, Wrapper_GetRoomMembersByName) {
+    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    wrapper.AddUserToDB("alice", "hash1");
+    wrapper.AddUserToDB("bob", "hash2");
+    wrapper.AddUserToDB("charlie", "hash3");
+    wrapper.AddRoomToDB("general");
+
+    wrapper.AddUserToRoomByName("alice", "general");
+    wrapper.AddUserToRoomByName("bob", "general");
+
+    auto members = wrapper.GetRoomMembersByName("general");
+    ASSERT_EQ(members.size(), 2);
+
+    std::vector<std::string> names;
+    for (const auto& u : members) names.push_back(u.username);
+    EXPECT_NE(std::find(names.begin(), names.end(), "alice"), names.end());
+    EXPECT_NE(std::find(names.begin(), names.end(), "bob"), names.end());
+    EXPECT_EQ(std::find(names.begin(), names.end(), "charlie"), names.end());
+}
+
+
 // --- TaggedUUID ---
 TEST(TaggedUUIDTest, UUIDGenerateAndStringRoundtrip) {
     auto uuid = util::TaggedUUID<struct TestTag>::New();

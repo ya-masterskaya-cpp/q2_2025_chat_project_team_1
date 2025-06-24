@@ -184,6 +184,31 @@ std::vector<postgres::RoomRecord> IRCDBWrapper::GetRoomsPage(int offset, int lim
     }
 }
 
+std::vector<postgres::UserRecord> IRCDBWrapper::GetRoomMembersByName(const std::string& roomname)
+{
+    try {
+        auto conn = pool_->GetConnection();
+        pqxx::work txn(*conn);
+
+        postgres::RoomsRepository rooms_repo(txn);
+        auto room = rooms_repo.FindByName(roomname);
+        if (!room) return {};
+
+        postgres::RoomMembersRepository members_repo(txn);
+        auto members = members_repo.LoadMembers(room->id);
+
+        postgres::UsersRepository users_repo(txn);
+        std::vector<postgres::UserRecord> result;
+        for (const auto& m : members) {
+            auto user = users_repo.FindById(m.user_id);
+            if (user) result.push_back(*user);
+        }
+        return result;
+    } catch (...) {
+        return {};
+    }
+}
+
 std::pair<bool, std::string> IRCDBWrapper::DeleteRoomByName(const std::string &roomname)
 {
     try {
