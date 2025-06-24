@@ -155,7 +155,7 @@ curl -X POST http://localhost:8080/api/room/join \
   -d '{"name":"new_room"}'
 ```
 
-Возврат при успешном запросе перехода в "room_1"
+Возврат при успешном запросе перехода в "room_1" или уже этой в комнате
 **HTTP 200**
 ```json
 {
@@ -179,7 +179,7 @@ curl -X POST http://localhost:8080/api/room/join \
 }
 ```
 
-Комната не найдена или уже этой в комнате
+Комната не найдена
 **HTTP 404 Not Found**
 ```json
 {
