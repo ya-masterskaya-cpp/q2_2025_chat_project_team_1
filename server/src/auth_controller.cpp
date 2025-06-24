@@ -50,11 +50,10 @@ void AuthController::LoginUser(const drogon::HttpRequestPtr &req,
         return;
     }
 
-    // TODO удалить случай "User already logged in"
     auto chat_service = ChatServicePlugin::GetService();
     auto token_opt = chat_service->Login(login, password); // выполняем вход и получаем токен
-    if (!token_opt.has_value()) {
-        http_utils::RespondWithError("Invalid login or password", drogon::k401Unauthorized, std::move(callback));
+    if (!token_opt.has_value()) { // вход невозможен при отсутствии регистрации или если пользователь уже залогинен
+        http_utils::RespondWithError("User is not registered or User already logged in", drogon::k401Unauthorized, std::move(callback));
         return;
     }
 
