@@ -140,18 +140,22 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         message_handler_.reset();
         return;
     }
+
     ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
     ws_client_->SetOnOpen([self = this](const std::string& msg) {
         self->send_button_->Enable(true);
         self->rooms_button_->Enable(true);
         self->disconection_button_->Enable(true);
         self->conection_button_->Enable(false);
+        self->status_bar_->SetStatusText(std::string("User: ") + self->user_.name,0);
     });
     ws_client_->SetOnClose([self = this](const std::string& msg) {
         self->send_button_->Enable(false);
         self->rooms_button_->Enable(false);
         self->disconection_button_->Enable(false);
         self->conection_button_->Enable(true);
+        self->status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"), 0);
+        self->status_bar_->SetStatusText(std::string("Room: ") + std::string("None"),1);
     });
     ws_client_->SetOnError([self = this](const std::string& msg) {
         wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);

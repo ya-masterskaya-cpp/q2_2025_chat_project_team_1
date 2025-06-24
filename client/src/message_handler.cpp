@@ -80,9 +80,9 @@ ServerResponse MessageHandler::CreateRoom(const std::string& name) {
     body["name"] = name;
     auto res = SendPostRequest(url_ + std::string(api::ROOM_CREATE), body, user_.token);
     if(res.error) {
-        return {res.status_code == 200, res.text, res.error.message};
+        return {res.status_code == 201, res.text, res.error.message};
     }
-    return{res.status_code == 200, res.text};
+    return{res.status_code == 201, res.text};
 }
 
 ServerResponse MessageHandler::JoinRoom(const std::string& name) {

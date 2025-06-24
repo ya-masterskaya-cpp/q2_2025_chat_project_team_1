@@ -45,7 +45,6 @@ void CreateRoomFrame::OnEnterButtonClicked(wxCommandEvent& event) {
 
     if(res.status) {
         if(on_update_) {
-            std::cout << "on enter button" << std::endl;
             on_update_();
         }
         Close();
