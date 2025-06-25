@@ -76,6 +76,7 @@ MainFrame::MainFrame(const wxString& title)
 
     SetStatusBar(status_bar_);
 
+    this->SetMinSize({400,400});
     //Load settings
     Load();
 }
@@ -115,12 +116,6 @@ void MainFrame::OnSettingsMenu(wxCommandEvent& event)
 {
     SettingsFrame* settings_frame = new SettingsFrame{this, file_configs_.get()};
     settings_frame->Show();
-}
-
-void MainFrame::Save() {
-    file_configs_->SetPath("/MainFrame");
-    file_configs_->Write("Width", GetSize().GetWidth());
-    file_configs_->Write("Height", GetSize().GetHeight());
 }
 
 void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
@@ -168,13 +163,22 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
 }
 
 void MainFrame::OnDisconnectButtonClicked(wxCommandEvent& event) {
+    Disconnect();
+}
+
+void MainFrame::Disconnect() {
     message_handler_->LogoutUser();
     message_handler_.reset();
     if(rooms_frame_) {
         rooms_frame_->Close();
     }
     ws_client_->Stop();
+}
 
+void MainFrame::Save() {
+    file_configs_->SetPath("/MainFrame");
+    file_configs_->Write("Width", GetSize().GetWidth());
+    file_configs_->Write("Height", GetSize().GetHeight());
 }
 
 void MainFrame::Load() {
@@ -195,8 +199,10 @@ void MainFrame::Load() {
 }
 
 
+
 MainFrame::~MainFrame() {
     Save();
+    Disconnect();
 }
 
 
