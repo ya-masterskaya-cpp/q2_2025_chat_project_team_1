@@ -20,13 +20,6 @@ void UserController::getOnlineUsers(const drogon::HttpRequestPtr &req, std::func
     }
 
     // Успех - отдаем список всех клиентов WebSocket // TODO заменить или дополнить методом списка зарегистрированных клиентов
-    Json::Value result(Json::arrayValue);
-    for (const auto& login : ChatWebSocket::GetConnectedUsers()) {
-        result.append(login);
-    }
-
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(result);
-    resp->setStatusCode(drogon::k200OK);
-    callback(resp);
-    // http_utils::RespondWithSuccess(?); // TODO создать удобную обертку c логгированием
+    // можно использовать ChatService::GetOnlineUserNames - список активных токенов
+    http_utils::RespondWithStringArray("Online WebSocket users", ChatWebSocket::GetConnectedUsers(), callback);
 }

@@ -14,8 +14,8 @@ void MessageController::SendMessage(const drogon::HttpRequestPtr &req, std::func
     const std::string token = token_opt.value();
 
     // Токен авторизации не найден
-    auto user = chat_service->GetUserByToken(token);
-    if (!user) {
+    auto user_opt = chat_service->GetUserByToken(token);
+    if (!user_opt) {
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
@@ -27,7 +27,7 @@ void MessageController::SendMessage(const drogon::HttpRequestPtr &req, std::func
         return;
     }
 
-    std::string from = user->GetName();
+    std::string from = user_opt->username;
     std::string text = (*json)["text"].asString(); // парсим текст
     std::string to = json->get("to", "").asString(); // находим получателя (рассылка внутри команты отправителя)
 
@@ -43,8 +43,8 @@ void MessageController::SendMessage(const drogon::HttpRequestPtr &req, std::func
     msg["text"] = text;
     std::string serialized = Json::FastWriter().write(msg); 
 
-    //ChatWebSocket::Broadcast(from, to, serialized); // рассылка через WebSocket
-    ChatWebSocket::Broadcast(token, serialized);
+    ChatWebSocket::Broadcast(token, serialized); // рассылка через WebSocket в пределах комнаты
 
     http_utils::RespondWithSuccess("Message sent", drogon::k200OK, std::move(callback));
+    // TODO добавить логирование
 }

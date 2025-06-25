@@ -1,7 +1,7 @@
 #include "chat_websocket.h"
+#include "logger_plugin.h"
 
 
-// описание ?
 std::mutex ChatWebSocket::conn_mutex_;
 std::unordered_map<std::string, drogon::WebSocketConnectionPtr> ChatWebSocket::connections_;
 
@@ -10,7 +10,7 @@ void ChatWebSocket::handleNewConnection(const drogon::HttpRequestPtr &req, const
     auto it = query.find("token");
     if (it == query.end()) {
         conn->shutdown();
-        std::cout << "[ChatWS] missing token\n";
+        drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("Missing token");
         return;
     }
 
@@ -18,33 +18,39 @@ void ChatWebSocket::handleNewConnection(const drogon::HttpRequestPtr &req, const
     std::string user;
 
     auto chat_service = ChatServicePlugin::GetService();
-    if (!chat_service->GetUserByToken(token)) {
+    auto user_opt = chat_service->GetUserByToken(token);
+    if (!user_opt) {
         conn->shutdown();
-        std::cout << "[ChatWS] invalid token\n";
+        drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("Invalid token");
         return;
     }
+
+    user = user_opt->username;
 
     {
         std::lock_guard<std::mutex> lock(conn_mutex_);
         connections_[user] = conn;
     }
 
-    // TODO!!! проверить появление пользователя в general есть ли в методе LOGIN? (если первое появление при входе и появление при входе после выхода)
-    //chat_service->JoinRoom(token, "general"); // при логине пользователь появляется в общей комнате 
+    drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("User " + user + " connected");
 
-    std::cout << "[ChatWS] connected: " << user << "\n"; // TODO отладка, нужны логи
-    std::cout << "[ChatWS] client in room: " << chat_service->GetCurrentRoomName(token) << "\n"; // TODO отладка, нужны логи
+    auto room_opt = chat_service->GetCurrentRoomName(token);
+    if (room_opt) {
+        drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("User " + user + " in room " + *room_opt);
+    }
 }
 
 void ChatWebSocket::handleNewMessage(const drogon::WebSocketConnectionPtr &ws_conn, std::string &&message, const drogon::WebSocketMessageType &) {
     Json::Reader reader;
     Json::Value root;
     if (!reader.parse(message, root)) {
+        drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("Failed to parse message");
         return;
     }
 
     const std::string text = root.get("text", "").asString();
     if (text.empty()) {
+        drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("Empty message");
         return;
     }
 
@@ -66,21 +72,22 @@ void ChatWebSocket::handleNewMessage(const drogon::WebSocketConnectionPtr &ws_co
     }
 
     if (token.empty()) {
+        drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("Empty token");
         return;
     }
 
     // сериализуем ответ
     auto chat_service = ChatServicePlugin::GetService();
-    auto user_ptr = chat_service->GetUserByToken(token);
-    if (!user_ptr) return;
+    auto user_opt = chat_service->GetUserByToken(token);
+    if (!user_opt) return;
 
     Json::Value response;
-    response["from"] = user_ptr->GetName();
+    response["from"] = user_opt->username;
     response["text"] = text;
 
     std::string serialized = Json::FastWriter().write(response);
 
-    std::cout << "[ChatWS] message received: " << text << "\n"; // TODO отладка, нужны логи
+    drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("From " + user_opt->username + ": " + text);
     Broadcast(token, serialized);
 }
 
@@ -88,7 +95,7 @@ void ChatWebSocket::handleConnectionClosed(const drogon::WebSocketConnectionPtr 
     std::lock_guard<std::mutex> lock(conn_mutex_);
     for (auto it = connections_.begin(); it != connections_.end(); ++it) {
         if (it->second == conn) {
-            std::cout << "[ChatWS] client disconnected: " << it->first << "\n";
+            drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("User " + it->first + " disconnected");
             //RoomManager::instance().LeaveRoom(it->first); // удаление по выходу в Logout
             connections_.erase(it);
             break;
@@ -105,16 +112,19 @@ std::vector<std::string> ChatWebSocket::GetConnectedUsers() {
     return users;
 }
 
-//void ChatWebSocket::Broadcast(const std::string &from, const std::string &to, const std::string &message) {
 void ChatWebSocket::Broadcast(const std::string& token, const std::string& message) {
     std::lock_guard<std::mutex> lock(conn_mutex_);
 
     auto chat_service = ChatServicePlugin::GetService();
-    auto room_name = chat_service->GetCurrentRoomName(token);
+    auto room_opt = chat_service->GetCurrentRoomName(token);
+    if (!room_opt) {
+        drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("Broadcast failed, user not in any room");
+        return;
+    }
 
-    std::cout << "[ChatWS] broadcast in room: " << room_name << "\n"; // TODO отладка, нужны логи
+    drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("Broadcast in room " + *room_opt);
 
-    auto room_user_names = chat_service->GetUserNamesInCurrentRoom(token);
+    auto room_user_names = chat_service->GetUserNamesInRoom(room_opt.value());
     for (const auto &[user, conn] : connections_) {
         if (std::find(room_user_names.begin(), room_user_names.end(), user) != room_user_names.end()) {
             conn->send(message);

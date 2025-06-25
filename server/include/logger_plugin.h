@@ -11,8 +11,11 @@ public:
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 
-    // События REST API // TODO нужны будут дополнительные обёртки помимо LogResponse
+    // События REST API
     void LogResponse(const std::string& text);
+
+    // События WebSocket рассылки сообщений
+    void LogWebSocketEvent(const std::string& text);
 
 private:
     bool verbose_ = false; // флаг для вывода дополнительной инфо в сообщениях логов
