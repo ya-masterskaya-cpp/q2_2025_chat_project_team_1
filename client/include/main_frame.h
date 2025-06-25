@@ -22,6 +22,7 @@ public:
     void OnSettingsMenu(wxCommandEvent& event);
     void OnConnectButtonClicked(wxCommandEvent& event);
     void OnDisconnectButtonClicked(wxCommandEvent& event);
+    void Disconnect();
     void Save();
     void Load();
     ~MainFrame();

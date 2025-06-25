@@ -1,6 +1,7 @@
 #include "websocket_client.h"
 
 #include <optional>
+#include <iostream>
 
 namespace transfer {
 
@@ -16,6 +17,7 @@ void WebSocketClient::Run() {
 
     ws_client_->setOnMessageCallback([this](const ix::WebSocketMessagePtr& msg) {
         if (msg->type == ix::WebSocketMessageType::Message) {
+            std::cout << "websocket message" << std::endl;
             if(msg_handler_) {
                 (*msg_handler_)(msg->str);
             }
