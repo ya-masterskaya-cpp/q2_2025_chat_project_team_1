@@ -1,10 +1,9 @@
 #pragma once
 
 #include "chat_service.h"
-#include "room_manager.h"
-#include "user_manager.h"
-#include "token_manager.h"
+#include "database_plugin.h"
 
+#include <drogon/drogon.h>
 #include <drogon/plugins/Plugin.h>
 
 

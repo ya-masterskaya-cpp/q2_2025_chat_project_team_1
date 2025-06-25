@@ -17,4 +17,6 @@ void LoggerPlugin::LogResponse(const std::string& text) {
     LOG_INFO << "[Response] " << text;
 }
 
-// TODO написать удобные обертки
+void LoggerPlugin::LogWebSocketEvent(const std::string& text) {
+    LOG_INFO << "[ChatWS] " << text;
+}

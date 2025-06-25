@@ -197,10 +197,10 @@ curl -X POST http://localhost:8080/api/room/join \
 
 #### Выйти в общую комнату (перейти в комнату GENERAL_ROOM)
 ```bash
-curl -X POST http://localhost:8080/api/room/join \
+curl -X POST http://localhost:8080/api/room/leave \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a" \
   -H "Content-Type: application/json" \
-  -d '{"name":"general"}'
+  -d '{}'
 ```
 
 Возврат при успешном запросе
@@ -364,3 +364,11 @@ cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
 cmake --build .
 ```
+
+## Скрипт для создания таблиц
+
+ ./setup_chat_db.sh
+
+## Для удаления таблиц
+
+sudo -u postgres dropdb chat_db

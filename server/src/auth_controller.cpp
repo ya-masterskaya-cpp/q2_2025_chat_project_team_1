@@ -27,7 +27,7 @@ void AuthController::RegisterUser(const drogon::HttpRequestPtr &req, std::functi
         return;
     }
 
-    // успех регистрации // TODO исправить проблему, когда валидный запрос шлёт залогиненный клиент
+    // успех регистрации //
     http_utils::RespondWithSuccess("Registration successful", drogon::k201Created, std::move(callback));
 }
 
@@ -57,14 +57,8 @@ void AuthController::LoginUser(const drogon::HttpRequestPtr &req,
         return;
     }
 
-    // успешный вход // TODO исправить проблему, когда валидный запрос шлёт залогиненный клиент
-    Json::Value result;
-    result["user"] = login; // TODO не безопасно отправлять одновременно вместе с токеном
-    result["token"] = token_opt.value();
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(result);
-    resp->setStatusCode(drogon::k200OK);
-    callback(resp);
-    // http_utils::RespondWithSuccess(token, drogon::k200OK, std::move(callback)); // TODO создать удобную обертку c логгированием
+    // успешный вход
+    http_utils::RespondAuthSuccess(login, token_opt.value(), callback);
 }
 
 void AuthController::LogoutUser(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {

@@ -1,146 +1,180 @@
-
 #include "chat_service.h"
-#include "token_generator.h"
+
 
 namespace chat {
 
-ChatService::ChatService(std::shared_ptr<UserManager> user_mgr,
-                         std::shared_ptr<RoomManager> room_mgr,
+inline const std::string GENERAL_ROOM = "general"; // TODO вынести в константы
+
+ChatService::ChatService(std::shared_ptr<IRCDBWrapper> db_wrapper,
                          std::shared_ptr<TokenManager> token_mgr)
-    : user_manager_(std::move(user_mgr))
-    , room_manager_(std::move(room_mgr))
+    : db_wrapper_(std::move(db_wrapper))
     , token_manager_(std::move(token_mgr)) {
 }
 
-//std::shared_ptr<User> ChatService::Register(const std::string& name, const std::string& password_hash) {
 bool ChatService::Register(const std::string& name, const std::string& password_hash) {
-    return user_manager_->RegisterUser(name, password_hash) != nullptr;
+    auto [ok, err] = db_wrapper_->AddUserToDB(name, password_hash);
+    return ok;
 }
 
 std::optional<std::string> ChatService::Login(const std::string& name, const std::string& password_hash) {
-    auto user = user_manager_->GetUserByName(name);
-    if (!user || user->GetPasswordHash() != password_hash) {
+    auto user_opt = db_wrapper_->FindUserByName(name);
+    if (!user_opt || user_opt->password_hash != password_hash) {
         return std::nullopt;
     }
 
-    // Важно!!! Если комната указана - пользователь уже залогинен. Повторный логин невозможен.
-    if (user->GetRoom() != nullptr) {
+    // Важно!!! Если уже есть активный токен - пользователь уже залогинен. Параллельный вход невозможен.
+    auto existing_token = token_manager_->GetTokenByUserId(user_opt->id);
+    if (existing_token) {
         return std::nullopt;
     }
 
-    auto general_room = room_manager_->GetRoomByName("general");
-    if (general_room) {
-        general_room->AddUser(user);
-        user->SetRoom(general_room);
+    // Создать комнату "general", если не была создана ранее
+    if (!db_wrapper_->FindRoomByName(chat::GENERAL_ROOM)) {
+        db_wrapper_->AddRoomToDB(chat::GENERAL_ROOM);
     }
+
+    db_wrapper_->AddUserToRoomByName(name, chat::GENERAL_ROOM);
 
     std::string token = Token::GENERATOR.GenerateHEXToken();
-    token_manager_->SaveToken(user->GetId(), token);
+    token_manager_->SaveToken(user_opt->id, token);
     return token;
 }
 
 bool ChatService::Logout(const std::string& token) {
     auto user_id_opt = token_manager_->GetUserIdByToken(token);
-
-    if (!user_id_opt.has_value()) {
+    if (!user_id_opt) {
         return false;
     }
 
-    auto user_id = user_id_opt.value();
-    
-    user_manager_->GetUserById(user_id)->SetRoom(nullptr); // Сбрасываем комнату
-    token_manager_->RemoveTokenByToken(token); // Удаляем токен
-    return room_manager_->RemoveUserFromRoom(user_id);
+    auto user_opt = db_wrapper_->FindUserById(user_id_opt.value());
+    if (!user_opt) {
+        return false;
+    }
+
+    for (const auto& room : db_wrapper_->GetAllRooms()) {
+        db_wrapper_->RemoveUserFromRoomByName(user_opt->username, room.name);
+    }
+
+    token_manager_->RemoveTokenByToken(token);
+    return true;
 }
 
 std::vector<std::string> ChatService::GetOnlineUserNames() const {
-    auto users = user_manager_->GetAllUsers();
     std::vector<std::string> names;
-    names.reserve(users.size());
-    for (const auto& user : users) {
-        names.push_back(user->GetName());
+    for (const auto& user_id : token_manager_->GetOnlineUserIds()) {
+        auto user_opt = db_wrapper_->FindUserById(user_id);
+        if (user_opt) {
+            names.push_back(user_opt->username);
+        }
     }
     return names;
 }
 
-std::shared_ptr<Room> ChatService::CreateRoom(const std::string& name) {
-    return room_manager_->CreateRoom(name);
+bool ChatService::CreateRoom(const std::string& name) {
+    auto [ok, err] = db_wrapper_->AddRoomToDB(name);
+    return ok;
 }
 
 bool ChatService::JoinRoom(const std::string& token, const std::string& room_name) {
-    auto user = GetUserByToken(token);
-    if (!user) return false;
-    return room_manager_->MoveUserToRoom(user->GetId(), room_name);
+    auto user_opt = GetUserByToken(token);
+    if (!user_opt) return false;
+
+    for (const auto& room : db_wrapper_->GetAllRooms()) {
+        db_wrapper_->RemoveUserFromRoomByName(user_opt->username, room.name);
+    }
+
+    auto [ok, err] = db_wrapper_->AddUserToRoomByName(user_opt->username, room_name);
+    return ok;
 }
 
 bool ChatService::LeaveRoom(const std::string& token) {
-    auto user = GetUserByToken(token);
-    if (!user) {
+    auto user_opt = GetUserByToken(token);
+    if (!user_opt) {
         return false;
     }
 
-    auto general_room = room_manager_->GetRoomByName("general");
-    if (!general_room) {
-        return false;
+    for (const auto& room : db_wrapper_->GetAllRooms()) {
+        db_wrapper_->RemoveUserFromRoomByName(user_opt->username, room.name);
     }
 
-    auto current_room = user->GetRoom();
-    if (current_room) {
-        current_room->RemoveUser(user->GetId());
-    }
-
-    general_room->AddUser(user);
-    user->SetRoom(general_room);
-
+    db_wrapper_->AddUserToRoomByName(user_opt->username, chat::GENERAL_ROOM);
     return true;
 }
 
 bool ChatService::HasRoom(const std::string& name) const {
-    return room_manager_->GetRoomByName(name) != nullptr;
+    return db_wrapper_->FindRoomByName(name).has_value();
 }
 
 std::vector<std::string> ChatService::GetRoomNames() const {
-    return room_manager_->GetAllRoomNames();
-}
-
-std::string ChatService::GetCurrentRoomName(const std::string& token) const {
-    auto user = GetUserByToken(token);
-    if (!user) return "";
-    auto room = user->GetRoom();
-    return room ? room->GetName() : "";
-}
-
-std::vector<std::string> ChatService::GetUserNamesInCurrentRoom(const std::string& token) const {
-    auto user = GetUserByToken(token);
-    if (!user) {
-        return {};
+    std::vector<std::string> names;
+    for (const auto& room : db_wrapper_->GetAllRooms()) {
+        names.push_back(room.name);
     }
-    auto room = user->GetRoom();
-    return room ? room->GetUserNames() : std::vector<std::string>{};
+    return names;
+}
+
+std::optional<std::string> ChatService::GetCurrentRoomName(const std::string& token) const {
+    auto user_opt = GetUserByToken(token);
+    if (!user_opt) {
+        return std::nullopt;
+    }
+
+    for (const auto& room : db_wrapper_->GetAllRooms()) {
+        auto members = db_wrapper_->GetRoomMembersByName(room.name);
+        for (const auto& u : members) {
+            if (u.username == user_opt->username) {
+                return room.name;
+            }
+        }
+    }
+    
+    return std::nullopt;
 }
 
 std::vector<std::string> ChatService::GetUserNamesInRoom(const std::string& room_name) const {
-    auto room = room_manager_->GetRoomByName(room_name);
-    if (!room) {
-        return {};
+    std::vector<std::string> names;
+    for (const auto& u : db_wrapper_->GetRoomMembersByName(room_name)) {
+        names.push_back(u.username);
     }
-    return room->GetUserNames();
+    return names;
 }
 
-std::shared_ptr<User> ChatService::GetUserByToken(const std::string& token) const {
+std::optional<postgres::UserRecord> ChatService::GetUserByToken(const std::string& token) const {
     auto user_id_opt = token_manager_->GetUserIdByToken(token);
-    if (!user_id_opt.has_value()) {
-        return nullptr;
+    if (!user_id_opt) {
+        return std::nullopt;
     }
-    return user_manager_->GetUserById(user_id_opt.value());
+
+    return db_wrapper_->FindUserById(user_id_opt.value());
 }
 
 std::optional<std::string> ChatService::GetTokenByUserName(const std::string& name) const {
-    auto user = user_manager_->GetUserByName(name);
-    if (!user) {
+    auto user_opt = db_wrapper_->FindUserByName(name);
+    if (!user_opt) {
         return std::nullopt;
     }
-    return token_manager_->GetTokenByUserId(user->GetId());
+
+    return token_manager_->GetTokenByUserId(user_opt->id);
+}
+
+// метод для сохранения при отправке сообщения
+bool ChatService::SendMessage(const std::string& token, const std::string& text) {
+    if (text.empty()) {
+        return false;
+    }
+
+    auto user_opt = GetUserByToken(token);
+    if (!user_opt) {
+        return false;
+    }
+
+    auto room_opt = GetCurrentRoomName(token);
+    if (!room_opt) {
+        return false;
+    }
+
+    auto [ok, err] = db_wrapper_->AddMessage(user_opt->username, *room_opt, text);
+    return ok;
 }
 
 }  // namespace chat

@@ -4,15 +4,10 @@
 std::shared_ptr<chat::ChatService> ChatServicePlugin::chat_service_ = nullptr;
 
 void ChatServicePlugin::initAndStart(const Json::Value &) {
-    auto user_mgr = std::make_shared<chat::UserManager>();
-    auto room_mgr = std::make_shared<chat::RoomManager>();
+    auto db = drogon::app().getPlugin<DatabasePlugin>()->GetDB();
     auto token_mgr = std::make_shared<chat::TokenManager>();
 
-    // Создание обязательной комнаты "general"
-    room_mgr->CreateRoom(chat::GENERAL_ROOM);
-
-    // Инициализация ChatService
-    chat_service_ = std::make_shared<chat::ChatService>(user_mgr, room_mgr, token_mgr);
+    chat_service_ = std::make_shared<chat::ChatService>(db, token_mgr);
 }
 
 void ChatServicePlugin::shutdown() {

@@ -85,7 +85,6 @@ void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<v
 
     // успех
     http_utils::RespondWithSuccess(name, drogon::k200OK, std::move(callback)); // {"info" : room_name} или заменить на  {"room" : room_name} ?
-    //http_utils::RespondWithSuccess("Joined room", drogon::k200OK, std::move(callback));
 }
 
 // возврат в GENERAL_ROOM
@@ -136,15 +135,7 @@ void RoomController::ListRooms(const drogon::HttpRequestPtr &req, std::function<
     }
 
     // успех - возвращаем список всех комнат
-    Json::Value result(Json::arrayValue);
-    for (const auto &name : chat_service->GetRoomNames()) {
-        result.append(name);
-    }
-
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(result);
-    resp->setStatusCode(drogon::k200OK);
-    callback(resp);
-    // http_utils::RespondWithSuccess(?); // TODO создать удобную обертку c логгированием
+    http_utils::RespondWithStringArray("List of rooms", chat_service->GetRoomNames(), callback);
 }
 
 void RoomController::CurrentRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
@@ -167,7 +158,8 @@ void RoomController::CurrentRoom(const drogon::HttpRequestPtr &req, std::functio
 
     // успех - возвращаем текущую комнату пользователя
     Json::Value json;
-    json["room"] = chat_service->GetCurrentRoomName(token_opt.value());
+    auto room_opt = chat_service->GetCurrentRoomName(token_opt.value());
+    json["room"] = room_opt.value_or(""); // если комната не определена - пустая строка
 
     auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
     resp->setStatusCode(drogon::k200OK);
@@ -204,14 +196,5 @@ void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::fun
 
     // успех - список пользователей в указанной комнате
     const auto users = chat_service->GetUserNamesInRoom(room);
-
-    Json::Value result(Json::arrayValue);
-    for (const auto &username : users) {
-        result.append(username);
-    }
-
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(result);
-    resp->setStatusCode(drogon::k200OK);
-    callback(resp);
-    // http_utils::RespondWithSuccess(?); // TODO создать удобную обертку c логгированием
+    http_utils::RespondWithStringArray("Users in room " + room + " ", users, callback);
 }
