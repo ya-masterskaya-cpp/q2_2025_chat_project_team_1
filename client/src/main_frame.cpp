@@ -296,7 +296,9 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
             wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
         });
         ws_client_->SetOnMessage([self = this](const std::string& msg) {
-            self->chat_history_->AppendText(msg);
+            Json::Value parsed_msg = domain::Parse(msg);
+            self->chat_history_->AppendText(parsed_msg["from"].asString() + ": "
+                                            + parsed_msg["text"].asString() + ".\n");
         });
 
         ws_client_->Run();
