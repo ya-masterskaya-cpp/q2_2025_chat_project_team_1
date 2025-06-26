@@ -14,14 +14,6 @@ MainFrame::MainFrame(const wxString& title)
     wxBoxSizer* general_sizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-    //settings
-    wxString config_path = wxStandardPaths::Get().GetUserConfigDir() + "/" + "settings.ini";
-
-    file_configs_ = std::make_unique<wxFileConfig>("IRC-chat", wxEmptyString, config_path,
-                                                wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
-
-    Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
-
     // chat history
     chat_history_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxSize(400, 300),
                                  wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH);
@@ -38,11 +30,6 @@ MainFrame::MainFrame(const wxString& title)
     rooms_button_ = new wxButton(panel, wxID_ANY, "Rooms");
     rooms_button_->Enable(false);
     rooms_button_->Bind(wxEVT_BUTTON, &MainFrame::OnRoomButtonClicked, this);
-    conection_button_ = new wxButton(panel, wxID_ANY, "Connect");
-    conection_button_->Bind(wxEVT_BUTTON, &MainFrame::OnConnectButtonClicked, this);
-    disconection_button_ = new wxButton(panel, wxID_ANY, "Disconnect");
-    disconection_button_->Bind(wxEVT_BUTTON, &MainFrame::OnDisconnectButtonClicked, this);
-    disconection_button_->Enable(false);
 
     //layouts
     general_sizer->Add(chat_history_, 1, wxEXPAND | wxALL, 5);
@@ -50,20 +37,31 @@ MainFrame::MainFrame(const wxString& title)
     general_sizer->Add(buttons_sizer, 0 , wxEXPAND | wxLEFT | wxRIGHT, 5);
 
     buttons_sizer->Add(rooms_button_, 0,  wxLEFT| wxBOTTOM, 5);
-    buttons_sizer->Add(conection_button_, 0,  wxLEFT| wxBOTTOM, 5);
-    buttons_sizer->Add(disconection_button_, 0,  wxLEFT| wxBOTTOM, 5);
     buttons_sizer->AddStretchSpacer(1);
     buttons_sizer->Add(send_button_, 0,  wxRIGHT | wxBOTTOM, 5);
 
     panel->SetSizer(general_sizer);
 
     //menu
+    wxString config_path = wxStandardPaths::Get().GetUserConfigDir() + "/" + "settings.ini";
+
+    file_configs_ = std::make_unique<wxFileConfig>("IRC-chat", wxEmptyString, config_path,
+                                                   wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
+
+
     wxMenu* settings_menu = new wxMenu;
     settings_menu->Append(1001, "Settings");
+    Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
+
+    wxMenu* server_menu = new wxMenu;
+    server_menu->Append(1002, "Connect");
+    server_menu->Append(1003, "Disconnect");
+    Bind(wxEVT_MENU, &MainFrame::OnConnectButtonClicked, this, 1002);
+    Bind(wxEVT_MENU, &MainFrame::OnDisconnectButtonClicked, this, 1003);
 
     wxMenuBar* menuBar = new wxMenuBar;
     menuBar->Append(settings_menu, "File");
-
+    menuBar->Append(server_menu, "Server");
     SetMenuBar(menuBar);
 
     //StatusBar
@@ -119,47 +117,48 @@ void MainFrame::OnSettingsMenu(wxCommandEvent& event)
 }
 
 void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
-    file_configs_->SetPath("/Transfer");
+    if(!is_connected_) {
+        file_configs_->SetPath("/Transfer");
 
-    wxString ip;
-    file_configs_->Read("IP", &ip, "127.0.0.1");
-    int port;
-    file_configs_->Read("Port", &port, 8080);
+        wxString ip;
+        file_configs_->Read("IP", &ip, "127.0.0.1");
+        int port;
+        file_configs_->Read("Port", &port, 8080);
 
-    message_handler_ = std::make_unique<domain::MessageHandler>(user_,ip.ToStdString() +":" + std::to_string(port));
+        message_handler_ = std::make_unique<domain::MessageHandler>(user_,ip.ToStdString() +":" + std::to_string(port));
 
-    LoginFrame* login_frame = new LoginFrame(this,message_handler_.get());
-    login_frame->ShowModal();
+        LoginFrame* login_frame = new LoginFrame(this,message_handler_.get());
+        login_frame->ShowModal();
 
-    if(user_.token.empty()) {
-        message_handler_.reset();
-        return;
+        if(user_.token.empty()) {
+            message_handler_.reset();
+            return;
+        }
+
+        ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
+        ws_client_->SetOnOpen([self = this](const std::string& msg) {
+            self->send_button_->Enable(true);
+            self->rooms_button_->Enable(true);
+            self->status_bar_->SetStatusText(std::string("User: ") + self->user_.name,0);
+        });
+        ws_client_->SetOnClose([self = this](const std::string& msg) {
+            self->send_button_->Enable(false);
+            self->rooms_button_->Enable(false);
+            self->status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"), 0);
+            self->status_bar_->SetStatusText(std::string("Room: ") + std::string("None"),1);
+        });
+        ws_client_->SetOnError([self = this](const std::string& msg) {
+            wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
+        });
+        ws_client_->SetOnMessage([self = this](const std::string& msg) {
+            self->chat_history_->AppendText(msg);
+        });
+
+        ws_client_->Run();
+        is_connected_ = true;
+    } else {
+        chat_history_->AppendText("You are connected already.\n");
     }
-
-    ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
-    ws_client_->SetOnOpen([self = this](const std::string& msg) {
-        self->send_button_->Enable(true);
-        self->rooms_button_->Enable(true);
-        self->disconection_button_->Enable(true);
-        self->conection_button_->Enable(false);
-        self->status_bar_->SetStatusText(std::string("User: ") + self->user_.name,0);
-    });
-    ws_client_->SetOnClose([self = this](const std::string& msg) {
-        self->send_button_->Enable(false);
-        self->rooms_button_->Enable(false);
-        self->disconection_button_->Enable(false);
-        self->conection_button_->Enable(true);
-        self->status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"), 0);
-        self->status_bar_->SetStatusText(std::string("Room: ") + std::string("None"),1);
-    });
-    ws_client_->SetOnError([self = this](const std::string& msg) {
-        wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
-    });
-    ws_client_->SetOnMessage([self = this](const std::string& msg) {
-        self->chat_history_->AppendText(msg);
-    });
-
-    ws_client_->Run();
 }
 
 void MainFrame::OnDisconnectButtonClicked(wxCommandEvent& event) {
@@ -167,12 +166,16 @@ void MainFrame::OnDisconnectButtonClicked(wxCommandEvent& event) {
 }
 
 void MainFrame::Disconnect() {
-    message_handler_->LogoutUser();
-    message_handler_.reset();
-    if(rooms_frame_) {
-        rooms_frame_->Close();
+    if(is_connected_) {
+        message_handler_->LogoutUser();
+        message_handler_.reset();
+        if(rooms_frame_) {
+            rooms_frame_->Close();
+        }
+        ws_client_->Stop();
+    } else {
+        chat_history_->AppendText("You are not connected.\n");
     }
-    ws_client_->Stop();
 }
 
 void MainFrame::Save() {
