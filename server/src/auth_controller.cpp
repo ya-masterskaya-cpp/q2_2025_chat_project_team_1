@@ -23,12 +23,12 @@ void AuthController::RegisterUser(const drogon::HttpRequestPtr &req, std::functi
     // пользователь уже зарегистрирован
     auto chat_service = ChatServicePlugin::GetService();
     if (!chat_service->Register(login, password)) {
-        http_utils::RespondWithError("User already registred", drogon::k409Conflict, std::move(callback));
+        http_utils::RespondWithError("User " + login + " already registered", drogon::k409Conflict, std::move(callback));
         return;
     }
 
     // успех регистрации //
-    http_utils::RespondWithSuccess("Registration successful", drogon::k201Created, std::move(callback));
+    http_utils::RespondWithSuccess("Registration successful: " + login, drogon::k201Created, std::move(callback));
 }
 
 void AuthController::LoginUser(const drogon::HttpRequestPtr &req,

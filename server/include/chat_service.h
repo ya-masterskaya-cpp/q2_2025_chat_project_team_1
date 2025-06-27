@@ -35,10 +35,14 @@ public:
     std::vector<std::string> GetUserNamesInRoom(const std::string& room_name) const;
 
     // Сообщения
-    bool SendMessage(const std::string& token, const std::string& text); // Сохраняет сообщение в БД при отправке
+    bool SaveMessage(const std::string& token, const std::string& text); // Сохраняет сообщение в БД, применяется при отправке
+    std::vector<postgres::MessageRecord> GetRecentMessages(const std::string& room_name, int max_items) const;
+    std::vector<postgres::MessageRecord> GetRoomMessagesPage(const std::string& room_name, int offset, int limit) const;
 
     std::optional<postgres::UserRecord> GetUserByToken(const std::string& token) const;
     std::optional<std::string> GetTokenByUserName(const std::string& name) const;
+
+    std::optional<std::string> GetUserNameById(const postgres::UserId& id) const;
 
 private:
     std::shared_ptr<IRCDBWrapper> db_wrapper_;

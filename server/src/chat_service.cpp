@@ -77,7 +77,9 @@ bool ChatService::CreateRoom(const std::string& name) {
 
 bool ChatService::JoinRoom(const std::string& token, const std::string& room_name) {
     auto user_opt = GetUserByToken(token);
-    if (!user_opt) return false;
+    if (!user_opt) {
+        return false;
+    }
 
     for (const auto& room : db_wrapper_->GetAllRooms()) {
         db_wrapper_->RemoveUserFromRoomByName(user_opt->username, room.name);
@@ -97,8 +99,8 @@ bool ChatService::LeaveRoom(const std::string& token) {
         db_wrapper_->RemoveUserFromRoomByName(user_opt->username, room.name);
     }
 
-    db_wrapper_->AddUserToRoomByName(user_opt->username, chat::GENERAL_ROOM);
-    return true;
+    auto [ok, err] = db_wrapper_->AddUserToRoomByName(user_opt->username, chat::GENERAL_ROOM);
+    return ok;
 }
 
 bool ChatService::HasRoom(const std::string& name) const {
@@ -139,6 +141,34 @@ std::vector<std::string> ChatService::GetUserNamesInRoom(const std::string& room
     return names;
 }
 
+// метод для сохранения при отправке сообщения
+bool ChatService::SaveMessage(const std::string& token, const std::string& text) {
+    if (text.empty()) {
+        return false;
+    }
+
+    auto user_opt = GetUserByToken(token);
+    if (!user_opt) {
+        return false;
+    }
+
+    auto room_opt = GetCurrentRoomName(token);
+    if (!room_opt) {
+        return false;
+    }
+
+    auto [ok, err] = db_wrapper_->AddMessage(user_opt->username, *room_opt, text);
+    return ok;
+}
+
+std::vector<postgres::MessageRecord> ChatService::GetRecentMessages(const std::string& room_name, int max_items) const {
+    return db_wrapper_->GetRecentMessages(room_name, max_items);
+}
+
+std::vector<postgres::MessageRecord> ChatService::GetRoomMessagesPage(const std::string& room_name, int offset, int limit) const {
+    return db_wrapper_->GetRoomMessagesPage(room_name, offset, limit);
+}
+
 std::optional<postgres::UserRecord> ChatService::GetUserByToken(const std::string& token) const {
     auto user_id_opt = token_manager_->GetUserIdByToken(token);
     if (!user_id_opt) {
@@ -157,24 +187,12 @@ std::optional<std::string> ChatService::GetTokenByUserName(const std::string& na
     return token_manager_->GetTokenByUserId(user_opt->id);
 }
 
-// метод для сохранения при отправке сообщения
-bool ChatService::SendMessage(const std::string& token, const std::string& text) {
-    if (text.empty()) {
-        return false;
+std::optional<std::string> ChatService::GetUserNameById(const postgres::UserId& id) const {
+    auto user_opt = db_wrapper_->FindUserById(id);
+    if (user_opt) {
+        return user_opt->username;
     }
-
-    auto user_opt = GetUserByToken(token);
-    if (!user_opt) {
-        return false;
-    }
-
-    auto room_opt = GetCurrentRoomName(token);
-    if (!room_opt) {
-        return false;
-    }
-
-    auto [ok, err] = db_wrapper_->AddMessage(user_opt->username, *room_opt, text);
-    return ok;
+    return std::nullopt;
 }
 
 }  // namespace chat

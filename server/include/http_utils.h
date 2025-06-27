@@ -57,7 +57,7 @@ inline void RespondAuthSuccess(const std::string& username,
     callback(MakeJsonResponse(body, drogon::k200OK));
 }
 
-inline void RespondWithStringArray(const std::string& log_message,
+inline void RespondWithStringArray(const std::string& message,
                                    const std::vector<std::string>& values,
                                    const std::function<void(const drogon::HttpResponsePtr&)>& callback) {
     Json::Value body(Json::arrayValue);
@@ -65,10 +65,27 @@ inline void RespondWithStringArray(const std::string& log_message,
         body.append(v);
     }
 
-    drogon::app().getPlugin<LoggerPlugin>()->LogResponse("[Success] " + log_message);
+    drogon::app().getPlugin<LoggerPlugin>()->LogResponse("[Success] " + message);
 
     callback(MakeJsonResponse(body, drogon::k200OK));
 }
 
+inline void RespondWithJson(const Json::Value& body,
+                            const std::string& message,
+                            drogon::HttpStatusCode code,
+                            const std::function<void(const drogon::HttpResponsePtr&)>& callback) {
+    drogon::app().getPlugin<LoggerPlugin>()->LogResponse(message);
+    
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(body);
+    resp->setStatusCode(code);
+    callback(resp);
+}
+
+// TODO перенести в domain удаление символа переноса строки '\n'
+inline void TrimNewLineSymb(std::string& str) {
+    if (!str.empty() && str.back() == '\n') {
+        str.pop_back();
+    }
+}
 
 }  // namespace http_utils

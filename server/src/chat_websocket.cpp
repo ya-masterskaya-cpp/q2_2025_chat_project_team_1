@@ -1,5 +1,4 @@
 #include "chat_websocket.h"
-#include "logger_plugin.h"
 
 
 std::mutex ChatWebSocket::conn_mutex_;
