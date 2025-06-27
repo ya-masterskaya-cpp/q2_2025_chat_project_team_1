@@ -17,7 +17,7 @@ MainFrame::MainFrame(const wxString& title)
     wxPanel* central_panel = new wxPanel(main_panel);
     wxBoxSizer* central_sizer = new wxBoxSizer(wxVERTICAL);
     wxPanel* info_panel = new wxPanel(main_panel);
-    wxBoxSizer* info_sizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* info_sizer = new wxBoxSizer(wxVERTICAL);
     wxPanel* control_panel = new wxPanel(main_panel);
     wxBoxSizer* control_sizer = new wxBoxSizer(wxVERTICAL);
 
@@ -35,9 +35,15 @@ MainFrame::MainFrame(const wxString& title)
     central_panel->SetSizer(central_sizer);
 
     //INFO PANEL
+    //label
+    info_label_txt_ = new wxStaticText(info_panel, wxID_ANY, "Info Panel");
+    wxFont info_label_font = info_label_txt_->GetFont();
+    info_label_font.SetWeight(wxFONTWEIGHT_BOLD);
+    info_label_txt_->SetFont(info_label_font);
     //list
     info_list_ = new wxListBox(info_panel, wxID_ANY, wxDefaultPosition, wxSize(200, -1), wxArrayString{});
     //layouts
+    info_sizer->Add(info_label_txt_,0, wxALL, 5);
     info_sizer->Add(info_list_,1,wxEXPAND | wxALL, 5);
     info_panel->SetSizer(info_sizer);
 
@@ -100,7 +106,6 @@ MainFrame::MainFrame(const wxString& title)
 
     this->SetMinSize({400,400});
 
-
     //Load settings
     Load();
 }
@@ -126,7 +131,7 @@ void MainFrame::UpdateRoomsList() {
     Json::Value parsed_val = domain::Parse(res.msg);
 
     if(res.status) {
-        info_list_->Append("Rooms:\n");
+        info_label_txt_->SetLabel("Info Panel - Rooms");
         for(auto& room : parsed_val) {
             info_list_->Append(room.asString() + '\n');
         }
@@ -198,6 +203,10 @@ void MainFrame::OnLeaveRoomButtonClicked(wxCommandEvent& event) {
 void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
     if(is_connected_) {
         int index = info_list_->GetSelection();
+        if(index == -1) {
+            wxMessageBox("Choose room", "Error", wxOK | wxICON_ERROR);
+            return;
+        }
         auto res = message_handler_->GetUsersInRoom(info_list_->GetString(index).ToStdString());
 
         if(!res.error_msg.empty()) {
@@ -211,7 +220,7 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
             Json::Value users_array = domain::Parse(parsed_val["info"].asString());
 
             info_list_->Clear();
-            info_list_->Append("Room #" + info_list_->GetString(index) + " users:\n");
+            info_label_txt_->SetLabel("Info Panel. Room #" + info_list_->GetString(index) + " users:");
             for(const auto& user : users_array) {
                 info_list_->Append(user.asString() + '\n');
             }
@@ -227,7 +236,8 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
     if(is_connected_) {
-        auto res = message_handler_->SendMessage(message_input_->GetValue().ToStdString());
+        std::cout << message_input_->GetValue().ToUTF8() << std::endl;
+        auto res = message_handler_->SendMessage(std::string(message_input_->GetValue().ToUTF8()));
         message_input_->Clear();
 
         if(!res.error_msg.empty()) {
@@ -243,21 +253,6 @@ void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
         chat_history_->AppendText("You are not connected.\n");
     }
 }
-
-// void MainFrame::OnRoomButtonClicked(wxCommandEvent& event) {
-//     if(!rooms_frame_) {
-//         rooms_frame_ = new RoomsFrame(this, "Select Room", message_handler_.get(), user_);
-//         rooms_frame_->OnJoinRoomUpdate([self = this](const std::string& room_name) {
-//             self->status_bar_->SetStatusText(std::string("Room: ") + std::string(room_name),1);
-//             self->chat_history_->AppendText("Room " +  room_name +":\n");
-//         });
-//         rooms_frame_->OnLeaveRoomUpdate([self = this]() {
-//             self->status_bar_->SetStatusText(std::string("Room: ") + std::string("General"),1);
-//             self->chat_history_->AppendText("Room General:\n");
-//         });
-//     }
-//     rooms_frame_->Show();
-// }
 
 void MainFrame::OnSettingsMenu(wxCommandEvent& event)
 {
@@ -296,9 +291,10 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
             wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
         });
         ws_client_->SetOnMessage([self = this](const std::string& msg) {
+            self->chat_history_->AppendText(msg);
             Json::Value parsed_msg = domain::Parse(msg);
             self->chat_history_->AppendText(parsed_msg["from"].asString() + ": "
-                                            + parsed_msg["text"].asString() + ".\n");
+                                            + std::string(parsed_msg["text"].asString()) + ".\n");
         });
 
         ws_client_->Run();
@@ -316,9 +312,6 @@ void MainFrame::Disconnect() {
     if(is_connected_) {
         message_handler_->LogoutUser();
         message_handler_.reset();
-        // if(rooms_frame_) {
-        //     rooms_frame_->Close();
-        // }
         ws_client_->Stop();
     } else {
         chat_history_->AppendText("You are not connected.\n");
