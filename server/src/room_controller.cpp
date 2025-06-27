@@ -69,7 +69,8 @@ void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<v
         return;
     }
 
-    const std::string name = (*json)["name"].asString();
+    std::string name = (*json)["name"].asString(); // при необходимости срезать '\n' в name - проблема в клиенте?
+    http_utils::TrimNewLineSymb(name); // TODO убрать костыль
 
     // пустое имя комнаты
     if (name.empty()) {
@@ -159,12 +160,9 @@ void RoomController::CurrentRoom(const drogon::HttpRequestPtr &req, std::functio
     // успех - возвращаем текущую комнату пользователя
     Json::Value json;
     auto room_opt = chat_service->GetCurrentRoomName(token_opt.value());
-    json["room"] = room_opt.value_or(""); // если комната не определена - пустая строка
+    json["room"] = room_opt.value_or(""); // если комната не определена - пустая строка // TODO добавить ошибку 400 "User not in any room"
 
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-    resp->setStatusCode(drogon::k200OK);
-    callback(resp);
-    // http_utils::RespondWithSuccess(?); // TODO создать удобную обертку c логгированием
+    http_utils::RespondWithJson(json, "Current room name extracted", drogon::k200OK, callback);
 }
 
 void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
@@ -185,7 +183,15 @@ void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::fun
         return;
     }
 
-    const std::string room = req->getParameter("name");
+    std::string room = req->getParameter("name");
+
+    // проверка параметров
+    if (room.empty()) {
+        http_utils::RespondWithError("Invalid parameters", drogon::k400BadRequest, std::move(callback));
+        return;
+    }
+
+    http_utils::TrimNewLineSymb(room); // TODO убрать костыль
 
     // комната не существует
     

@@ -5,11 +5,25 @@
 
 ## Запросы к API
 
+#### Ping сервера
+
+```bash
+curl -X GET http://localhost:8080/api/v1/ping
+```
+
+Успешный ответ  
+**HTTP 200**
+```json
+{
+  "info":"Ping success"
+}
+```
+
 ### REST API для аутентификации
 
 #### Регистрация
 ```bash
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"login":"alice", "password":"1234"}'
 ```
@@ -18,7 +32,7 @@ curl -X POST http://localhost:8080/api/auth/register \
 **HTTP 201 Created**
 ```json
 {
-  "info":"Registration successful"
+  "info":"Registration successful: alice"
 }
 ```
 
@@ -26,7 +40,7 @@ curl -X POST http://localhost:8080/api/auth/register \
 **HTTP 409 Conflict**
 ```json
 {
-  "error":"User already registered"
+  "error":"User alice already registered"
 }
 ```
 
@@ -48,7 +62,7 @@ curl -X POST http://localhost:8080/api/auth/register \
 
 #### Вход (выдает новый токен)
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"login":"alice", "password":"1234"}'
 ```
@@ -80,7 +94,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 #### Выход (токен аннулируется)
 ```bash
-curl -X POST http://localhost:8080/api/auth/logout \
+curl -X POST http://localhost:8080/api/v1/auth/logout \
   -H "Authorization: Bearer 96b1f594eb48c7026d90a1601eca4ce7"
 ```
 
@@ -98,7 +112,7 @@ curl -X POST http://localhost:8080/api/auth/logout \
 
 #### Получить список всех подключенных клиентов WebSocket
 ```bash
-curl -X GET http://localhost:8080/api/users/online \
+curl -X GET http://localhost:8080/api/v1/users/online \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
 ```
 
@@ -117,7 +131,7 @@ curl -X GET http://localhost:8080/api/users/online \
 
 #### Создать новую комнату
 ```bash
-curl -X POST http://localhost:8080/api/room/create \
+curl -X POST http://localhost:8080/api/v1/room/create \
   -H "Authorization: Bearer 536942b7d3c7b5a91fa34e8f4b24439a" \
   -H "Content-Type: application/json" \
   -d '{"name":"new_room"}'
@@ -157,7 +171,7 @@ curl -X POST http://localhost:8080/api/room/create \
 
 #### Присоединиться к комнате чата
 ```bash
-curl -X POST http://localhost:8080/api/room/join \
+curl -X POST http://localhost:8080/api/v1/room/join \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a" \
   -H "Content-Type: application/json" \
   -d '{"name":"new_room"}'
@@ -197,7 +211,7 @@ curl -X POST http://localhost:8080/api/room/join \
 
 #### Выйти в общую комнату (перейти в комнату GENERAL_ROOM)
 ```bash
-curl -X POST http://localhost:8080/api/room/leave \
+curl -X POST http://localhost:8080/api/v1/room/leave \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a" \
   -H "Content-Type: application/json" \
   -d '{}'
@@ -221,7 +235,7 @@ curl -X POST http://localhost:8080/api/room/leave \
 
 #### Получить название текущей комнаты
 ```bash
-curl -X GET http://localhost:8080/api/room/current \
+curl -X GET http://localhost:8080/api/v1/room/current \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
 ```
 
@@ -235,19 +249,22 @@ curl -X GET http://localhost:8080/api/room/current \
 
 #### Получить список всех комнат
 ```bash
-curl -X GET http://localhost:8080/api/room/list \
+curl -X GET http://localhost:8080/api/v1/room/list \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
 ```
 
 Возврат массива json при успешном запросе
 **HTTP 200**
 ```json
-["general", "new_room"]
+[
+  "general",
+  "new_room"
+]
 ```
 
 #### Получить список участников комнаты
 ```bash
-curl -X GET "http://localhost:8080/api/room/users?name=general" \
+curl -X GET "http://localhost:8080/api/v1/room/users?name=general" \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
 ```
 
@@ -259,37 +276,30 @@ curl -X GET "http://localhost:8080/api/room/users?name=general" \
 }
 ```
 
+При отсутствии поля name
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Invalid parameters"
+}
+```
+
 Возврат массива json при успешном запросе
 **HTTP 200**
 ```json
-["alice", "bob"]
-```
-
-#### Ошибки при получении списка участников комнаты
-
-- Ошибка извлечения токена  
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Failed to extract token"
-}
-```
-
-- Недействительный токен  
-**HTTP 401 Unauthorized**
-```json
-{
-  "error":"Invalid token"
-}
+[
+  "alice",
+  "bob"
+]
 ```
 
 ---
 
-### REST API для отправки сообщений
+### REST API для работы с сообщениями
 
 #### Отправка сообщения (REST)
 ```bash
-curl -X POST http://localhost:8080/api/messages \
+curl -X POST http://localhost:8080/api/v1/messages/send \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a" \
   -H "Content-Type: application/json" \
   -d '{"text":"Привет, чат!", "to":""}'
@@ -299,7 +309,7 @@ curl -X POST http://localhost:8080/api/messages \
 **HTTP 200**
 ```json
 {
-  "info":"Message sent"
+  "info":"Message from alice sent"
 }
 ```
 
@@ -322,6 +332,77 @@ curl -X POST http://localhost:8080/api/messages \
 Отправка сообщения через WebSocket - пример:
 ```bash
 wscat -c "ws://localhost:8080/chat?token=2a3d8e712bcebc2da7416dc67cf9103a"
+```
+
+#### Сохранение сообщения в БД (выполнять запрос после отправки сообщений на сервер!)
+```bash
+curl -X POST http://localhost:8080/api/v1/messages/upload \
+  -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a" \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Привет, чат!"}'
+```
+
+Успешная отправка
+**HTTP 200**
+```json
+{
+  "info":"Message saved to DB"
+}
+```
+
+Невалидный json
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Invalid JSON format"
+}
+```
+
+При отсутствии сообщения
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Empty message"
+}
+```
+
+Ошибка сохранения в БД
+**HTTP 500 Internal server error**
+```json
+{
+  "error":"Failed to save message to DB"
+}
+```
+
+#### Получение последних N сообщений в комнате
+```bash
+curl -X GET "http://localhost:8080/api/v1/messages/recent?room=general&max_items=10" \
+  -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a"
+```
+
+Возврат массива json при успешном запросе
+**HTTP 200**
+```json
+[
+  {
+    "from": "alice",
+    "sent_at": "2024-06-24 20:12:45",
+    "text": "Привет!"
+  },
+  {
+    "from": "bob",
+    "sent_at": "2024-06-24 20:13:10",
+    "text": "Привет, Alice!"
+  }
+]
+```
+
+При отсутствии полей room или max_items, либо некорректный max_items
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Invalid parameters"
+}
 ```
 
 ---
