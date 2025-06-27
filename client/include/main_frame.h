@@ -18,7 +18,6 @@ class MainFrame : public wxFrame
 public:
     MainFrame(const wxString& title);
     void OnSendButtonClicked(wxCommandEvent& event);
-    // void OnRoomButtonClicked(wxCommandEvent& event);
     void OnGetRoomsButtonClicked(wxCommandEvent& event);
     void OnCreateRoomButtonClicked(wxCommandEvent& event);
     void OnJoinRoomButtonClicked(wxCommandEvent& event);
@@ -43,6 +42,7 @@ private:
     wxTextCtrl* chat_history_;
     wxTextCtrl* message_input_;
     wxStatusBar* status_bar_;
+    wxStaticText* info_label_txt_;
     wxListBox* info_list_;
     SettingsFrame* settings_frame_;
 
