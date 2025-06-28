@@ -19,10 +19,10 @@ SettingsFrame::SettingsFrame(wxWindow* parent, wxFileConfig* file_configs)
     wxFlexGridSizer* transfer_sizer = new wxFlexGridSizer(2, 2, 5, 5);
     ip_ = new wxTextCtrl(transfer_panel, wxID_ANY);
     port_ = new wxTextCtrl(transfer_panel, wxID_ANY);
-    transfer_sizer->Add(new wxStaticText(transfer_panel, wxID_ANY, "IP:"),1);
-    transfer_sizer->Add(ip_,3,wxEXPAND,5);
-    transfer_sizer->Add(new wxStaticText(transfer_panel, wxID_ANY, "Port:"),1);
-    transfer_sizer->Add(port_,3,wxEXPAND,5);
+    transfer_sizer->Add(new wxStaticText(transfer_panel, wxID_ANY, "IP:"),1, wxALL, 5);
+    transfer_sizer->Add(ip_,3,wxEXPAND | wxALL, 5);
+    transfer_sizer->Add(new wxStaticText(transfer_panel, wxID_ANY, "Port:"),1, wxALL, 5);
+    transfer_sizer->Add(port_,3,wxEXPAND | wxALL, 5);
     transfer_panel->SetSizer(transfer_sizer);
 
 
@@ -40,26 +40,20 @@ SettingsFrame::SettingsFrame(wxWindow* parent, wxFileConfig* file_configs)
     wxButton* cancel_button = new wxButton(this, wxID_ANY, "Cancel");
     save_button->Bind(wxEVT_BUTTON, &SettingsFrame::OnSaveButtonClicked,this);
     cancel_button->Bind(wxEVT_BUTTON, &SettingsFrame::OnCancelButtonClicked,this);
-    buttons_sizer->Add(save_button, 0,  wxRIGHT, 5);
-    buttons_sizer->Add(cancel_button, 0,  wxRIGHT, 5);
+    buttons_sizer->AddStretchSpacer(1);
+    buttons_sizer->Add(save_button, 0,  wxALL, 5);
+    buttons_sizer->Add(cancel_button, 0,  wxALL, 5);
 
 
     //layout
     main_sizer->Add(notebook, 1, wxEXPAND,5);
-    main_sizer->Add(buttons_sizer,0);
+    main_sizer->Add(buttons_sizer,0,wxEXPAND,5);
     SetSizer(main_sizer);
 
     Load();
 }
 
 void SettingsFrame::OnSaveButtonClicked(wxCommandEvent& event) {
-    // std::regex ipRegex(R"(^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)
-    //         {3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(3[0-2]|[1-2]?\d))?$)");
-    // if (std::regex_match(std::string(ip_->GetValue().ToStdString()), ipRegex)) {
-    //     ip_->SetBackgroundColour(*wxWHITE);
-    // } else {
-    //     ip_->SetBackgroundColour(*wxRED);
-    // }
     Save();
 }
 
