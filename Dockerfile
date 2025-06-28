@@ -2,7 +2,7 @@ FROM debian:12
 
 # 1. Базовые зависимости
 RUN apt-get update && \
-    apt-get install -y build-essential cmake git pkg-config curl libssl-dev zip bison flex autoconf automake libtool m4 pkg-config
+    apt-get install -y build-essential cmake git pkg-config curl libssl-dev zip bison flex autoconf automake libtool m4 pkg-config postgresql-client
 # 2. vcpkg
 WORKDIR /opt
 RUN git clone https://github.com/microsoft/vcpkg.git && cd vcpkg && ./bootstrap-vcpkg.sh
