@@ -4,6 +4,8 @@
 #include <json/json.h>
 #include <password_hasher.h>
 
+#include <iostream>
+
 namespace domain {
 
 MessageHandler::MessageHandler(UserData& user, const std::string& url)
@@ -105,6 +107,11 @@ ServerResponse MessageHandler::GetCurrentRoom() {
 
 ServerResponse MessageHandler::GetUsersInRoom(const std::string& roomName) {
     return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_USERS) + "?name=" + roomName, user_.token));
+}
+
+ServerResponse MessageHandler::GetRoomsRecentMEssages(const std::string room_name, size_t messages_count) {
+    return ToRequest(SendGetRequest(url_ + std::string(api::MESSAGE_RECENT) + "?room=" + room_name +
+                                    "&max_items=" + std::to_string(messages_count),user_.token));
 }
 
 void MessageHandler::SetUrl(const std::string& url) {

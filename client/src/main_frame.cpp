@@ -133,7 +133,7 @@ void MainFrame::UpdateRoomsList() {
     if(res.status) {
         info_label_txt_->SetLabel("Info Panel - Rooms");
         for(auto& room : parsed_val) {
-            info_list_->Append(room.asString() + '\n');
+            info_list_->Append(room.asString());
         }
     } else {
         wxMessageBox(parsed_val["error"].asString(), "Error", wxOK | wxICON_ERROR);
@@ -156,7 +156,8 @@ void MainFrame::OnCreateRoomButtonClicked(wxCommandEvent& event) {
 void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
     if(is_connected_) {
         int index = info_list_->GetSelection();
-        auto res = message_handler_->JoinRoom(info_list_->GetString(index).ToStdString());
+        const std::string& room_name = info_list_->GetString(index).ToStdString();
+        auto res = message_handler_->JoinRoom(room_name);
 
         if(!res.error_msg.empty()) {
             wxMessageBox(res.error_msg, "Error", wxOK | wxICON_ERROR);
@@ -172,6 +173,20 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
             wxMessageBox(parsed_val["error"].asString(), "Warning", wxOK | wxICON_WARNING);
             return;
         }
+
+        auto recent_msg_res = message_handler_->GetRoomsRecentMEssages(room_name);
+        if(!recent_msg_res.error_msg.empty()) {
+            wxMessageBox(recent_msg_res.error_msg, "Error", wxOK | wxICON_ERROR);
+            return;
+        }
+
+        Json::Value parsed_msg_val = domain::Parse(recent_msg_res.msg);
+
+        for(auto& msg : parsed_msg_val) {
+            chat_history_->AppendText(msg["from"].asString() + ": " + msg["text"].asString());
+        }
+
+
     } else {
         chat_history_->AppendText("You are not connected.\n");
     }
@@ -207,6 +222,7 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
             wxMessageBox("Choose room", "Error", wxOK | wxICON_ERROR);
             return;
         }
+
         auto res = message_handler_->GetUsersInRoom(info_list_->GetString(index).ToStdString());
 
         if(!res.error_msg.empty()) {
@@ -217,12 +233,10 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
         Json::Value parsed_val = domain::Parse(res.msg);
 
         if(res.status) {
-            Json::Value users_array = domain::Parse(parsed_val["info"].asString());
-
+            info_label_txt_->SetLabel("Info Panel. Rooms users:");
             info_list_->Clear();
-            info_label_txt_->SetLabel("Info Panel. Room #" + info_list_->GetString(index) + " users:");
-            for(const auto& user : users_array) {
-                info_list_->Append(user.asString() + '\n');
+            for(const auto& user : parsed_val) {
+                info_list_->Append(user.asString());
             }
 
         } else {

@@ -11,17 +11,22 @@ class MessageHandler {
 public:
     MessageHandler(UserData& user, const std::string& url);
 
-    // REST API для аутентификации: регистрация, логина, выхода
+    // REST API for authentication
     ServerResponse RegisterUser(const std::string& login, const std::string& password);
     ServerResponse LoginUser(const std::string& login, const std::string& password);
     ServerResponse LogoutUser();
 
-    // REST API список всех клиентов и рассылка
+    // REST API for all users
     ServerResponse GetOnlineUsers();
-    ServerResponse SendMessage(const std::string& text,
-                            const std::string& to = ""); // по умолчанию рассылка всем (Broadcast)
 
-    // REST API для работы с комнатами
+    //REST API for working with messages
+    ServerResponse SendMessage(const std::string& text,
+                            const std::string& to = ""); // to all default (Broadcast)
+    ServerResponse GetRoomsRecentMEssages(const std::string room_name,
+                                          size_t messages_count = 10);
+
+
+    // REST API for working with rooms
     ServerResponse CreateRoom(const std::string& name);
     ServerResponse JoinRoom(const std::string& name);
     ServerResponse LeaveRoom();
