@@ -62,3 +62,6 @@ CTestTestfile.cmake
 vcpkg_installed/
 vcpkg_ports/
 vcpkg_buildtrees/
+
+# Игнорировать файл с переменными окружения для Docker
+.env
