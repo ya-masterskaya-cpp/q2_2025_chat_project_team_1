@@ -7,7 +7,6 @@
 
 #include "domain.h"
 #include "message_handler.h"
-// #include "rooms_frame.h"
 #include "settings_frame.h"
 #include "websocket_client.h"
 
