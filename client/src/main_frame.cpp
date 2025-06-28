@@ -133,7 +133,7 @@ void MainFrame::UpdateRoomsList() {
     if(res.status) {
         info_label_txt_->SetLabel("Info Panel - Rooms");
         for(auto& room : parsed_val) {
-            info_list_->Append(room.asString() + '\n');
+            info_list_->Append(room.asString());
         }
     } else {
         wxMessageBox(parsed_val["error"].asString(), "Error", wxOK | wxICON_ERROR);
@@ -207,6 +207,7 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
             wxMessageBox("Choose room", "Error", wxOK | wxICON_ERROR);
             return;
         }
+
         auto res = message_handler_->GetUsersInRoom(info_list_->GetString(index).ToStdString());
 
         if(!res.error_msg.empty()) {
@@ -217,12 +218,10 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
         Json::Value parsed_val = domain::Parse(res.msg);
 
         if(res.status) {
-            Json::Value users_array = domain::Parse(parsed_val["info"].asString());
-
+            info_label_txt_->SetLabel("Info Panel. Rooms users:");
             info_list_->Clear();
-            info_label_txt_->SetLabel("Info Panel. Room #" + info_list_->GetString(index) + " users:");
-            for(const auto& user : users_array) {
-                info_list_->Append(user.asString() + '\n');
+            for(const auto& user : parsed_val) {
+                info_list_->Append(user.asString());
             }
 
         } else {
