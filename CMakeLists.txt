@@ -17,7 +17,7 @@ find_package(cpr REQUIRED)
 find_package(jsoncpp REQUIRED)
 find_package(ixwebsocket REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(wxWidgets REQUIRED COMPONENTS core base richtext)
+find_package(wxWidgets COMPONENTS core base richtext)
 set(wxBUILD_SHARED ON)
 include(${wxWidgets_USE_FILE})
 
