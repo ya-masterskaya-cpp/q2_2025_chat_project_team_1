@@ -43,6 +43,8 @@ private:
     info_panel_status info_sts_{info_panel_status::none};
 
     //gui
+    wxPanel* main_panel_;
+    wxBoxSizer* main_sizer_;
     wxRichTextCtrl* chat_history_;
     wxTextCtrl* message_input_;
     wxStatusBar* status_bar_;
@@ -52,7 +54,11 @@ private:
 
     //methods
     void UpdateRoomsList();
+    void SetInfoPanel();
     void SetCentralPanel();
+    void SetControlPanel();
+    void SetMenu();
+    void SetStBar();
 };
 
 } //gui namespace

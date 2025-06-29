@@ -12,101 +12,26 @@ MainFrame::MainFrame(const wxString& title)
     : wxFrame(nullptr, wxID_ANY, title) {
 
 
-    wxPanel* main_panel = new wxPanel(this);
-    wxBoxSizer* main_sizer = new wxBoxSizer(wxHORIZONTAL);
-    wxPanel* central_panel = new wxPanel(main_panel);
-    wxBoxSizer* central_sizer = new wxBoxSizer(wxVERTICAL);
-    wxPanel* info_panel = new wxPanel(main_panel);
-    wxBoxSizer* info_sizer = new wxBoxSizer(wxVERTICAL);
-    wxPanel* control_panel = new wxPanel(main_panel);
-    wxBoxSizer* control_sizer = new wxBoxSizer(wxVERTICAL);
-
-    //CENTRAL PANEL
-    // chat history
-    chat_history_ = new wxRichTextCtrl(central_panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
-                                 wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH);
-    //input
-    message_input_ = new wxTextCtrl(central_panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-    message_input_->SetHint("Write to Send");
-    message_input_->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnSendButtonClicked, this);
-    //layouts
-    central_sizer->Add(chat_history_, 1, wxEXPAND | wxALL, 5);
-    central_sizer->Add(message_input_, 0, wxEXPAND | wxALL, 5);
-    central_panel->SetSizer(central_sizer);
+    main_panel_ = new wxPanel(this);
+    main_sizer_ = new wxBoxSizer(wxHORIZONTAL);
 
     //INFO PANEL
-    //label
-    info_label_txt_ = new wxStaticText(info_panel, wxID_ANY, "Info Panel");
-    wxFont info_label_font = info_label_txt_->GetFont();
-    info_label_font.SetWeight(wxFONTWEIGHT_BOLD);
-    info_label_txt_->SetFont(info_label_font);
-    //list
-    info_list_ = new wxListBox(info_panel, wxID_ANY, wxDefaultPosition, wxSize(200, -1), wxArrayString{});
-    //layouts
-    info_sizer->Add(info_label_txt_,0, wxALL, 5);
-    info_sizer->Add(info_list_,1,wxEXPAND | wxALL, 5);
-    info_panel->SetSizer(info_sizer);
+    SetInfoPanel();
+
+    //CENTRAL PANEL
+    SetCentralPanel();
 
     //CONTROL PANEL
-    //buttons
-    wxButton* get_rooms_btn = new wxButton(control_panel, wxID_ANY, "Get rooms");
-    get_rooms_btn->Bind(wxEVT_BUTTON, &MainFrame::OnGetRoomsButtonClicked,this);
-    wxButton* create_room_btn = new wxButton(control_panel, wxID_ANY, "Create room");
-    create_room_btn->Bind(wxEVT_BUTTON, &MainFrame::OnCreateRoomButtonClicked,this);
-    wxButton* join_room_btn = new wxButton(control_panel, wxID_ANY, "Join room");
-    join_room_btn->Bind(wxEVT_BUTTON, &MainFrame::OnJoinRoomButtonClicked,this);
-    wxButton* leave_room_btn = new wxButton(control_panel, wxID_ANY, "Leave room");
-    leave_room_btn->Bind(wxEVT_BUTTON, &MainFrame::OnLeaveRoomButtonClicked,this);
-    wxButton* get_users_btn = new wxButton(control_panel, wxID_ANY, "Get users");
-    get_users_btn->Bind(wxEVT_BUTTON, &MainFrame::OnGetUsersButtonClicked,this);
-    wxButton* send_msg_btn = new wxButton(control_panel, wxID_ANY, "Send");
-    send_msg_btn->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked,this);
-    //layout
-    control_sizer->Add(get_rooms_btn,0,wxALL,5);
-    control_sizer->Add(create_room_btn,0,wxALL,5);
-    control_sizer->Add(join_room_btn,0,wxALL,5);
-    control_sizer->Add(leave_room_btn,0,wxALL,5);
-    control_sizer->Add(get_users_btn,0,wxALL,5);
-    control_sizer->AddStretchSpacer(1);
-    control_sizer->Add(send_msg_btn,0,wxALL,5);
-    control_panel->SetSizer(control_sizer);
+    SetControlPanel();
 
     //MAIN PANEL
-    main_sizer->Add(info_panel,0, wxEXPAND);
-    main_sizer->Add(central_panel,1, wxEXPAND);
-    main_sizer->Add(control_panel,0, wxEXPAND);
-    main_panel->SetSizer(main_sizer);
+    main_panel_->SetSizer(main_sizer_);
+
     //MENU
-    wxString config_path = wxStandardPaths::Get().GetUserConfigDir() + "/" + "settings.ini";
-
-    file_configs_ = std::make_unique<wxFileConfig>("IRC-chat", wxEmptyString, config_path,
-                                                   wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
-
-
-    wxMenu* settings_menu = new wxMenu;
-    settings_menu->Append(1001, "Settings");
-    Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
-
-    wxMenu* server_menu = new wxMenu;
-    server_menu->Append(1002, "Connect");
-    server_menu->Append(1003, "Disconnect");
-    Bind(wxEVT_MENU, &MainFrame::OnConnectButtonClicked, this, 1002);
-    Bind(wxEVT_MENU, &MainFrame::OnDisconnectButtonClicked, this, 1003);
-
-    wxMenuBar* menuBar = new wxMenuBar;
-    menuBar->Append(settings_menu, "File");
-    menuBar->Append(server_menu, "Server");
-    SetMenuBar(menuBar);
+    SetMenu();
 
     //STATUS BAR
-    status_bar_ = CreateStatusBar(2);
-    int widths[] = {150, 150};
-    status_bar_->SetStatusWidths(2, widths);
-    status_bar_->Show();
-    status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"),0);
-    status_bar_->SetStatusText(std::string("Room: ") + std::string("general"),1);
-
-    SetStatusBar(status_bar_);
+    SetStBar();
 
     this->SetMinSize({400,400});
 
@@ -331,6 +256,7 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
         ws_client_->SetOnOpen([self = this](const std::string& msg) {
             self->status_bar_->SetStatusText(std::string("User: ") + self->user_.name,0);
+            self->status_bar_->SetStatusText(std::string("Room: ") + std::string("general"),1);
         });
         ws_client_->SetOnClose([self = this](const std::string& msg) {
             self->status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"), 0);
@@ -396,5 +322,106 @@ MainFrame::~MainFrame() {
     Disconnect();
 }
 
+void MainFrame::SetInfoPanel() {
+    wxPanel* info_panel = new wxPanel(main_panel_);
+    wxBoxSizer* info_sizer = new wxBoxSizer(wxVERTICAL);
+
+    //label
+    info_label_txt_ = new wxStaticText(info_panel, wxID_ANY, "Info Panel");
+    wxFont info_label_font = info_label_txt_->GetFont();
+    info_label_font.SetWeight(wxFONTWEIGHT_BOLD);
+    info_label_txt_->SetFont(info_label_font);
+    //list
+    info_list_ = new wxListBox(info_panel, wxID_ANY, wxDefaultPosition, wxSize(200, -1), wxArrayString{});
+    //layouts
+    info_sizer->Add(info_label_txt_,0, wxALL, 5);
+    info_sizer->Add(info_list_,1,wxEXPAND | wxALL, 5);
+    info_panel->SetSizer(info_sizer);
+
+    main_sizer_->Add(info_panel,0, wxEXPAND);
+}
+
+void MainFrame::SetCentralPanel() {
+    wxPanel* central_panel = new wxPanel(main_panel_);
+    wxBoxSizer* central_sizer = new wxBoxSizer(wxVERTICAL);
+
+    // chat history
+    chat_history_ = new wxRichTextCtrl(central_panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
+                               wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH);
+    //input
+    message_input_ = new wxTextCtrl(central_panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    message_input_->SetHint("Write to Send");
+    message_input_->Bind(wxEVT_TEXT_ENTER, &MainFrame::OnSendButtonClicked, this);
+    //layouts
+    central_sizer->Add(chat_history_, 1, wxEXPAND | wxALL, 5);
+    central_sizer->Add(message_input_, 0, wxEXPAND | wxALL, 5);
+    central_panel->SetSizer(central_sizer);
+
+    main_sizer_->Add(central_panel,1, wxEXPAND);
+}
+
+void MainFrame::SetControlPanel() {
+    wxPanel* control_panel = new wxPanel(main_panel_);
+    wxBoxSizer* control_sizer = new wxBoxSizer(wxVERTICAL);
+
+    //buttons
+    wxButton* get_rooms_btn = new wxButton(control_panel, wxID_ANY, "Get rooms");
+    get_rooms_btn->Bind(wxEVT_BUTTON, &MainFrame::OnGetRoomsButtonClicked,this);
+    wxButton* create_room_btn = new wxButton(control_panel, wxID_ANY, "Create room");
+    create_room_btn->Bind(wxEVT_BUTTON, &MainFrame::OnCreateRoomButtonClicked,this);
+    wxButton* join_room_btn = new wxButton(control_panel, wxID_ANY, "Join room");
+    join_room_btn->Bind(wxEVT_BUTTON, &MainFrame::OnJoinRoomButtonClicked,this);
+    wxButton* leave_room_btn = new wxButton(control_panel, wxID_ANY, "Leave room");
+    leave_room_btn->Bind(wxEVT_BUTTON, &MainFrame::OnLeaveRoomButtonClicked,this);
+    wxButton* get_users_btn = new wxButton(control_panel, wxID_ANY, "Get users");
+    get_users_btn->Bind(wxEVT_BUTTON, &MainFrame::OnGetUsersButtonClicked,this);
+    wxButton* send_msg_btn = new wxButton(control_panel, wxID_ANY, "Send");
+    send_msg_btn->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked,this);
+    //layout
+    control_sizer->Add(get_rooms_btn,0,wxALL,5);
+    control_sizer->Add(create_room_btn,0,wxALL,5);
+    control_sizer->Add(join_room_btn,0,wxALL,5);
+    control_sizer->Add(leave_room_btn,0,wxALL,5);
+    control_sizer->Add(get_users_btn,0,wxALL,5);
+    control_sizer->AddStretchSpacer(1);
+    control_sizer->Add(send_msg_btn,0,wxALL,5);
+    control_panel->SetSizer(control_sizer);
+
+    main_sizer_->Add(control_panel,0, wxEXPAND);
+}
+
+void MainFrame::SetMenu() {
+    wxString config_path = wxStandardPaths::Get().GetUserConfigDir() + "/" + "settings.ini";
+
+    file_configs_ = std::make_unique<wxFileConfig>("IRC-chat", wxEmptyString, config_path,
+                                                   wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
+
+
+    wxMenu* settings_menu = new wxMenu;
+    settings_menu->Append(1001, "Settings");
+    Bind(wxEVT_MENU, &MainFrame::OnSettingsMenu, this, 1001);
+
+    wxMenu* server_menu = new wxMenu;
+    server_menu->Append(1002, "Connect");
+    server_menu->Append(1003, "Disconnect");
+    Bind(wxEVT_MENU, &MainFrame::OnConnectButtonClicked, this, 1002);
+    Bind(wxEVT_MENU, &MainFrame::OnDisconnectButtonClicked, this, 1003);
+
+    wxMenuBar* menuBar = new wxMenuBar;
+    menuBar->Append(settings_menu, "File");
+    menuBar->Append(server_menu, "Server");
+    SetMenuBar(menuBar);
+}
+
+void MainFrame::SetStBar() {
+    status_bar_ = CreateStatusBar(2);
+    int widths[] = {150, 150};
+    status_bar_->SetStatusWidths(2, widths);
+    status_bar_->Show();
+    status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"),0);
+    status_bar_->SetStatusText(std::string("Room: ") + std::string("None"),1);
+
+    SetStatusBar(status_bar_);
+}
 
 }   //namespace gui
