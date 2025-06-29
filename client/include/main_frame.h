@@ -3,6 +3,7 @@
 
 
 #include <wx/fileconf.h>
+#include <wx/richtext/richtextctrl.h>
 #include <wx/wx.h>
 
 #include "domain.h"
@@ -12,8 +13,11 @@
 
 namespace gui {
 
+
 class MainFrame : public wxFrame
 {
+    enum class info_panel_status { none, rooms, users };
+
 public:
     MainFrame(const wxString& title);
     void OnSendButtonClicked(wxCommandEvent& event);
@@ -26,8 +30,8 @@ public:
     void OnConnectButtonClicked(wxCommandEvent& event);
     void OnDisconnectButtonClicked(wxCommandEvent& event);
     void Disconnect();
-    void Save();
-    void Load();
+    void SaveConfig();
+    void LoadConfig();
     ~MainFrame();
 
 private:
@@ -36,9 +40,10 @@ private:
     std::unique_ptr<wxFileConfig> file_configs_;
     std::unique_ptr<transfer::WebSocketClient> ws_client_;
     bool is_connected_{false};
+    info_panel_status info_sts_{info_panel_status::none};
 
     //gui
-    wxTextCtrl* chat_history_;
+    wxRichTextCtrl* chat_history_;
     wxTextCtrl* message_input_;
     wxStatusBar* status_bar_;
     wxStaticText* info_label_txt_;
@@ -47,6 +52,7 @@ private:
 
     //methods
     void UpdateRoomsList();
+    void SetCentralPanel();
 };
 
 } //gui namespace

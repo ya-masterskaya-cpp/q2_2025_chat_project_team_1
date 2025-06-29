@@ -22,8 +22,9 @@ public:
     //REST API for working with messages
     ServerResponse SendMessage(const std::string& text,
                             const std::string& to = ""); // to all default (Broadcast)
-    ServerResponse GetRoomsRecentMEssages(const std::string room_name,
+    ServerResponse GetRoomsRecentMessages(const std::string& room_name,
                                           size_t messages_count = 10);
+    ServerResponse UploadMessageToDB(const std::string& message);
 
 
     // REST API for working with rooms
