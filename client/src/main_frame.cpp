@@ -23,7 +23,7 @@ MainFrame::MainFrame(const wxString& title)
 
     //CENTRAL PANEL
     // chat history
-    chat_history_ = new wxTextCtrl(central_panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,/*wxSize(400, 300),*/
+    chat_history_ = new wxRichTextCtrl(central_panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
                                  wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH);
     //input
     message_input_ = new wxTextCtrl(central_panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
@@ -59,18 +59,22 @@ MainFrame::MainFrame(const wxString& title)
     leave_room_btn->Bind(wxEVT_BUTTON, &MainFrame::OnLeaveRoomButtonClicked,this);
     wxButton* get_users_btn = new wxButton(control_panel, wxID_ANY, "Get users");
     get_users_btn->Bind(wxEVT_BUTTON, &MainFrame::OnGetUsersButtonClicked,this);
+    wxButton* send_msg_btn = new wxButton(control_panel, wxID_ANY, "Send");
+    send_msg_btn->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked,this);
     //layout
     control_sizer->Add(get_rooms_btn,0,wxALL,5);
     control_sizer->Add(create_room_btn,0,wxALL,5);
     control_sizer->Add(join_room_btn,0,wxALL,5);
     control_sizer->Add(leave_room_btn,0,wxALL,5);
     control_sizer->Add(get_users_btn,0,wxALL,5);
+    control_sizer->AddStretchSpacer(1);
+    control_sizer->Add(send_msg_btn,0,wxALL,5);
     control_panel->SetSizer(control_sizer);
 
     //MAIN PANEL
     main_sizer->Add(info_panel,0, wxEXPAND);
     main_sizer->Add(central_panel,1, wxEXPAND);
-    main_sizer->Add(control_panel,0);
+    main_sizer->Add(control_panel,0, wxEXPAND);
     main_panel->SetSizer(main_sizer);
     //MENU
     wxString config_path = wxStandardPaths::Get().GetUserConfigDir() + "/" + "settings.ini";
@@ -100,19 +104,20 @@ MainFrame::MainFrame(const wxString& title)
     status_bar_->SetStatusWidths(2, widths);
     status_bar_->Show();
     status_bar_->SetStatusText(std::string("User: ") + std::string("Unknown"),0);
-    status_bar_->SetStatusText(std::string("Room: ") + std::string("None"),1);
+    status_bar_->SetStatusText(std::string("Room: ") + std::string("general"),1);
 
     SetStatusBar(status_bar_);
 
     this->SetMinSize({400,400});
 
     //Load settings
-    Load();
+    LoadConfig();
 }
 
 void MainFrame::OnGetRoomsButtonClicked(wxCommandEvent& event) {
     if(is_connected_) {
         UpdateRoomsList();
+        info_sts_ = info_panel_status::rooms;
     } else {
         chat_history_->AppendText("You are not connected.\n");
     }
@@ -154,8 +159,17 @@ void MainFrame::OnCreateRoomButtonClicked(wxCommandEvent& event) {
 }
 
 void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
+    if(info_sts_ != info_panel_status::rooms) {
+        wxMessageBox("No rooms are selected in the info panel", "Error", wxOK | wxICON_ERROR);
+        return;
+    }
+
     if(is_connected_) {
         int index = info_list_->GetSelection();
+        if(index == -1) {
+            wxMessageBox("Choose room", "Error", wxOK | wxICON_ERROR);
+            return;
+        }
         const std::string& room_name = info_list_->GetString(index).ToStdString();
         auto res = message_handler_->JoinRoom(room_name);
 
@@ -174,7 +188,7 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
             return;
         }
 
-        auto recent_msg_res = message_handler_->GetRoomsRecentMEssages(room_name);
+        auto recent_msg_res = message_handler_->GetRoomsRecentMessages(room_name);
         if(!recent_msg_res.error_msg.empty()) {
             wxMessageBox(recent_msg_res.error_msg, "Error", wxOK | wxICON_ERROR);
             return;
@@ -183,7 +197,7 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
         Json::Value parsed_msg_val = domain::Parse(recent_msg_res.msg);
 
         for(auto& msg : parsed_msg_val) {
-            chat_history_->AppendText(msg["from"].asString() + ": " + msg["text"].asString());
+            chat_history_->AppendText(msg["from"].asString() + ": " + msg["text"].asString() +"\n");
         }
 
 
@@ -204,18 +218,36 @@ void MainFrame::OnLeaveRoomButtonClicked(wxCommandEvent& event) {
         Json::Value parsed_val = domain::Parse(res.msg);
 
         if(res.status) {
-            status_bar_->SetStatusText(std::string("Room: ") + std::string("General"),1);
+            status_bar_->SetStatusText(std::string("Room: ") + std::string("general"),1);
             chat_history_->AppendText("Room General:\n");
         } else {
             wxMessageBox(parsed_val["error"].asString(), "Warning", wxOK | wxICON_WARNING);
             return;
         }
+
+        auto recent_msg_res = message_handler_->GetRoomsRecentMessages("general");
+        if(!recent_msg_res.error_msg.empty()) {
+            wxMessageBox(recent_msg_res.error_msg, "Error", wxOK | wxICON_ERROR);
+            return;
+        }
+
+        Json::Value parsed_msg_val = domain::Parse(recent_msg_res.msg);
+
+        for(auto& msg : parsed_msg_val) {
+            chat_history_->AppendText(msg["from"].asString() + ": " + msg["text"].asString() +"\n");
+        }
+
     } else {
         chat_history_->AppendText("You are not connected.\n");
     }
 }
 
 void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
+    if(info_sts_ != info_panel_status::rooms) {
+        wxMessageBox("No rooms are selected in the info panel", "Error", wxOK | wxICON_ERROR);
+        return;
+    }
+
     if(is_connected_) {
         int index = info_list_->GetSelection();
         if(index == -1) {
@@ -243,6 +275,7 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
             wxMessageBox(parsed_val["error"].asString(), "Warning", wxOK | wxICON_WARNING);
             return;
         }
+        info_sts_ = info_panel_status::users;
     } else {
         chat_history_->AppendText("You are not connected.\n");
     }
@@ -250,8 +283,8 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
 
 void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
     if(is_connected_) {
-        std::cout << message_input_->GetValue().ToUTF8() << std::endl;
-        auto res = message_handler_->SendMessage(std::string(message_input_->GetValue().ToUTF8()));
+        const auto msg = std::string(message_input_->GetValue().ToUTF8());
+        auto res = message_handler_->SendMessage(msg);
         message_input_->Clear();
 
         if(!res.error_msg.empty()) {
@@ -263,13 +296,15 @@ void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
             Json::Value parsed_val = domain::Parse(res.msg);
             wxMessageBox(parsed_val["error"].asString(), "MainFrame error", wxOK | wxICON_ERROR);
         }
+
+        auto upload_res = message_handler_->UploadMessageToDB(msg);
+
     } else {
         chat_history_->AppendText("You are not connected.\n");
     }
 }
 
-void MainFrame::OnSettingsMenu(wxCommandEvent& event)
-{
+void MainFrame::OnSettingsMenu(wxCommandEvent& event) {
     SettingsFrame* settings_frame = new SettingsFrame{this, file_configs_.get()};
     settings_frame->Show();
 }
@@ -305,10 +340,9 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
             wxMessageBox(msg, "Error", wxOK | wxICON_WARNING);
         });
         ws_client_->SetOnMessage([self = this](const std::string& msg) {
-            self->chat_history_->AppendText(msg);
             Json::Value parsed_msg = domain::Parse(msg);
-            self->chat_history_->AppendText(parsed_msg["from"].asString() + ": "
-                                            + std::string(parsed_msg["text"].asString()) + ".\n");
+            self->chat_history_->AppendText((parsed_msg["from"].asString() + ": "
+                                                               + wxString::FromUTF8(parsed_msg["text"].asString())) + ".\n");
         });
 
         ws_client_->Run();
@@ -332,13 +366,13 @@ void MainFrame::Disconnect() {
     }
 }
 
-void MainFrame::Save() {
+void MainFrame::SaveConfig() {
     file_configs_->SetPath("/MainFrame");
     file_configs_->Write("Width", GetSize().GetWidth());
     file_configs_->Write("Height", GetSize().GetHeight());
 }
 
-void MainFrame::Load() {
+void MainFrame::LoadConfig() {
     file_configs_->SetPath("/MainFrame");
 
     int width = 300;
@@ -358,7 +392,7 @@ void MainFrame::Load() {
 
 
 MainFrame::~MainFrame() {
-    Save();
+    SaveConfig();
     Disconnect();
 }
 

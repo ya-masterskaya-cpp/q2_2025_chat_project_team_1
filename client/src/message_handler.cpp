@@ -77,6 +77,17 @@ ServerResponse MessageHandler::SendMessage(const std::string& text, const std::s
     return ToRequest(SendPostRequest(url_ + std::string(api::MESSAGE_SEND), body,user_.token));
 }
 
+ServerResponse MessageHandler::GetRoomsRecentMessages(const std::string& room_name, size_t messages_count) {
+    return ToRequest(SendGetRequest(url_ + std::string(api::MESSAGE_RECENT) + "?room=" + room_name +
+                                        "&max_items=" + std::to_string(messages_count),user_.token));
+}
+
+ServerResponse MessageHandler::UploadMessageToDB(const std::string& message) {
+    Json::Value body;
+    body["text"] = message;
+    return ToRequest(SendPostRequest(url_ + std::string(api::MESSAGE_UPLOAD), body,user_.token));
+}
+
 ServerResponse MessageHandler::CreateRoom(const std::string& name) {
     Json::Value body;
     body["name"] = name;
@@ -107,11 +118,6 @@ ServerResponse MessageHandler::GetCurrentRoom() {
 
 ServerResponse MessageHandler::GetUsersInRoom(const std::string& roomName) {
     return ToRequest(SendGetRequest(url_ + std::string(api::ROOM_USERS) + "?name=" + roomName, user_.token));
-}
-
-ServerResponse MessageHandler::GetRoomsRecentMEssages(const std::string room_name, size_t messages_count) {
-    return ToRequest(SendGetRequest(url_ + std::string(api::MESSAGE_RECENT) + "?room=" + room_name +
-                                    "&max_items=" + std::to_string(messages_count),user_.token));
 }
 
 void MessageHandler::SetUrl(const std::string& url) {
