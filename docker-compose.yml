@@ -18,6 +18,8 @@ services:
     depends_on:
       - postgres
     command: ["./build/Server"]
+    ports:
+    - "8080:8080"
 
   dbtests:
     build: .
