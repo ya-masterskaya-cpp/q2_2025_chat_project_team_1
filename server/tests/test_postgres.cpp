@@ -7,10 +7,12 @@
 class PostgresRepoTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        pool = std::make_shared<postgres::ConnectionPool>(1, []{
-            return std::make_shared<pqxx::connection>(
-                "host=localhost dbname=test_db user=test_user password=test_password"
-            );
+        const char* conn_str = std::getenv("IRC_CHAT_TEST_DB_URL");
+        if (!conn_str) {
+            throw std::runtime_error("Environment variable IRC_CHAT_DB_URL is not set!");
+        }
+        pool = std::make_shared<postgres::ConnectionPool>(1, [conn_str]{
+            return std::make_shared<pqxx::connection>(conn_str);
         });
         db = std::make_unique<postgres::Database>(pool);
 
@@ -303,7 +305,9 @@ TEST_F(PostgresRepoTest, RoomMembersRepository_LoadRoomsByUser) {
 
 // --- IRCDBWrapper: AddUserToDB и GetAllUsers ---
 TEST_F(PostgresRepoTest, Wrapper_AddUserToDB_And_GetAllUsers) {
-    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    const char* conn_str = std::getenv("IRC_CHAT_TEST_DB_URL");
+    ASSERT_NE(conn_str, nullptr) << "Environment variable IRC_CHAT_DB_URL is not set!";
+    IRCDBWrapper wrapper(conn_str);
 
     auto [ok1, err1] = wrapper.AddUserToDB("vasya", "pass_111");
     EXPECT_TRUE(ok1);
@@ -325,7 +329,9 @@ TEST_F(PostgresRepoTest, Wrapper_AddUserToDB_And_GetAllUsers) {
 
 // --- IRCDBWrapper: User find by id/name, remove by name ---
 TEST_F(PostgresRepoTest, Wrapper_FindUserByIdAndByName_And_DeleteUser) {
-    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    const char* conn_str = std::getenv("IRC_CHAT_TEST_DB_URL");
+    ASSERT_NE(conn_str, nullptr) << "Environment variable IRC_CHAT_DB_URL is not set!";
+    IRCDBWrapper wrapper(conn_str);
 
     wrapper.AddUserToDB("u1", "h1");
     wrapper.AddUserToDB("u2", "h2");
@@ -344,7 +350,9 @@ TEST_F(PostgresRepoTest, Wrapper_FindUserByIdAndByName_And_DeleteUser) {
 
 // --- IRCDBWrapper: Room create/find/delete, get all, page ---
 TEST_F(PostgresRepoTest, Wrapper_AddRoom_FindRoom_DeleteRoom_GetAllRooms_Pagination) {
-    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    const char* conn_str = std::getenv("IRC_CHAT_TEST_DB_URL");
+    ASSERT_NE(conn_str, nullptr) << "Environment variable IRC_CHAT_DB_URL is not set!";
+    IRCDBWrapper wrapper(conn_str);
 
     // Add two rooms
     auto [ok1, err1] = wrapper.AddRoomToDB("r1");
@@ -379,7 +387,9 @@ TEST_F(PostgresRepoTest, Wrapper_AddRoom_FindRoom_DeleteRoom_GetAllRooms_Paginat
 
 // --- IRCDBWrapper: User add/remove to/from room by name ---
 TEST_F(PostgresRepoTest, Wrapper_AddAndRemoveUserToRoomByName) {
-    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    const char* conn_str = std::getenv("IRC_CHAT_TEST_DB_URL");
+    ASSERT_NE(conn_str, nullptr) << "Environment variable IRC_CHAT_DB_URL is not set!";
+    IRCDBWrapper wrapper(conn_str);
     wrapper.AddUserToDB("alice", "pa");
     wrapper.AddRoomToDB("main");
 
@@ -401,7 +411,9 @@ TEST_F(PostgresRepoTest, Wrapper_AddAndRemoveUserToRoomByName) {
 
 // --- IRCDBWrapper: Add and get messages, pagination, delete message ---
 TEST_F(PostgresRepoTest, Wrapper_AddMessage_GetMessages_DeleteMessage) {
-    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    const char* conn_str = std::getenv("IRC_CHAT_TEST_DB_URL");
+    ASSERT_NE(conn_str, nullptr) << "Environment variable IRC_CHAT_DB_URL is not set!";
+    IRCDBWrapper wrapper(conn_str);
     wrapper.AddUserToDB("bob", "p1");
     wrapper.AddRoomToDB("talk");
     wrapper.AddUserToRoomByName("bob", "talk");
@@ -435,7 +447,9 @@ TEST_F(PostgresRepoTest, Wrapper_AddMessage_GetMessages_DeleteMessage) {
 }
 
 TEST_F(PostgresRepoTest, Wrapper_GetRoomMembersByName) {
-    IRCDBWrapper wrapper("host=localhost dbname=test_db user=test_user password=test_password");
+    const char* conn_str = std::getenv("IRC_CHAT_TEST_DB_URL");
+    ASSERT_NE(conn_str, nullptr) << "Environment variable IRC_CHAT_DB_URL is not set!";
+    IRCDBWrapper wrapper(conn_str);
     wrapper.AddUserToDB("alice", "hash1");
     wrapper.AddUserToDB("bob", "hash2");
     wrapper.AddUserToDB("charlie", "hash3");

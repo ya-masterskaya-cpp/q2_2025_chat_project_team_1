@@ -8,7 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # для сервера:
 find_package(Drogon CONFIG REQUIRED)
-find_package(libpqxx REQUIRED)
+# find_package(libpqxx REQUIRED)
+find_package(libpqxx CONFIG REQUIRED)
 find_package(PostgreSQL REQUIRED)
 
 # для клиента:
@@ -16,7 +17,7 @@ find_package(cpr REQUIRED)
 find_package(jsoncpp REQUIRED)
 find_package(ixwebsocket REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(wxWidgets REQUIRED COMPONENTS core base richtext)
+find_package(wxWidgets COMPONENTS core base richtext)
 set(wxBUILD_SHARED ON)
 include(${wxWidgets_USE_FILE})
 
@@ -43,24 +44,44 @@ add_executable(Server
 )
 target_include_directories(Server PRIVATE ${SERVER_INCL})
 
-target_link_libraries(Server PRIVATE Drogon::Drogon general_domain_lib pqxx PostgreSQL::PostgreSQL)
+target_link_libraries(Server PRIVATE Drogon::Drogon general_domain_lib libpqxx::pqxx PostgreSQL::PostgreSQL)
 
 # ------ CLIENT ------
-set(CLIENT_INCL ${CMAKE_SOURCE_DIR}/client/include)
-set(CLIENT_SRC  ${CMAKE_SOURCE_DIR}/client/src)
+if(wxWidgets_FOUND)
+    set(CLIENT_INCL ${CMAKE_SOURCE_DIR}/client/include)
+    set(CLIENT_SRC  ${CMAKE_SOURCE_DIR}/client/src)
 
-file(GLOB_RECURSE CLIENT_INCL_FILES ${CLIENT_INCL}/*.h)
-file(GLOB_RECURSE CLIENT_SRC_FILES  ${CLIENT_SRC}/*.cpp)
+    file(GLOB_RECURSE CLIENT_INCL_FILES ${CLIENT_INCL}/*.h)
+    file(GLOB_RECURSE CLIENT_SRC_FILES  ${CLIENT_SRC}/*.cpp)
 
-add_executable(Client
-    ${CLIENT_SRC_FILES}
-    ${CLIENT_INCL_FILES}
+
+    add_executable(Client
+        ${CLIENT_SRC_FILES}
+        ${CLIENT_INCL_FILES}
+    )
+
+
+    target_include_directories(Client PRIVATE ${CLIENT_INCL})
+    target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib)
+
+    if(UNIX)
+        find_package(X11 REQUIRED)
+        target_link_libraries(Client PRIVATE ${X11_LIBRARIES})
+    endif()
+endif()
+
+# ---- TESTS ----
+enable_testing()
+
+add_executable(DbTests
+    server/tests/test_postgres.cpp
+    server/src/postgres.cpp
+    server/src/db_wrapper.cpp
+    server/src/tagged_uuid.cpp
 )
 
-target_include_directories(Client PRIVATE ${CLIENT_INCL})
-target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket OpenSSL::SSL OpenSSL::Crypto general_domain_lib)
-
-if(UNIX)
-    find_package(X11 REQUIRED)
-    target_link_libraries(Client PRIVATE ${X11_LIBRARIES})
-endif()
+target_include_directories(DbTests PRIVATE server/include)
+target_link_libraries(DbTests PRIVATE libpqxx::pqxx PostgreSQL::PostgreSQL)
+find_package(GTest REQUIRED)
+target_link_libraries(DbTests PRIVATE GTest::gtest GTest::gtest_main pthread)
+add_test(NAME DbTestRun COMMAND DbTests)
