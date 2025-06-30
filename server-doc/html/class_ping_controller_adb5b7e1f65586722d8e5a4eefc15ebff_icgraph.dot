@@ -1,0 +1,11 @@
+digraph "PingController::Ping"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="PingController::Ping",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Обрабатывает запрос Ping и отправляет ответ об успехе."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="PingController::ADD\l_METHOD_TO",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_ping_controller.html#a2d2bacdd434451700c42fe2288f05674",tooltip="Макрос для определения списка HTTP-методов, обрабатываемых контроллером."];
+}
