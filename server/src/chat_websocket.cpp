@@ -39,7 +39,13 @@ void ChatWebSocket::handleNewConnection(const drogon::HttpRequestPtr &req, const
     }
 }
 
-void ChatWebSocket::handleNewMessage(const drogon::WebSocketConnectionPtr &ws_conn, std::string &&message, const drogon::WebSocketMessageType &) {
+void ChatWebSocket::handleNewMessage(const drogon::WebSocketConnectionPtr &ws_conn, std::string &&message, const drogon::WebSocketMessageType &type) {
+
+    // Json обрабатывается, если сообщение текстовое, иначе игнорируем
+    if (type != drogon::WebSocketMessageType::Text) {
+        return;
+    }
+
     Json::Reader reader;
     Json::Value root;
     if (!reader.parse(message, root)) {
@@ -91,15 +97,38 @@ void ChatWebSocket::handleNewMessage(const drogon::WebSocketConnectionPtr &ws_co
 }
 
 void ChatWebSocket::handleConnectionClosed(const drogon::WebSocketConnectionPtr &conn) {
-    std::lock_guard<std::mutex> lock(conn_mutex_);
-    for (auto it = connections_.begin(); it != connections_.end(); ++it) {
-        if (it->second == conn) {
-            drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("User " + it->first + " disconnected");
-            //RoomManager::instance().LeaveRoom(it->first); // удаление по выходу в Logout
-            connections_.erase(it);
-            break;
+    std::string username;
+
+    {
+        std::lock_guard<std::mutex> lock(conn_mutex_);
+        for (const auto& [user, connection] : connections_) {
+            if (connection == conn) {
+                username = user;
+                break;
+            }
+        }
+
+        if (!username.empty()) {
+            connections_.erase(username);
         }
     }
+
+    if (username.empty()) {
+        return;
+    }
+
+    drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("User " + username + " disconnected");
+
+    auto chat_service = ChatServicePlugin::GetService();
+    auto token_opt = chat_service->GetTokenByUserName(username);
+
+    if (!token_opt) {
+        return;
+    }
+
+    if (chat_service->Logout(token_opt.value())) {
+        drogon::app().getPlugin<LoggerPlugin>()->LogWebSocketEvent("User " + username + " logged out after disconnect");
+    } 
 }
 
 std::vector<std::string> ChatWebSocket::GetConnectedUsers() {
