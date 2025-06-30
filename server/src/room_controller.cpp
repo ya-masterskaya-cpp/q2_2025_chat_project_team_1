@@ -69,8 +69,8 @@ void RoomController::JoinRoom(const drogon::HttpRequestPtr &req, std::function<v
         return;
     }
 
-    std::string name = (*json)["name"].asString(); // при необходимости срезать '\n' в name - проблема в клиенте?
-    http_utils::TrimNewLineSymb(name); // TODO убрать костыль
+    const std::string name = (*json)["name"].asString(); // при необходимости срезать '\n' в name - проблема в клиенте?
+    //http_utils::TrimNewLineSymb(name); // TODO убрать костыль
 
     // пустое имя комнаты
     if (name.empty()) {
@@ -183,7 +183,7 @@ void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::fun
         return;
     }
 
-    std::string room = req->getParameter("name");
+    const std::string room = req->getParameter("name");
 
     // проверка параметров
     if (room.empty()) {
@@ -191,7 +191,7 @@ void RoomController::ListUsersInRoom(const drogon::HttpRequestPtr &req, std::fun
         return;
     }
 
-    http_utils::TrimNewLineSymb(room); // TODO убрать костыль
+    //http_utils::TrimNewLineSymb(room); // TODO убрать костыль
 
     // комната не существует
     
