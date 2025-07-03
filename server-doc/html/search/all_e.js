@@ -1,26 +1,10 @@
 var searchData=
 [
-  ['register_0',['Register',['../classchat_1_1_chat_service.html#a605ed6c4066316157b211cf35d3aa140',1,'chat::ChatService']]],
-  ['registered_5fat_1',['registered_at',['../structpostgres_1_1_user_record.html#a329bdf3184d155e3fe0559cdef5e727a',1,'postgres::UserRecord']]],
-  ['registeruser_2',['RegisterUser',['../class_auth_controller.html#a9312aa09a7c72f00fe62cc4d22ebb230',1,'AuthController']]],
-  ['remove_3',['Remove',['../classpostgres_1_1_room_members_repository.html#a49d02d3156db97b68225d2294e675108',1,'postgres::RoomMembersRepository']]],
-  ['removetokenbytoken_4',['RemoveTokenByToken',['../classchat_1_1_token_manager.html#a525cb2ad592b4598a87fad73473667fd',1,'chat::TokenManager']]],
-  ['removetokenbyuserid_5',['RemoveTokenByUserId',['../classchat_1_1_token_manager.html#a72eb72316cd9e61ab6e1e1eb23726a95',1,'chat::TokenManager']]],
-  ['removeuserfromroombyname_6',['RemoveUserFromRoomByName',['../class_i_r_c_d_b_wrapper.html#a5e96ce5a08f4445ca09fa76d1f68116b',1,'IRCDBWrapper']]],
-  ['respondauthsuccess_7',['RespondAuthSuccess',['../namespacehttp__utils.html#a48abc3f81a457b478e6c8f87ea9a749e',1,'http_utils']]],
-  ['respondwitherror_8',['RespondWithError',['../namespacehttp__utils.html#ac29a7e8c4c8e35768e9b05acbca35189',1,'http_utils']]],
-  ['respondwithjson_9',['RespondWithJson',['../namespacehttp__utils.html#a6aff7bd8bae49e206b8bcc12511f18b7',1,'http_utils']]],
-  ['respondwithstringarray_10',['RespondWithStringArray',['../namespacehttp__utils.html#a86e046c88e3666afee8dedf2fccb58b8',1,'http_utils']]],
-  ['respondwithsuccess_11',['RespondWithSuccess',['../namespacehttp__utils.html#a48958efcb93221cac5b87e4518b55c79',1,'http_utils']]],
-  ['room_5fcontroller_2eh_12',['room_controller.h',['../room__controller_8h.html',1,'']]],
-  ['room_5fid_13',['room_id',['../structpostgres_1_1_message_record.html#a97c8a03b1993ba38c06706c7bb87902d',1,'postgres::MessageRecord::room_id'],['../structpostgres_1_1_room_member_record.html#a532adf801f144e2c31551af146e351bb',1,'postgres::RoomMemberRecord::room_id']]],
-  ['roomcontroller_14',['RoomController',['../class_room_controller.html',1,'']]],
-  ['roomid_15',['RoomId',['../namespacepostgres.html#a9bd47c01733736861a04eef7205159b5',1,'postgres']]],
-  ['roomidtag_16',['RoomIdTag',['../structpostgres_1_1detail_1_1_room_id_tag.html',1,'postgres::detail']]],
-  ['roommemberid_17',['RoomMemberId',['../namespacepostgres.html#a8fd42edf50b2e0d72f935e7cf0074447',1,'postgres']]],
-  ['roommemberidtag_18',['RoomMemberIdTag',['../structpostgres_1_1detail_1_1_room_member_id_tag.html',1,'postgres::detail']]],
-  ['roommemberrecord_19',['RoomMemberRecord',['../structpostgres_1_1_room_member_record.html',1,'postgres']]],
-  ['roommembersrepository_20',['RoomMembersRepository',['../classpostgres_1_1_room_members_repository.html',1,'postgres::RoomMembersRepository'],['../classpostgres_1_1_room_members_repository.html#a23c50838a076e0797cc94fa34d26448a',1,'postgres::RoomMembersRepository::RoomMembersRepository()']]],
-  ['roomrecord_21',['RoomRecord',['../structpostgres_1_1_room_record.html',1,'postgres']]],
-  ['roomsrepository_22',['RoomsRepository',['../classpostgres_1_1_rooms_repository.html',1,'postgres::RoomsRepository'],['../classpostgres_1_1_rooms_repository.html#ab7758686381bb0f7a67dfdc90b6ae5f4',1,'postgres::RoomsRepository::RoomsRepository()']]]
+  ['findbyid_0',['FindById',['../classpostgres_1_1_users_repository.html#ad250c064bb75ef46dc6c941925eab86f',1,'postgres::UsersRepository']]],
+  ['findbyname_1',['FindByName',['../classpostgres_1_1_rooms_repository.html#a4a0613f1633a3912f25f419e072783f7',1,'postgres::RoomsRepository']]],
+  ['findbyusername_2',['FindByUsername',['../classpostgres_1_1_users_repository.html#a066f2446e1dccf8bb9676e5bba274526',1,'postgres::UsersRepository']]],
+  ['findroombyname_3',['FindRoomByName',['../class_i_r_c_d_b_wrapper.html#a97ab0e3b09cec3cd7d52adf5b8ddaee8',1,'IRCDBWrapper']]],
+  ['finduserbyid_4',['FindUserById',['../class_i_r_c_d_b_wrapper.html#af1fe5772dacb0103bc449eca2fa71e2a',1,'IRCDBWrapper']]],
+  ['finduserbyname_5',['FindUserByName',['../class_i_r_c_d_b_wrapper.html#af07dc43eee0572941e773dd9305df31a',1,'IRCDBWrapper']]],
+  ['fromstring_6',['FromString',['../classutil_1_1_tagged_u_u_i_d.html#a8b481603b430e05e6ceb5ba57f60d512',1,'util::TaggedUUID']]]
 ];

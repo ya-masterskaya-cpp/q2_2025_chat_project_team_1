@@ -1,9 +1,4 @@
 var searchData=
 [
-  ['handleconnectionclosed_0',['handleConnectionClosed',['../class_chat_web_socket.html#abcb2164b2e56d7bade7efad301220f71',1,'ChatWebSocket']]],
-  ['handlenewconnection_1',['handleNewConnection',['../class_chat_web_socket.html#ac9fc9759da5bd05d4c1044e60e0a3586',1,'ChatWebSocket']]],
-  ['handlenewmessage_2',['handleNewMessage',['../class_chat_web_socket.html#ad44a6bc68e4c80c8d5b19831e33a9e09',1,'ChatWebSocket']]],
-  ['hasroom_3',['HasRoom',['../classchat_1_1_chat_service.html#a8731051664e37a4fd4b78e72ac5c7622',1,'chat::ChatService']]],
-  ['http_5futils_4',['http_utils',['../namespacehttp__utils.html',1,'']]],
-  ['http_5futils_2eh_5',['http_utils.h',['../http__utils_8h.html',1,'']]]
+  ['7_20запустить_20только_20тесты_0',['7. Запустить только тесты',['../md__r_e_a_d_m_e___d_o_c_k_e_r.html#autotoc_md30',1,'']]]
 ];

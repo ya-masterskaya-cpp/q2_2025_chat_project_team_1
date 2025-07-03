@@ -1,16 +1,12 @@
 var searchData=
 [
-  ['uploadmessage_0',['UploadMessage',['../class_message_controller.html#ade27e6561ce5f3180a01712cd4933b7a',1,'MessageController']]],
-  ['user_5fcontroller_2eh_1',['user_controller.h',['../user__controller_8h.html',1,'']]],
-  ['user_5fid_2',['user_id',['../structpostgres_1_1_message_record.html#a09905562637c7af966560055afd0f6bf',1,'postgres::MessageRecord::user_id'],['../structpostgres_1_1_room_member_record.html#aefca53b69c11080be7198b7f1959a710',1,'postgres::RoomMemberRecord::user_id']]],
-  ['usercontroller_3',['UserController',['../class_user_controller.html',1,'']]],
-  ['userid_4',['UserId',['../namespacepostgres.html#aa48112bc565b189d8c5e7f15584c474f',1,'postgres']]],
-  ['useridtag_5',['UserIdTag',['../structpostgres_1_1detail_1_1_user_id_tag.html',1,'postgres::detail']]],
-  ['username_6',['username',['../structpostgres_1_1_user_record.html#a2538d41476764a9dddd47c1327dec31d',1,'postgres::UserRecord']]],
-  ['userrecord_7',['UserRecord',['../structpostgres_1_1_user_record.html',1,'postgres']]],
-  ['usersrepository_8',['UsersRepository',['../classpostgres_1_1_users_repository.html',1,'postgres::UsersRepository'],['../classpostgres_1_1_users_repository.html#a6b2f5d37575c2d63a680ce1cc228940d',1,'postgres::UsersRepository::UsersRepository()']]],
-  ['util_9',['util',['../namespaceutil.html',1,'']]],
-  ['uuidfromstring_10',['UUIDFromString',['../tagged__uuid_8h.html#ab90ace7716f30784c7f26b5effefb97e',1,'util::detail']]],
-  ['uuidtostring_11',['UUIDToString',['../tagged__uuid_8h.html#a244297cfe84bd78345a7d42ad1909d73',1,'util::detail']]],
-  ['uuidtype_12',['UUIDType',['../tagged__uuid_8h.html#aec5b9167364b470da44be3aa9efaa7c6',1,'util::detail']]]
+  ['id_0',['id',['../structpostgres_1_1_user_record.html#ab8a2f74a4ab73678c7b91dd686646606',1,'postgres::UserRecord::id'],['../structpostgres_1_1_room_record.html#ab67a03c40c15eff72a1c744435aae523',1,'postgres::RoomRecord::id'],['../structpostgres_1_1_message_record.html#a176471bdb22e555bd34e53cddeea7655',1,'postgres::MessageRecord::id'],['../structpostgres_1_1_room_member_record.html#aa0ee79f8adebfb85e37753ce8ce6a8eb',1,'postgres::RoomMemberRecord::id']]],
+  ['initandstart_1',['initAndStart',['../class_chat_service_plugin.html#afcb47c57e308e6d412212b0f6c2829ec',1,'ChatServicePlugin::initAndStart()'],['../class_database_plugin.html#a91159fcac44282bf283233a8194ee089',1,'DatabasePlugin::initAndStart()'],['../class_logger_plugin.html#a5ede2062d17f1981088ff901e9005c97',1,'LoggerPlugin::initAndStart()']]],
+  ['irc_20чата_2',['IRCDBWrapper — упрощённый интерфейс для работы с БД IRC-чата',['../md__r_e_a_d_m_e__db__wrapper.html',1,'']]],
+  ['irc_20chat_3',['IRC-Chat',['../md__read_me___i_r_c.html',1,'']]],
+  ['irc_20chat_20database_20layer_20c_20postgresql_4',['IRC Chat Database Layer (C++ / PostgreSQL)',['../md__r_e_a_d_m_e__irc__chat__db.html',1,'']]],
+  ['irc_20chat_20project_20—_20docker_20guide_5',['IRC Chat Project — Docker Guide',['../md__r_e_a_d_m_e___d_o_c_k_e_r.html',1,'']]],
+  ['ircdbwrapper_6',['IRCDBWrapper',['../class_i_r_c_d_b_wrapper.html',1,'IRCDBWrapper'],['../class_i_r_c_d_b_wrapper.html#ad52ccba2586ac0c9f0b81e3f9c9a11b3',1,'IRCDBWrapper::IRCDBWrapper()']]],
+  ['ircdbwrapper_20—_20упрощённый_20интерфейс_20для_20работы_20с_20бд_20irc_20чата_7',['IRCDBWrapper — упрощённый интерфейс для работы с БД IRC-чата',['../md__r_e_a_d_m_e__db__wrapper.html',1,'']]],
+  ['ircdbwrapper_20tt_20высокоуровневая_20обёртка_20для_20работы_20с_20бд_8',['6. &lt;tt&gt;IRCDBWrapper&lt;/tt&gt; (высокоуровневая обёртка для работы с БД)',['../md__r_e_a_d_m_e__irc__chat__db.html#autotoc_md102',1,'']]]
 ];

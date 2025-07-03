@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.13.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>server: Class Hierarchy</title>
+<title>IRC-Chat: Class Hierarchy</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">server<span id="projectnumber">&#160;1.0.0</span>
+   <div id="projectname">IRC-Chat<span id="projectnumber">&#160;Release</span>
    </div>
   </td>
     <td>        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -105,9 +105,7 @@ $(function(){initNavTree('hierarchy.html',''); initResizable(true); });
   <div class="headertitle"><div class="title">Class Hierarchy</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock">
-<p><a href="inherits.html">Go to the graphical class hierarchy</a></p>
-This inheritance list is sorted roughly, but not completely, alphabetically:</div><div class="directory">
+<div class="textblock">This inheritance list is sorted roughly, but not completely, alphabetically:</div><div class="directory">
 <div class="levels">[detail level <span onclick="javascript:dynsection.toggleLevel(1);">1</span><span onclick="javascript:dynsection.toggleLevel(2);">2</span>]</div><table class="directory">
 <tr id="row_0_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classchat_1_1_chat_service.html" target="_self">chat::ChatService</a></td><td class="desc">Предоставляет интерфейс для управления чатом, включая аутентификацию, управление пользователями и комнатами </td></tr>
 <tr id="row_1_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classpostgres_1_1_connection_pool.html" target="_self">postgres::ConnectionPool</a></td><td class="desc">Класс для управления пулом соединений с базой данных </td></tr>
@@ -141,14 +139,16 @@ This inheritance list is sorted roughly, but not completely, alphabetically:</di
 <tr id="row_17_" class="odd"><td class="entry"><span style="width:0px;display:inline-block;">&#160;</span><span id="arr_17_" class="arrow" onclick="dynsection.toggleFolder('17_')">&#9660;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classutil_1_1_tagged.html" target="_self">util::Tagged&lt; detail::UUIDType, Tag &gt;</a></td><td class="desc"></td></tr>
 <tr id="row_17_0_" class="even"><td class="entry"><span style="width:32px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classutil_1_1_tagged_u_u_i_d.html" target="_self">util::TaggedUUID&lt; Tag &gt;</a></td><td class="desc">Шаблон класса для представления UUID с тегом </td></tr>
 <tr id="row_18_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structutil_1_1_tagged_hasher.html" target="_self">util::TaggedHasher&lt; TaggedValue &gt;</a></td><td class="desc">Структура для хеширования объектов <a class="el" href="classutil_1_1_tagged.html" title="Шаблон класса для добавления тега к значению.">Tagged</a> </td></tr>
-<tr id="row_19_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classchat_1_1_token.html" target="_self">chat::Token</a></td><td class="desc">Класс, предоставляющий статический генератор токенов </td></tr>
-<tr id="row_20_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classchat_1_1_token_generator.html" target="_self">chat::TokenGenerator</a></td><td class="desc">Класс для генерации шестнадцатеричных токенов </td></tr>
-<tr id="row_21_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classchat_1_1_token_manager.html" target="_self">chat::TokenManager</a></td><td class="desc">Класс для управления токенами аутентификации </td></tr>
-<tr id="row_22_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structpostgres_1_1detail_1_1_user_id_tag.html" target="_self">postgres::detail::UserIdTag</a></td><td class="desc">Тег для идентификатора пользователя </td></tr>
-<tr id="row_23_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structpostgres_1_1_user_record.html" target="_self">postgres::UserRecord</a></td><td class="desc">Структура, представляющая запись пользователя </td></tr>
-<tr id="row_24_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classpostgres_1_1_users_repository.html" target="_self">postgres::UsersRepository</a></td><td class="desc">Класс для управления записями пользователей в базе данных </td></tr>
-<tr id="row_25_" class="even"><td class="entry"><span style="width:0px;display:inline-block;">&#160;</span><span id="arr_25_" class="arrow" onclick="dynsection.toggleFolder('25_')">&#9660;</span><span class="icona"><span class="icon">C</span></span><b>drogon::WebSocketController</b></td><td class="desc"></td></tr>
-<tr id="row_25_0_" class="odd"><td class="entry"><span style="width:32px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="class_chat_web_socket.html" target="_self">ChatWebSocket</a></td><td class="desc">Класс, реализующий WebSocket-соединение для чата </td></tr>
+<tr id="row_19_" class="even"><td class="entry"><span style="width:0px;display:inline-block;">&#160;</span><span id="arr_19_" class="arrow" onclick="dynsection.toggleFolder('19_')">&#9660;</span><span class="icona"><span class="icon">C</span></span><b>testing::Test</b></td><td class="desc"></td></tr>
+<tr id="row_19_0_" class="odd"><td class="entry"><span style="width:32px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="class_postgres_repo_test.html" target="_self">PostgresRepoTest</a></td><td class="desc"></td></tr>
+<tr id="row_20_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classchat_1_1_token.html" target="_self">chat::Token</a></td><td class="desc">Класс, предоставляющий статический генератор токенов </td></tr>
+<tr id="row_21_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classchat_1_1_token_generator.html" target="_self">chat::TokenGenerator</a></td><td class="desc">Класс для генерации шестнадцатеричных токенов </td></tr>
+<tr id="row_22_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classchat_1_1_token_manager.html" target="_self">chat::TokenManager</a></td><td class="desc">Класс для управления токенами аутентификации </td></tr>
+<tr id="row_23_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structpostgres_1_1detail_1_1_user_id_tag.html" target="_self">postgres::detail::UserIdTag</a></td><td class="desc">Тег для идентификатора пользователя </td></tr>
+<tr id="row_24_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structpostgres_1_1_user_record.html" target="_self">postgres::UserRecord</a></td><td class="desc">Структура, представляющая запись пользователя </td></tr>
+<tr id="row_25_" class="odd"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="classpostgres_1_1_users_repository.html" target="_self">postgres::UsersRepository</a></td><td class="desc">Класс для управления записями пользователей в базе данных </td></tr>
+<tr id="row_26_" class="even"><td class="entry"><span style="width:0px;display:inline-block;">&#160;</span><span id="arr_26_" class="arrow" onclick="dynsection.toggleFolder('26_')">&#9660;</span><span class="icona"><span class="icon">C</span></span><b>drogon::WebSocketController</b></td><td class="desc"></td></tr>
+<tr id="row_26_0_" class="odd"><td class="entry"><span style="width:32px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="class_chat_web_socket.html" target="_self">ChatWebSocket</a></td><td class="desc">Класс, реализующий WebSocket-соединение для чата </td></tr>
 </table>
 </div><!-- directory -->
 </div><!-- contents -->

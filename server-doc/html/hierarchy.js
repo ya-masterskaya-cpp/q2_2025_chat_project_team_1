@@ -36,6 +36,9 @@ var hierarchy =
       [ "util::TaggedUUID< Tag >", "classutil_1_1_tagged_u_u_i_d.html", null ]
     ] ],
     [ "util::TaggedHasher< TaggedValue >", "structutil_1_1_tagged_hasher.html", null ],
+    [ "testing::Test", null, [
+      [ "PostgresRepoTest", "class_postgres_repo_test.html", null ]
+    ] ],
     [ "chat::Token", "classchat_1_1_token.html", null ],
     [ "chat::TokenGenerator", "classchat_1_1_token_generator.html", null ],
     [ "chat::TokenManager", "classchat_1_1_token_manager.html", null ],

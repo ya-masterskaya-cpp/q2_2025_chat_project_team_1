@@ -37,6 +37,7 @@ var annotated_dup =
     [ "LoggerPlugin", "class_logger_plugin.html", "class_logger_plugin" ],
     [ "MessageController", "class_message_controller.html", "class_message_controller" ],
     [ "PingController", "class_ping_controller.html", "class_ping_controller" ],
+    [ "PostgresRepoTest", "class_postgres_repo_test.html", null ],
     [ "RoomController", "class_room_controller.html", "class_room_controller" ],
     [ "UserController", "class_user_controller.html", "class_user_controller" ]
 ];

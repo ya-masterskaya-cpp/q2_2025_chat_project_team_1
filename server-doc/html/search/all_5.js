@@ -1,27 +1,5 @@
 var searchData=
 [
-  ['generatehextoken_0',['GenerateHEXToken',['../classchat_1_1_token_generator.html#a2065dcd7843c05951abca1b720a41b89',1,'chat::TokenGenerator']]],
-  ['generator_1',['GENERATOR',['../classchat_1_1_token.html#a745199e8458b7acdb989227f05641e4a',1,'chat::Token']]],
-  ['getallrooms_2',['GetAllRooms',['../class_i_r_c_d_b_wrapper.html#a14874ec37cc51861e54ee2be81909aa9',1,'IRCDBWrapper']]],
-  ['getallusers_3',['GetAllUsers',['../class_i_r_c_d_b_wrapper.html#a3258432e6ec935e1168ace89b598082c',1,'IRCDBWrapper']]],
-  ['getconnectedusers_4',['GetConnectedUsers',['../class_chat_web_socket.html#a1e92c62474a134a1ca829e4c7eb6d4b8',1,'ChatWebSocket']]],
-  ['getconnection_5',['GetConnection',['../classpostgres_1_1_connection_pool.html#a58873de3888f1b93028304d5a77f8528',1,'postgres::ConnectionPool::GetConnection()'],['../classpostgres_1_1_connection_pool.html#ab2bca21d37d112cf3ba8e7f3ad12efc6',1,'postgres::ConnectionPool::GetConnection(std::chrono::milliseconds timeout)']]],
-  ['getcurrentroomname_6',['GetCurrentRoomName',['../classchat_1_1_chat_service.html#a676ee63a781118f230d35513080f3263',1,'chat::ChatService']]],
-  ['getdb_7',['GetDB',['../class_database_plugin.html#a71f066e6a63177f42ceb02846cd04b39',1,'DatabasePlugin']]],
-  ['getonlineuserids_8',['GetOnlineUserIds',['../classchat_1_1_token_manager.html#a6172d8197033e0d83d3f53c5581a7108',1,'chat::TokenManager']]],
-  ['getonlineusernames_9',['GetOnlineUserNames',['../classchat_1_1_chat_service.html#aab350cdfed4106d2980ac6cce0bc6a74',1,'chat::ChatService']]],
-  ['getonlineusers_10',['getOnlineUsers',['../class_user_controller.html#a47699593da86249a2eead7de84f1935e',1,'UserController']]],
-  ['getrecentmessages_11',['GetRecentMessages',['../classchat_1_1_chat_service.html#a5513fa9e0c64223ac7b1a2c8ab868e95',1,'chat::ChatService::GetRecentMessages()'],['../class_i_r_c_d_b_wrapper.html#a62b7ad485b1bad6031af3ccfcbc4e497',1,'IRCDBWrapper::GetRecentMessages()'],['../class_message_controller.html#aa6c2f249835f78a0c9775ab1e938f5dc',1,'MessageController::GetRecentMessages()']]],
-  ['getroommembersbyname_12',['GetRoomMembersByName',['../class_i_r_c_d_b_wrapper.html#abaf3642fb64df325b8e7d71760c00954',1,'IRCDBWrapper']]],
-  ['getroommessagespage_13',['GetRoomMessagesPage',['../classchat_1_1_chat_service.html#a7965d3c04700b74085e584fc8f39ef00',1,'chat::ChatService::GetRoomMessagesPage()'],['../class_i_r_c_d_b_wrapper.html#a389d1f06a3eb4055b397c420fab54797',1,'IRCDBWrapper::GetRoomMessagesPage()']]],
-  ['getroomnames_14',['GetRoomNames',['../classchat_1_1_chat_service.html#a104c4c2cab951c1381abc126d1a99f15',1,'chat::ChatService']]],
-  ['getroomspage_15',['GetRoomsPage',['../class_i_r_c_d_b_wrapper.html#a3e5eb995003772b571de715eefe8776b',1,'IRCDBWrapper']]],
-  ['getservice_16',['GetService',['../class_chat_service_plugin.html#aea4f0ded1380bb21deb2deb59913bca3',1,'ChatServicePlugin']]],
-  ['gettokenbyuserid_17',['GetTokenByUserId',['../classchat_1_1_token_manager.html#a07774356386f7510b4a30a0dc70f0a24',1,'chat::TokenManager']]],
-  ['gettokenbyusername_18',['GetTokenByUserName',['../classchat_1_1_chat_service.html#a1bbb0e3a5d868420f04d395647fc9e52',1,'chat::ChatService']]],
-  ['gettransaction_19',['GetTransaction',['../classpostgres_1_1_database.html#a0360a8ecd3f788f3edce40e37d4687e0',1,'postgres::Database']]],
-  ['getuserbytoken_20',['GetUserByToken',['../classchat_1_1_chat_service.html#abdad43148ba98d3de5d3e1f811c7132c',1,'chat::ChatService']]],
-  ['getuseridbytoken_21',['GetUserIdByToken',['../classchat_1_1_token_manager.html#ae269e8ead596fe2dd4da9b8e34aca2c2',1,'chat::TokenManager']]],
-  ['getusernamebyid_22',['GetUserNameById',['../classchat_1_1_chat_service.html#a790cd343461eb8bcc7df8973233b0663',1,'chat::ChatService']]],
-  ['getusernamesinroom_23',['GetUserNamesInRoom',['../classchat_1_1_chat_service.html#a6506be8ef53e63668f2bd92cc87d0da6',1,'chat::ChatService']]]
+  ['6_20запустить_20только_20сервер_20и_20бд_0',['6. Запустить только сервер и БД',['../md__r_e_a_d_m_e___d_o_c_k_e_r.html#autotoc_md29',1,'']]],
+  ['6_20tt_20ircdbwrapper_20tt_20высокоуровневая_20обёртка_20для_20работы_20с_20бд_1',['6. &lt;tt&gt;IRCDBWrapper&lt;/tt&gt; (высокоуровневая обёртка для работы с БД)',['../md__r_e_a_d_m_e__irc__chat__db.html#autotoc_md102',1,'']]]
 ];
