@@ -29,7 +29,7 @@
      ```
    - Для серверной части:
      ```bash
-    server-doc/html/index.html
+     server-doc/html/index.html
      ```
 
 Можно использовать любой браузер.
