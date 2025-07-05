@@ -129,7 +129,7 @@ void MainFrame::UpdateRoomsList() {
     auto res = message_handler_->ListRooms();
 
     if (!res.error_msg.empty())  {
-        wxMessageBox(res.error_msg, "Error", wxOK | wxICON_ERROR);
+        wxMessageBox(wxString::FromUTF8(res.error_msg), "Error", wxOK | wxICON_ERROR);
         return;
     }
 
@@ -138,7 +138,7 @@ void MainFrame::UpdateRoomsList() {
     if(res.status) {
         info_label_txt_->SetLabel("Info Panel - Rooms");
         for(auto& room : parsed_val) {
-            info_list_->Append(room.asString());
+            info_list_->Append(wxString::FromUTF8(room.asString()));
         }
     } else {
         wxMessageBox(parsed_val["error"].asString(), "Error", wxOK | wxICON_ERROR);
@@ -174,15 +174,15 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
         auto res = message_handler_->JoinRoom(room_name);
 
         if(!res.error_msg.empty()) {
-            wxMessageBox(res.error_msg, "Error", wxOK | wxICON_ERROR);
+            wxMessageBox(wxString::FromUTF8(res.error_msg), "Error", wxOK | wxICON_ERROR);
             return;
         }
 
         Json::Value parsed_val = domain::Parse(res.msg);
 
         if(res.status) {
-            status_bar_->SetStatusText(std::string("Room: ") + std::string(parsed_val["info"].asString()),1);
-            chat_history_->AppendText("Room " +  parsed_val["info"].asString() +":\n");
+            status_bar_->SetStatusText("Room: " + wxString::FromUTF8(parsed_val["info"].asString()),1);
+            chat_history_->AppendText("Room " + wxString::FromUTF8(parsed_val["info"].asString()) +":\n");
         } else {
             wxMessageBox(parsed_val["error"].asString(), "Warning", wxOK | wxICON_WARNING);
             return;
@@ -197,7 +197,7 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
         Json::Value parsed_msg_val = domain::Parse(recent_msg_res.msg);
 
         for(auto& msg : parsed_msg_val) {
-            chat_history_->AppendText(msg["from"].asString() + ": " + msg["text"].asString() +"\n");
+            chat_history_->AppendText(wxString::FromUTF8(msg["from"].asString()) + ": " + wxString::FromUTF8(msg["text"].asString()) +"\n");
         }
 
 
@@ -211,7 +211,7 @@ void MainFrame::OnLeaveRoomButtonClicked(wxCommandEvent& event) {
         auto res = message_handler_->LeaveRoom();
 
         if(!res.error_msg.empty()) {
-            wxMessageBox(res.error_msg, "Error", wxOK | wxICON_ERROR);
+            wxMessageBox(wxString::FromUTF8(res.error_msg), "Error", wxOK | wxICON_ERROR);
             return;
         }
 
@@ -234,7 +234,7 @@ void MainFrame::OnLeaveRoomButtonClicked(wxCommandEvent& event) {
         Json::Value parsed_msg_val = domain::Parse(recent_msg_res.msg);
 
         for(auto& msg : parsed_msg_val) {
-            chat_history_->AppendText(msg["from"].asString() + ": " + msg["text"].asString() +"\n");
+            chat_history_->AppendText(wxString::FromUTF8(msg["from"].asString()) + ": " + wxString::FromUTF8(msg["text"].asString()) +"\n");
         }
 
     } else {
@@ -258,7 +258,7 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
         auto res = message_handler_->GetUsersInRoom(info_list_->GetString(index).ToStdString());
 
         if(!res.error_msg.empty()) {
-            wxMessageBox(res.error_msg, "Error", wxOK | wxICON_ERROR);
+            wxMessageBox(wxString::FromUTF8(res.error_msg), "Error", wxOK | wxICON_ERROR);
             return;
         }
 
@@ -268,7 +268,7 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
             info_label_txt_->SetLabel("Info Panel. Rooms users:");
             info_list_->Clear();
             for(const auto& user : parsed_val) {
-                info_list_->Append(user.asString());
+                info_list_->Append(wxString::FromUTF8(user.asString()));
             }
 
         } else {
@@ -288,13 +288,13 @@ void MainFrame::OnSendButtonClicked(wxCommandEvent& event) {
         message_input_->Clear();
 
         if(!res.error_msg.empty()) {
-            chat_history_->AppendText(res.error_msg + '\n');
+            chat_history_->AppendText(wxString::FromUTF8(res.error_msg) + '\n');
             return;
         }
 
         if(!res.status) {
             Json::Value parsed_val = domain::Parse(res.msg);
-            wxMessageBox(parsed_val["error"].asString(), "MainFrame error", wxOK | wxICON_ERROR);
+            wxMessageBox(wxString::FromUTF8(parsed_val["error"].asString()), "MainFrame error", wxOK | wxICON_ERROR);
         }
 
         auto upload_res = message_handler_->UploadMessageToDB(msg);
@@ -341,8 +341,9 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         });
         ws_client_->SetOnMessage([self = this](const std::string& msg) {
             Json::Value parsed_msg = domain::Parse(msg);
-            self->chat_history_->AppendText((parsed_msg["from"].asString() + ": "
-                                                               + wxString::FromUTF8(parsed_msg["text"].asString())) + ".\n");
+            self->chat_history_->AppendText(wxString::FromUTF8(parsed_msg["from"].asString()) + ": "
+                                                               + wxString::FromUTF8(parsed_msg["text"].asString()) + ".\n");
+                                              
         });
 
         ws_client_->Run();
@@ -361,6 +362,7 @@ void MainFrame::Disconnect() {
         message_handler_->LogoutUser();
         message_handler_.reset();
         ws_client_->Stop();
+        is_connected_ = false;
     } else {
         chat_history_->AppendText("You are not connected.\n");
     }

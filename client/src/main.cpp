@@ -14,10 +14,15 @@
 
 wxIMPLEMENT_APP(Application);
 
-bool Application::OnInit() {
-    #ifdef __unix__ || __unix || unix
+#ifdef __unix__ || __unix || unix
+struct XlibInitializer {
+    XlibInitializer() {
         XInitThreads();
-    #endif
+    }
+} xlib_initializer;
+#endif
+
+bool Application::OnInit() {
     gui::MainFrame* frame = new gui::MainFrame("IRC-chat");
     frame->Show();
     return true;
