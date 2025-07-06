@@ -81,7 +81,7 @@ void MessageController::UploadMessage(const drogon::HttpRequestPtr &req, std::fu
     }
 
     // Ошибка при сохранении в БД
-    if (!chat_service->SaveMessage(token, text)) {
+    if (!chat_service->SaveMessage(token, text)) { // TODO разнообразить ошибки сохранения
         http_utils::RespondWithError("Failed to save message to DB", drogon::k500InternalServerError, std::move(callback));
         return;
     }
@@ -109,11 +109,29 @@ void MessageController::GetRecentMessages(const drogon::HttpRequestPtr &req, std
     }
 
     const std::string room = req->getParameter("room");
-    int max_items = std::stoi(req->getParameter("max_items"));
+    const std::string max_items_str = req->getParameter("max_items");
 
-    // проверка параметров
-    if (room.empty() || max_items <= 0) {
+    // Проверка параметров
+    if (room.empty() || max_items_str.empty()) {
         http_utils::RespondWithError("Invalid parameters", drogon::k400BadRequest, std::move(callback));
+        return;
+    }
+
+    int max_items = 0;
+    try {
+        max_items = std::stoi(max_items_str);
+    } catch (...) {
+        http_utils::RespondWithError("Invalid parameter: max_items", drogon::k400BadRequest, std::move(callback));
+        return;
+    }
+
+    if (max_items <= 0) {
+        http_utils::RespondWithError("Parameter must be positive: max_items", drogon::k400BadRequest, std::move(callback));
+        return;
+    }
+
+    if (!chat_service->HasRoom(room)) {
+        http_utils::RespondWithError("Room not found", drogon::k404NotFound, std::move(callback));
         return;
     }
 

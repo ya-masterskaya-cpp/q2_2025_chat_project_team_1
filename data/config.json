@@ -16,6 +16,13 @@
       "type": "Global"
     },
     {
+      "name": "DatabasePlugin",
+      "config": {
+        "conn_str": "",
+        "pool_size": 4
+      }
+    },    
+    {
       "name": "ChatServicePlugin",
       "type": "Global"
     }

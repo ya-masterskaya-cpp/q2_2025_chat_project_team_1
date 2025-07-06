@@ -71,8 +71,8 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 **HTTP 200**
 ```json
 {
-  "user": "alice",
-  "token":"96b1f594eb48c7026d90a1601eca4ce7"
+  "token":"96b1f594eb48c7026d90a1601eca4ce7",
+  "user": "alice"
 }
 ```
 
@@ -225,11 +225,11 @@ curl -X POST http://localhost:8080/api/v1/room/leave \
 }
 ```
 
-Уже в общей комнате GENERAL_ROOM
+Комната general не найдена
 **HTTP 404 Not Found**
 ```json
 {
-  "error":"Already in general room"
+  "error":"Room general not founded"
 }
 ```
 
@@ -302,7 +302,7 @@ curl -X GET "http://localhost:8080/api/v1/room/users?name=general" \
 curl -X POST http://localhost:8080/api/v1/messages/send \
   -H "Authorization: Bearer 2a3d8e712bcebc2da7416dc67cf9103a" \
   -H "Content-Type: application/json" \
-  -d '{"text":"Привет, чат!", "to":""}'
+  -d '{"text":"Привет, чат!"}'
 ```
 
 Успешная отправка
@@ -331,7 +331,7 @@ curl -X POST http://localhost:8080/api/v1/messages/send \
 
 Отправка сообщения через WebSocket - пример:
 ```bash
-wscat -c "ws://localhost:8080/chat?token=2a3d8e712bcebc2da7416dc67cf9103a"
+wscat -c "ws://localhost:8080/ws/chat?token=2a3d8e712bcebc2da7416dc67cf9103a"
 ```
 
 #### Сохранение сообщения в БД (выполнять запрос после отправки сообщений на сервер!)
@@ -397,11 +397,35 @@ curl -X GET "http://localhost:8080/api/v1/messages/recent?room=general&max_items
 ]
 ```
 
-При отсутствии полей room или max_items, либо некорректный max_items
+При отсутствии полей room или max_items, либо некорректное поле room
 **HTTP 400 Bad Request**
 ```json
 {
   "error":"Invalid parameters"
+}
+```
+
+При некорректном поле max_items - не число
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Invalid parameter: max_items"
+}
+```
+
+При некорректном поле max_items - не натуральное число
+**HTTP 400 Bad Request**
+```json
+{
+  "error":"Parameter must be positive: max_items"
+}
+```
+
+Комната не найдена  
+**HTTP 404 Not Found**
+```json
+{
+  "error":"Room not found"
 }
 ```
 
@@ -427,6 +451,49 @@ curl -X GET "http://localhost:8080/api/v1/messages/recent?room=general&max_items
 
 ---
 
+## Логика авторизации и WebSocket соединения
+
+### Последовательность действий
+
+1. **Регистрация**
+2. **Логин** — получение токена и добавление в комнату `general`.
+3. **Открытие WebSocket**  
+   Адрес:  
+   `ws://<ip>:8080/ws/chat?token=<токен>`  
+   Пример:
+   ```bash
+   wscat -c "ws://130.193.57.100:8080/ws/chat?token=2a3d8e712bcebc2da7416dc67cf9103a"
+   ```
+
+   - При валидном токене:
+     - Соединение сохраняется.
+     - Пользователь считается в сети.
+     - Можно отправлять и получать сообщения.
+   - При невалидном токене:
+     - Соединение отклоняется.
+
+4. **Работа с сообщениями**  
+   Формат отправки сообщений:
+   ```json
+   {
+     "from": "<имя>",
+     "text": "<сообщение>"
+   }
+   ```
+
+5. **Выход (логаут)**
+   - Запрос `/api/v1/auth/logout` аннулирует токен и удаляет пользователя из комнаты.
+   - WebSocket соединение остается открытым.
+   - Клиент должен самостоятельно закрыть соединение.
+
+6. **Принудительный логаут**
+   - Если WebSocket закрывается до запроса на логаут, сервер:
+     - Разлогинивает пользователя.
+     - Аннулирует токен.
+     - Удаляет пользователя из комнаты.
+
+---
+
 ## Зависимости и сборка проекта
 
 Этот проект использует [Drogon](https://github.com/drogonframework/drogon) — высокопроизводительный HTTP-фреймворк на C++. Все зависимости устанавливаются через `vcpkg`.
@@ -446,10 +513,68 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
 cmake --build .
 ```
 
+## Отладочная сборка, TSAN 
+
+```bash
+mkdir build
+cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_FLAGS="-fsanitize=thread -g -O1" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread"
+cmake --build .
+```
+
+### Проверка
+
+```bash
+readelf -s ./Server | grep __tsan
+```
+
+# Инструкции по работе с базой данных чата (локальная сборка)
+
 ## Скрипт для создания таблиц
 
- ./setup_chat_db.sh
+```bash
+chmod +x setup_chat_db.sh
+./setup_chat_db.sh
+```
 
-## Для удаления таблиц
+## Информация в таблицах
 
+Подключение к базе данных:
+
+```bash
+sudo -u postgres psql -d chat_db
+```
+
+### Список пользователей с их хешами и длиной имени
+
+```sql
+SELECT id, username, password_hash, LENGTH(username) AS username_length FROM users;
+```
+
+### Список всех комнат
+
+```sql
+SELECT id, name, created_at FROM rooms;
+```
+
+### Список пользователей и их комнат
+
+```sql
+SELECT u.username, r.name AS room_name
+FROM room_members rm
+JOIN rooms r ON rm.room_id = r.id
+JOIN users u ON rm.user_id = u.id
+ORDER BY r.name, u.username;
+```
+
+Выход из psql:
+
+```sql
+\q
+```
+
+## Для удаления базы данных
+
+```bash
 sudo -u postgres dropdb chat_db
+```
