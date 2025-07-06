@@ -43,6 +43,9 @@ if(wxWidgets_FOUND)
     endif()
 endif()
 
+install(TARGETS Client DESTINATION bin)
+link_directories(/app/lib)
+
 # ---- TESTS ----
 find_package(GTest REQUIRED)
 set(TESTS_INCL ${CMAKE_CURRENT_SOURCE_DIR}/tests/include)
