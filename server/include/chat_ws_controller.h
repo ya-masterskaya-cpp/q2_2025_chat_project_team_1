@@ -79,4 +79,6 @@ private:
     static std::mutex conn_mutex_;
     /** @brief Карта, связывающая имя пользователя с WebSocket-соединением. */
     static std::unordered_map<std::string, drogon::WebSocketConnectionPtr> connections_;
+    /** @brief Карта, связывающая WebSocket-соединение с именем пользователя. */
+    static std::unordered_map<drogon::WebSocketConnectionPtr, std::string> conn_to_user_;
 };

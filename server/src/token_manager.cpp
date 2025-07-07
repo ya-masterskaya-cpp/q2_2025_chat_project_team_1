@@ -46,11 +46,13 @@ std::optional<postgres::UserId> TokenManager::GetUserIdByToken(const std::string
 }
 
 std::vector<postgres::UserId> TokenManager::GetOnlineUserIds() const {
-    std::lock_guard<std::mutex> lock(mutex_);
     std::vector<postgres::UserId> ids;
-    ids.reserve(id_to_token_.size());
-    for (const auto& [id, _] : id_to_token_) {
-        ids.push_back(id);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        ids.reserve(id_to_token_.size());
+        for (const auto& [id, _] : id_to_token_) {
+            ids.push_back(id);
+        }
     }
     return ids;
 }
