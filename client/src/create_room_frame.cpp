@@ -4,7 +4,7 @@ namespace  gui {
 
 
 CreateRoomFrame::CreateRoomFrame(wxWindow* parent, domain::MessageHandler* message_handler)
-    : wxFrame(parent, wxID_ANY, "Create Room",{},{250,70},wxDEFAULT_FRAME_STYLE & ~wxRESIZE_BORDER),
+    : wxFrame(parent, wxID_ANY, "Create Room",wxDefaultPosition),
                 message_handler_{message_handler} {
     Bind(wxEVT_CLOSE_WINDOW, &CreateRoomFrame::OnClose, this);
 
@@ -16,12 +16,19 @@ CreateRoomFrame::CreateRoomFrame(wxWindow* parent, domain::MessageHandler* messa
     enter_button->Bind(wxEVT_BUTTON, &CreateRoomFrame::OnEnterButtonClicked,this);
 
     //input
-    room_name_input_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    room_name_input_ = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition,
+                                      wxDefaultSize, wxTE_PROCESS_ENTER);
+    room_name_input_->Bind(wxEVT_TEXT_ENTER,&CreateRoomFrame::OnEnterButtonClicked,this);
+    room_name_input_->SetMinSize(wxSize(150, -1));
     room_name_input_->SetHint("Write room name");
 
-    main_sizer->Add(room_name_input_,0,wxEXPAND | wxRIGHT,5);
-    main_sizer->Add(enter_button,0,wxEXPAND | wxRIGHT,5);
+    main_sizer->Add(room_name_input_,0,wxEXPAND | wxALL,5);
+    main_sizer->Add(enter_button,0,wxEXPAND | wxALL,5);
     panel->SetSizer(main_sizer);
+    main_sizer->SetSizeHints(this);
+
+    Layout();
+    Centre();
 }
 
 void CreateRoomFrame::OnEnterButtonClicked(wxCommandEvent& event) {
