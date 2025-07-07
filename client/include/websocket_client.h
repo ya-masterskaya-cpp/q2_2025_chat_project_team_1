@@ -22,6 +22,8 @@ public:
     void SetOnOpen(Callback callback);
     void SetOnClose(Callback callback);
     void SetOnError(Callback callback);
+    void SetWebSocket(std::unique_ptr<ix::WebSocket>&& ws_client);
+    void SetWebSocket(ix::WebSocket* ws_client);
 
 private:
     std::unique_ptr<ix::WebSocket> ws_client_;
