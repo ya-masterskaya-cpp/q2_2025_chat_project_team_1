@@ -1,7 +1,6 @@
 #include "websocket_client.h"
 
 #include <optional>
-#include <iostream>
 
 namespace transfer {
 
@@ -60,6 +59,14 @@ void WebSocketClient::SetOnClose(Callback callback) {
 }
 void WebSocketClient::SetOnError(Callback callback) {
     error_handler_ = callback;
+}
+
+void WebSocketClient::SetWebSocket(std::unique_ptr<ix::WebSocket>&& ws_client) {
+    ws_client_ = std::move(ws_client);
+}
+
+void WebSocketClient::SetWebSocket(ix::WebSocket* ws_client) {
+    ws_client_.reset(ws_client);
 }
 
 }   //namespace transfer

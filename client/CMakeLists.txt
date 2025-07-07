@@ -23,7 +23,6 @@ if(wxWidgets_FOUND)
 
 
     if(NOT DEFINED DOMAIN_SET)
-        message(STATUS "Переменная MY_VARIABLE существует и имеет значение: ${MY_VARIABLE}")
         get_filename_component(DOMAIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../domain" ABSOLUTE)
         add_subdirectory(${DOMAIN_DIR} ${CMAKE_BINARY_DIR}/domain)
     endif()
