@@ -1,7 +1,6 @@
 #include "settings_frame.h"
 
 #include <wx/notebook.h>
-#include <regex>
 
 namespace gui {
 
@@ -18,11 +17,13 @@ SettingsFrame::SettingsFrame(wxWindow* parent, wxFileConfig* file_configs)
     wxPanel* transfer_panel = new wxPanel(notebook);
     wxFlexGridSizer* transfer_sizer = new wxFlexGridSizer(2, 2, 5, 5);
     ip_ = new wxTextCtrl(transfer_panel, wxID_ANY);
+    ip_->SetMinSize({150,-1});
     port_ = new wxTextCtrl(transfer_panel, wxID_ANY);
-    transfer_sizer->Add(new wxStaticText(transfer_panel, wxID_ANY, "IP:"),1, wxALL, 5);
-    transfer_sizer->Add(ip_,3,wxEXPAND | wxALL, 5);
-    transfer_sizer->Add(new wxStaticText(transfer_panel, wxID_ANY, "Port:"),1, wxALL, 5);
-    transfer_sizer->Add(port_,3,wxEXPAND | wxALL, 5);
+    port_->SetMinSize({150,-1});
+    transfer_sizer->Add(new wxStaticText(transfer_panel, wxID_ANY, "IP:"),0, wxALL, 5);
+    transfer_sizer->Add(ip_,0,wxEXPAND | wxALL, 5);
+    transfer_sizer->Add(new wxStaticText(transfer_panel, wxID_ANY, "Port:"),0, wxALL, 5);
+    transfer_sizer->Add(port_,0,wxEXPAND | wxALL, 5);
     transfer_panel->SetSizer(transfer_sizer);
 
 
@@ -49,7 +50,13 @@ SettingsFrame::SettingsFrame(wxWindow* parent, wxFileConfig* file_configs)
     main_sizer->Add(notebook, 1, wxEXPAND,5);
     main_sizer->Add(buttons_sizer,0,wxEXPAND,5);
     SetSizer(main_sizer);
+    main_sizer->SetSizeHints(this);
 
+    Layout();
+    Centre();
+
+
+    //settings load
     Load();
 }
 

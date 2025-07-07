@@ -3,13 +3,16 @@
 namespace gui {
 
 LoginFrame::LoginFrame(wxWindow* parent, domain::MessageHandler* message_handler)
-    : wxDialog(parent, wxID_ANY, "Authorization", wxDefaultPosition, wxSize(400, 120)),
+    : wxDialog(parent, wxID_ANY, "Authorization", wxDefaultPosition),
     message_handler_{message_handler} {
     Bind(wxEVT_CLOSE_WINDOW, &LoginFrame::OnClose, this);
 
     wxPanel* panel = new wxPanel(this);
 
-    username_ctrl_ = new wxTextCtrl(panel, wxID_ANY);
+    username_ctrl_ = new wxTextCtrl(panel, wxID_ANY,"", wxDefaultPosition,
+                                    wxDefaultSize,wxTE_PROCESS_ENTER);
+    username_ctrl_->SetMinSize(wxSize(150, -1));
+    username_ctrl_->Bind(wxEVT_TEXT_ENTER, &LoginFrame::OnUserNameEnter, this);
     password_ctrl_ = new wxTextCtrl(panel, wxID_ANY,"",wxDefaultPosition,
                                     wxDefaultSize,wxTE_PASSWORD);
 
@@ -34,10 +37,18 @@ LoginFrame::LoginFrame(wxWindow* parent, domain::MessageHandler* message_handler
     btn_sizer->Add(sign_up_button,0,wxALL,5);
     btn_sizer->Add(login_button,0,wxALL,5);
 
-    main_sizer->Add(login_sizer,0,wxEXPAND,5);
-    main_sizer->Add(btn_sizer,0,wxEXPAND,5);
+    main_sizer->Add(login_sizer,0,wxEXPAND | wxALL,5);
+    main_sizer->Add(btn_sizer,0,wxEXPAND | wxALL,5);
 
     panel->SetSizer(main_sizer);
+    main_sizer->SetSizeHints(this);
+
+    Layout();
+    Centre();
+}
+
+void LoginFrame::OnUserNameEnter(wxCommandEvent& event) {
+    password_ctrl_->SetFocus();
 }
 
 void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {

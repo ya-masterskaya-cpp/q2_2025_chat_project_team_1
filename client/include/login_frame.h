@@ -10,6 +10,7 @@ namespace gui {
 class LoginFrame : public wxDialog {
 public:
     LoginFrame(wxWindow* parent, domain::MessageHandler* message_handler);
+    void OnUserNameEnter(wxCommandEvent& event);
     void OnSignUpButtonClicked(wxCommandEvent& event);
     void OnLoginButtonClicked(wxCommandEvent& event);
 
