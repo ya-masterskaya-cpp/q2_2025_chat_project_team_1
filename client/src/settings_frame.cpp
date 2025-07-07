@@ -55,6 +55,7 @@ SettingsFrame::SettingsFrame(wxWindow* parent, wxFileConfig* file_configs)
 
 void SettingsFrame::OnSaveButtonClicked(wxCommandEvent& event) {
     Save();
+    Close();
 }
 
 void SettingsFrame::Save() {

@@ -10,7 +10,8 @@ void DatabasePlugin::initAndStart(const Json::Value &config) {
         throw std::runtime_error("Environment variable IRC_CHAT_DB_URL is not set!");
     }
     size_t pool_size = config.get("pool_size", 4).asUInt();
-    db_wrapper_ = std::make_shared<IRCDBWrapper>(conn_str, pool_size);
+
+    db_wrapper_ = std::make_shared<IRCDBWrapper>(std::string{conn_str}, pool_size);
 }
 
 void DatabasePlugin::shutdown() {
