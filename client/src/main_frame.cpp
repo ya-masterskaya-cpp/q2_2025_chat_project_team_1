@@ -123,8 +123,8 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
 
         for(auto& msg : parsed_msg_val) {
             chat_history_->AppendText(wxString::FromUTF8(msg["from"].asString()) + ": " + wxString::FromUTF8(msg["text"].asString()) +"\n");
+            chat_history_->ShowPosition(chat_history_->GetLastPosition());
         }
-
 
     } else {
         chat_history_->AppendText("You are not connected.\n");
@@ -268,8 +268,8 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         ws_client_->SetOnMessage([self = this](const std::string& msg) {
             Json::Value parsed_msg = domain::Parse(msg);
             self->chat_history_->AppendText(wxString::FromUTF8(parsed_msg["from"].asString()) + ": "
-                                                               + wxString::FromUTF8(parsed_msg["text"].asString()) + ".\n");
-                                              
+                                                               + wxString::FromUTF8(parsed_msg["text"].asString()) + "\n");
+            self->chat_history_->ShowPosition(self->chat_history_->GetLastPosition());
         });
 
         ws_client_->Run();

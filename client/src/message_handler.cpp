@@ -4,8 +4,6 @@
 #include <json/json.h>
 #include <password_hasher.h>
 
-#include <iostream>
-
 namespace domain {
 
 MessageHandler::MessageHandler(UserData& user, const std::string& url)

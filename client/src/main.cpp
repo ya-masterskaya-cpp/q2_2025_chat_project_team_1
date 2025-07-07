@@ -1,9 +1,3 @@
-// #include "server_loader.h"
-// #include "command_handler.h"
-// #include "chat_client.h"
-// #include <iostream>
-
-// <<<<<<< HEAD
 #include "application.h"
 #include "main_frame.h"
 
