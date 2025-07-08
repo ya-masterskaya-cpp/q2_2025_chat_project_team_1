@@ -33,7 +33,7 @@ CreateRoomFrame::CreateRoomFrame(wxWindow* parent, domain::MessageHandler* messa
 
 void CreateRoomFrame::OnEnterButtonClicked(wxCommandEvent& event) {
 
-    std::string room_name = room_name_input_->GetValue().ToStdString();
+    const std::string room_name = std::string(room_name_input_->GetValue().ToUTF8());
 
     if(room_name.empty()) {
         wxMessageBox("Empty room name" , "Error", wxOK | wxICON_ERROR);
