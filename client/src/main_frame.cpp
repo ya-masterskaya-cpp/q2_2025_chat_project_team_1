@@ -95,7 +95,7 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
             wxMessageBox("Choose room", "Error", wxOK | wxICON_ERROR);
             return;
         }
-        const std::string& room_name = info_list_->GetString(index).ToStdString();
+        const std::string room_name = std::string(info_list_->GetString(index).ToUTF8());
         auto res = message_handler_->JoinRoom(room_name);
 
         if(!res.error_msg.empty()) {
@@ -180,7 +180,8 @@ void MainFrame::OnGetUsersButtonClicked(wxCommandEvent& event) {
             return;
         }
 
-        auto res = message_handler_->GetUsersInRoom(info_list_->GetString(index).ToStdString());
+        const std::string room_name = std::string(info_list_->GetString(index).ToUTF8());
+        auto res = message_handler_->GetUsersInRoom(room_name);
 
         if(!res.error_msg.empty()) {
             wxMessageBox(wxString::FromUTF8(res.error_msg), "Error", wxOK | wxICON_ERROR);
@@ -255,7 +256,7 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
 
         ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
         ws_client_->SetOnOpen([self = this](const std::string& msg) {
-            self->status_bar_->SetStatusText(std::string("User: ") + self->user_.name,0);
+            self->status_bar_->SetStatusText(std::string("User: ") + wxString::FromUTF8(self->user_.name),0);
             self->status_bar_->SetStatusText(std::string("Room: ") + std::string("general"),1);
         });
         ws_client_->SetOnClose([self = this](const std::string& msg) {

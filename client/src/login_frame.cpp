@@ -52,13 +52,15 @@ void LoginFrame::OnUserNameEnter(wxCommandEvent& event) {
 }
 
 void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {
-    if(username_ctrl_->GetValue().empty() || password_ctrl_->GetValue().empty()) {
+    const auto user_name = std::string(username_ctrl_->GetValue().ToUTF8());
+    const auto password = std::string(password_ctrl_->GetValue().ToUTF8());
+
+    if(user_name.empty() || password.empty()) {
         wxMessageBox("Empty user_name or password", "Warning", wxOK | wxICON_WARNING);
         return;
     }
 
-    auto res = message_handler_->RegisterUser(username_ctrl_->GetValue().ToStdString(),
-                                   password_ctrl_->GetValue().ToStdString());
+    auto res = message_handler_->RegisterUser(user_name, password);
 
     if (!res.error_msg.empty())  {
         wxMessageBox(res.error_msg, "Error", wxOK | wxICON_WARNING);
@@ -68,19 +70,21 @@ void LoginFrame::OnSignUpButtonClicked(wxCommandEvent& event) {
     Json::Value parsed_val = domain::Parse(res.msg);
 
     if(res.status) {
-        wxMessageBox(parsed_val["info"].asString(), "Info", wxOK | wxICON_INFORMATION);
+        wxMessageBox(wxString::FromUTF8(parsed_val["info"].asString()), "Info", wxOK | wxICON_INFORMATION);
     } else {
-        wxMessageBox(parsed_val["error"].asString(), "Warning", wxOK | wxICON_WARNING);
+        wxMessageBox(wxString::FromUTF8(parsed_val["error"].asString()), "Error", wxOK | wxICON_WARNING);
     }
 }
 
 void LoginFrame::OnLoginButtonClicked(wxCommandEvent& event) {
-    if(username_ctrl_->GetValue().empty() || password_ctrl_->GetValue().empty()) {
+    const auto user_name = std::string(username_ctrl_->GetValue().ToUTF8());
+    const auto password = std::string(password_ctrl_->GetValue().ToUTF8());
+
+    if(user_name.empty() || password.empty()) {
         wxMessageBox("Empty user_name or password", "Warning", wxOK | wxICON_WARNING);
         return;
     }
-    auto res = message_handler_->LoginUser(username_ctrl_->GetValue().ToStdString(),
-                                           password_ctrl_->GetValue().ToStdString());
+    auto res = message_handler_->LoginUser(user_name, password);
 
     if (!res.error_msg.empty())  {
         wxMessageBox(res.error_msg, "Error", wxOK | wxICON_WARNING);
@@ -90,10 +94,11 @@ void LoginFrame::OnLoginButtonClicked(wxCommandEvent& event) {
     Json::Value parsed_val = domain::Parse(res.msg);
 
     if(res.status) {
-        wxMessageBox("Welcome, " + parsed_val["user"].asString(), "Info", wxOK | wxICON_INFORMATION);
+        wxMessageBox("Welcome, " + wxString::FromUTF8(parsed_val["user"].asString()),
+                     "Info", wxOK | wxICON_INFORMATION);
         Close();
     } else {
-        wxMessageBox(parsed_val["error"].asString(), "Error", wxOK | wxICON_ERROR);
+        wxMessageBox(wxString::FromUTF8(parsed_val["error"].asString()), "Error", wxOK | wxICON_ERROR);
         return;
     }
 }
