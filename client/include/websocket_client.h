@@ -3,7 +3,6 @@
 
 #include <ixwebsocket/IXWebSocket.h>
 #include <memory>
-#include <optional>
 
 using Callback = std::function<void(const std::string& msg)>;
 
@@ -24,16 +23,18 @@ public:
     void SetOnError(Callback callback);
     void SetWebSocket(std::unique_ptr<ix::WebSocket>&& ws_client);
     void SetWebSocket(ix::WebSocket* ws_client);
+    const ix::WebSocket* const GetWebSocket() const;
+    virtual ~WebSocketClient() = default;
 
 private:
     std::unique_ptr<ix::WebSocket> ws_client_;
     std::string url_;
     std::string token_;
 
-    std::optional<Callback> msg_handler_{std::nullopt};
-    std::optional<Callback> open_handler_{std::nullopt};
-    std::optional<Callback> close_handler_{std::nullopt};
-    std::optional<Callback> error_handler_{std::nullopt};
+    Callback msg_handler_;
+    Callback open_handler_;
+    Callback close_handler_;
+    Callback error_handler_;
 };
 
 }   //namespace transfer
