@@ -42,6 +42,7 @@ private:
     UserData& user_;
     std::string url_;
 
+    //methods
     bool ParseTokenFromJson(const std::string& jsonText);
     template<typename Function>
     ServerResponse ToRequest(Function function) {
