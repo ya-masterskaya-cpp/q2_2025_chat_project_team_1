@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+//#include <iostream>
+
 
 /**
  * @namespace chat
@@ -167,6 +169,24 @@ namespace chat
          * @return std::optional<std::string> Имя пользователя, если пользователь найден, `std::nullopt` в противном случае.
          */
         std::optional<std::string> GetUserNameById(const postgres::UserId &id) const;
+
+        /**
+         * @brief Обновляет время последней активности пользователя по токену.
+         * @param token Токен пользователя.
+         */
+        void UpdateActivityByToken(const std::string& token);
+
+        /**
+         * @brief Выполняет принудительный выход пользователя.
+         * @param token Токен аутентификации пользователя.
+         */
+        void ForceLogoutByToken(const std::string& token);
+
+        /**
+         * @brief Удаляет просроченные токены по таймауту.
+         * @param timeout Время бездействия, после которого токены считаются просроченными.
+         */
+        void RemoveExpiredTokens(std::chrono::minutes timeout);
 
     private:
         /// @brief Ссылка на объект `IRCDBWrapper` для доступа к базе данных.
