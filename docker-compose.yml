@@ -17,7 +17,7 @@ services:
       IRC_CHAT_DB_URL: ${IRC_CHAT_DB_URL}
     depends_on:
       - postgres
-    command: ["./build/Server"]
+    command: ["./build/server/Server"]
     ports:
     - "8080:8080"
 
@@ -29,7 +29,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       - postgres
-    command: ["/bin/sh", "-c", "export PGPASSWORD=$POSTGRES_PASSWORD && sleep 10 && psql -U $POSTGRES_USER -h postgres -d postgres -c 'CREATE DATABASE irc_chat_test;' || true && ./build/DbTests"]
+    command: ["/bin/sh", "-c", "export PGPASSWORD=$POSTGRES_PASSWORD && sleep 10 && psql -U $POSTGRES_USER -h postgres -d postgres -c 'CREATE DATABASE irc_chat_test;' || true && ./build/server/DbTests"]
 
 volumes:
   pgdata:

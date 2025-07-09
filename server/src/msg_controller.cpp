@@ -20,6 +20,9 @@ void MessageController::SendMessage(const drogon::HttpRequestPtr &req, std::func
         return;
     }
 
+    // Обновляем активность пользователя
+    chat_service->UpdateActivityByToken(token);
+
     // нет нужных полей, невалидный json
     auto json = req->getJsonObject();
     if (!json || !json->isMember("text")) {
@@ -66,6 +69,9 @@ void MessageController::UploadMessage(const drogon::HttpRequestPtr &req, std::fu
         return;
     }
 
+    // Обновляем активность пользователя
+    chat_service->UpdateActivityByToken(token);
+
     // нет нужных полей, невалидный json
     auto json = req->getJsonObject();
     if (!json || !json->isMember("text")) {
@@ -107,6 +113,9 @@ void MessageController::GetRecentMessages(const drogon::HttpRequestPtr &req, std
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
+
+    // Обновляем активность пользователя
+    chat_service->UpdateActivityByToken(token);
 
     const std::string room = req->getParameter("room");
     const std::string max_items_str = req->getParameter("max_items");
@@ -169,6 +178,9 @@ void MessageController::GetRoomMessagesPage(const drogon::HttpRequestPtr& req, s
         http_utils::RespondWithError("Invalid token", drogon::k401Unauthorized, std::move(callback));
         return;
     }
+
+    // Обновляем активность пользователя
+    chat_service->UpdateActivityByToken(token);
 
     const std::string room = req->getParameter("room");
     const std::string offset_str = req->getParameter("offset");

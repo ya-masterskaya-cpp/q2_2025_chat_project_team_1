@@ -193,4 +193,36 @@ std::optional<std::string> ChatService::GetUserNameById(const postgres::UserId& 
     return std::nullopt;
 }
 
+void ChatService::UpdateActivityByToken(const std::string& token) {
+    token_manager_.UpdateActivityByToken(token);
+}
+
+void ChatService::ForceLogoutByToken(const std::string& token) {
+    auto user_id_opt = token_manager_.GetUserIdByToken(token);
+    if (!user_id_opt) {
+        return;
+    }
+
+    auto user_opt = db_wrapper_.FindUserById(user_id_opt.value());
+    if (!user_opt) {
+        token_manager_.RemoveTokenByToken(token);
+        return;
+    }
+
+    for (const auto& room : db_wrapper_.GetAllRooms()) {
+        db_wrapper_.RemoveUserFromRoomByName(user_opt->username, room.name);
+    }
+
+    token_manager_.RemoveTokenByToken(token);
+}
+
+void ChatService::RemoveExpiredTokens(std::chrono::minutes timeout) {
+    const auto remove_tokens = token_manager_.GetExpiredTokens(timeout);
+    //std::cout << "[ChatService] RemoveExpiredTokens: " << remove_tokens.size() << " invalid tokens\n"; // для отладки
+    for (const auto& token : remove_tokens) {
+        ForceLogoutByToken(token);
+        //std::cout << "[ChatService] Logout: " << token << '\n'; // для отладки
+    }
+}
+
 }  // namespace chat

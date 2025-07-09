@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 project(client)
 
+option(BUILD_CLIENT "Build the GUI client" ON)
+if(NOT BUILD_CLIENT)
+    return()
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
