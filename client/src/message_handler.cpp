@@ -14,11 +14,12 @@ ServerResponse MessageHandler::RegisterUser(const std::string& login, const std:
     Json::Value body;
     body["login"] = login;
     body["password"] = PasswordHasher::HashPassword(password);
-    auto res = SendPostRequest(url_ + std::string(api::AUTH_REGISTER), body);
-    if(res.error) {
-        return {res.status_code == 201, res.text, res.error.message};
-    }
-    return {res.status_code == 201, res.text};
+    // auto res = SendPostRequest(url_ + std::string(api::AUTH_REGISTER), body);
+    // if(res.error) {
+    //     return {res.status_code == 201, res.text, res.error.message};
+    // }
+    // return {res.status_code == 201, res.text};
+    return ToRequest(SendPostRequest(url_ + std::string(api::AUTH_REGISTER), body),201);
 }
 
 ServerResponse MessageHandler::LoginUser(const std::string& login, const std::string& password) {

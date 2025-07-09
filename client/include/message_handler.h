@@ -45,12 +45,12 @@ private:
     //methods
     bool ParseTokenFromJson(const std::string& jsonText);
     template<typename Function>
-    ServerResponse ToRequest(Function function) {
+    ServerResponse ToRequest(Function function, int code = 200) {
         auto res = function;
         if(res.error) {
-            return {res.status_code == 200, res.text, res.error.message};
+            return {res.status_code == code, res.text, res.error.message};
         }
-        return {res.status_code == 200, res.text};
+        return {res.status_code == code, res.text};
     }
 
 };

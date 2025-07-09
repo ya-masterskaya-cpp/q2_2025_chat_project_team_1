@@ -61,4 +61,14 @@ void CreateRoomFrame::OnEnterButtonClicked(wxCommandEvent& event) {
     }
 }
 
+void CreateRoomFrame::SetOnUpdate(ObserveFunc on_update) {
+    on_update_ = on_update;
+}
+
+void CreateRoomFrame::OnClose(wxCloseEvent& event){
+    Destroy();
+}
+
+
+
 }   //namespace gui

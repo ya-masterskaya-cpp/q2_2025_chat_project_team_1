@@ -381,13 +381,13 @@ void MainFrame::SetControlPanel() {
     wxButton* send_msg_btn = new wxButton(control_panel, wxID_ANY, "Send");
     send_msg_btn->Bind(wxEVT_BUTTON, &MainFrame::OnSendButtonClicked,this);
     //layout
-    control_sizer->Add(get_rooms_btn,0,wxALL,5);
-    control_sizer->Add(create_room_btn,0,wxALL,5);
-    control_sizer->Add(join_room_btn,0,wxALL,5);
-    control_sizer->Add(leave_room_btn,0,wxALL,5);
-    control_sizer->Add(get_users_btn,0,wxALL,5);
+    control_sizer->Add(get_rooms_btn,0, wxEXPAND | wxALL,5);
+    control_sizer->Add(create_room_btn,0, wxEXPAND | wxALL,5);
+    control_sizer->Add(join_room_btn,0, wxEXPAND | wxALL,5);
+    control_sizer->Add(leave_room_btn,0, wxEXPAND | wxALL,5);
+    control_sizer->Add(get_users_btn,0, wxEXPAND | wxALL,5);
     control_sizer->AddStretchSpacer(1);
-    control_sizer->Add(send_msg_btn,0,wxALL,5);
+    control_sizer->Add(send_msg_btn,0, wxEXPAND | wxALL,5);
     control_panel->SetSizer(control_sizer);
 
     main_sizer_->Add(control_panel,0, wxEXPAND);

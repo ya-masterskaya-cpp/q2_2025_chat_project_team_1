@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(cpr REQUIRED)
 find_package(jsoncpp REQUIRED)
+find_package(Threads REQUIRED)
 find_package(ixwebsocket REQUIRED)
 find_package(wxWidgets COMPONENTS core base html xml richtext REQUIRED)
 set(wxBUILD_SHARED ON)

@@ -23,71 +23,7 @@
         }
       ],
       "build-commands": [
-        "mkdir build && ls -al && cd build && ls -al && cmake -DCMAKE_INSTALL_PREFIX=/app -DJSONCPP_WITH_TESTS=OFF -DBUILD_SHARED_LIBS=ON .. && make -j$(nproc) && make install"
-      ]
-    },
-    {
-      "name": "drogon",
-      "buildsystem": "cmake",
-      "config-opts": [
-        "-DBUILD_SHARED_LIBS=ON",
-        "-DBUILD_EXAMPLES=OFF",
-        "-DBUILD_ORM=OFF",
-        "-DCMAKE_INSTALL_PREFIX=/app"
-      ],
-      "sources": [
-        {
-          "type": "git",
-          "url": "https://github.com/drogonframework/drogon.git",
-          "tag": "v1.8.3"
-        }
-      ]
-    },
-    {
-      "name": "postgresql",
-      "buildsystem": "autotools",
-      "config-opts": [
-        "--prefix=/app"
-      ],
-      "sources": [
-        {
-          "type": "archive",
-          "url": "https://ftp.postgresql.org/pub/source/v14.5/postgresql-14.5.tar.gz",
-          "sha256": "90ead393dbc654cb0075eaaf0ec2058e6b9866ced478fed3cf2b68a5bc04eb24"
-        }
-      ]
-    },
-    {
-      "name": "libpqxx",
-      "buildsystem": "cmake",
-      "config-opts": [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=/app",
-        "-DBUILD_SHARED_LIBS=ON",
-        "-DBUILD_DOC=OFF",
-        "-DBUILD_TEST=OFF"
-      ],
-      "sources": [
-        {
-          "type": "git",
-          "url": "https://github.com/jtv/libpqxx.git",
-          "tag": "7.7.5"
-        }
-      ]
-    },
-    {
-      "name": "zlib",
-      "buildsystem": "cmake",
-      "config-opts": [
-        "-DCMAKE_INSTALL_PREFIX=/app",
-        "-DBUILD_SHARED_LIBS=ON"
-      ],
-      "sources": [
-        {
-          "type": "archive",
-          "url": "https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz",
-          "sha256": "ff0ba4c292013dbc27530b3a81e1f9a813cd39de01ca5e0f8bf355702efa593e"
-        }
+        "mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/app -DJSONCPP_WITH_TESTS=OFF -DBUILD_SHARED_LIBS=ON .. && make -j$(nproc) && make install"
       ]
     },
     {
@@ -141,29 +77,13 @@
       ]
     },
     {
-      "name": "gtest",
-      "buildsystem": "cmake",
-      "config-opts": [
-        "-DCMAKE_INSTALL_PREFIX=/app",
-        "-DBUILD_SHARED_LIBS=ON",
-        "-Dgtest_force_shared_crt=ON"
-      ],
-      "sources": [
-        {
-          "type": "git",
-          "url": "https://github.com/google/googletest.git",
-          "tag": "release-1.12.1"
-        }
-      ]
-    },
-    {
       "name": "irc-chat",
       "buildsystem": "simple",
       "config-opts": [
         "-DCMAKE_PREFIX_PATH=/app"
       ],
       "build-commands": [
-        "export LIBRARY_PATH=../lib:$LIBRARY_PATH && mkdir -p build && cd build && cmake ../client/ -DCMAKE_INSTALL_PREFIX=/app -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_RPATH=/app/lib && cmake --build . && cmake --install ."
+        "mkdir -p build && cd build && cmake ../client/ -DCMAKE_INSTALL_PREFIX=/app -DCMAKE_BUILD_TYPE=Release  && cmake --build . && cmake --install ."
       ],
       "sources": [
         {
