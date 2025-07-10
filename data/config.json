@@ -1,0 +1,46 @@
+{
+  "listeners": [
+    {
+      "address": "0.0.0.0",
+      "port": 8080
+    }
+  ],
+"app": {
+    "log": {
+      /*
+        Если параметры файла не указаны - вывод в консоль
+      */
+      //"log_path": "../logs", // Путь
+      //"logfile_base_name": "server", // Имя файла
+      //"log_size_limit": 10485760, // Размер каждого файла в байтах (10 Мб)
+      //"log_level": "DEBUG"
+    }
+  },
+  "plugins": [
+    {
+      "name": "LoggerPlugin",
+      "type": "Global",
+      "config": {
+        "log_level": "debug"
+      }
+    },
+    {
+      "name": "DatabasePlugin",
+      "config": {
+        "conn_str": "",
+        "pool_size": 4
+      }
+    },
+    {
+      "name": "ChatServicePlugin",
+      "type": "Global"
+    },
+    {
+      "name": "TokenMonitorPlugin",
+      "config": {
+        "cleanup_interval_seconds": 30, // Интервал проверки токенов
+        "token_timeout_minutes": 5 // Время жизни токена без активности
+      }
+    }
+  ]
+}

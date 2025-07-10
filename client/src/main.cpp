@@ -1,12 +1,23 @@
-#include <wx/wx.h>
+#include "application.h"
+#include "main_frame.h"
 
-class MyApp : public wxApp {
-public:
-    virtual bool OnInit() {
-        wxFrame* frame = new wxFrame(NULL, wxID_ANY, "Hello wxWidgets");
-        frame->Show(true);
-        return true;
+#ifdef __unix__ || __unix || unix
+    #include <X11/Xlib.h>
+#endif
+
+
+wxIMPLEMENT_APP(Application);
+
+#ifdef __unix__ || __unix || unix
+struct XlibInitializer {
+    XlibInitializer() {
+        XInitThreads();
     }
-};
+} xlib_initializer;
+#endif
 
-wxIMPLEMENT_APP(MyApp);
+bool Application::OnInit() {
+    gui::MainFrame* frame = new gui::MainFrame("IRC-chat");
+    frame->Show();
+    return true;
+}

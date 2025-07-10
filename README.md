@@ -34,14 +34,14 @@ export VCPKG_ROOT="$HOME/.local/share/vcpkg"
 (действует только на данную сессию, для постоянной настройки__
 добавлем строку в ~/.bashrc или ~/.zshrc)__
 
-Устанавливаем libpqxx, Boost и wxWidgets:__
+Устанавливаем libpqxx, Boost, wxWidgets и OpenSSL:__
 ```bash
-vcpkg install libpqxx boost wxwidgets
+vcpkg install libpqxx boost wxwidgets openssl
 ```
 
 Для специфичных версий (если нужно):__
 ```bash
-vcpkg install libpqxx@7.7.4 boost@1.83.0 wxwidgets@3.2.2.1
+vcpkg install libpqxx@7.7.4 boost@1.83.0 wxwidgets@3.2.2.1 openssl@3.5.0
 ```
 
 При проблемах установки смотрим файл `~/.local/share/vcpkg/installed/vcpkg/issue_body.md` 
