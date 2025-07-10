@@ -133,7 +133,7 @@ namespace chat
         bool SaveMessage(const std::string &token, const std::string &text); // Сохраняет сообщение в БД, применяется при отправке
 
         /**
-         * @brief Получает последние сообщения из указанной комнаты.
+         * @brief Получает последние сообщения в порядке от новых к старым из указанной комнаты.
          * @param room_name Имя комнаты.
          * @param max_items Максимальное количество сообщений для загрузки.
          * @return std::vector<postgres::MessageRecord> Список записей сообщений.
@@ -141,7 +141,7 @@ namespace chat
         std::vector<postgres::MessageRecord> GetRecentMessages(const std::string &room_name, int max_items) const;
 
         /**
-         * @brief Получает страницу сообщений из указанной комнаты.
+         * @brief Получает страницу сообщений в порядке от новых к старым из указанной комнаты.
          * @param room_name Имя комнаты.
          * @param offset Смещение для загрузки страницы.
          * @param limit Количество записей на странице.
