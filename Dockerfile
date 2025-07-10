@@ -18,8 +18,10 @@ WORKDIR /app
 COPY . .
 
 # 5. Сборка обеих целей с vcpkg toolchain
-RUN cmake -Bbuild -S. -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+RUN cmake -Bbuild -S. \
+    -DBUILD_CLIENT=OFF \
+    -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
     && cmake --build build --target Server --target DbTests
 
 # 6. Значение по умолчанию: запуск тестов (можно переопределить через docker-compose)
-CMD ["./build/DbTests"]
+CMD ["./build/server/DbTests"]

@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+//#include <iostream>
+
 
 /**
  * @namespace chat
@@ -36,11 +38,9 @@ namespace chat
     public:
         /**
          * @brief Конструктор класса ChatService.
-         * @param db_wrapper Указатель на объект `IRCDBWrapper` для доступа к базе данных.
-         * @param token_mgr Указатель на объект `TokenManager` для управления токенами.
+         * @param db_wrapper Ссылка на объект `IRCDBWrapper` для доступа к базе данных.
          */
-        ChatService(std::shared_ptr<IRCDBWrapper> db_wrapper,
-                    std::shared_ptr<TokenManager> token_mgr);
+        explicit ChatService(IRCDBWrapper& db_wrapper);
 
         // Аутентификация
         /**
@@ -133,7 +133,7 @@ namespace chat
         bool SaveMessage(const std::string &token, const std::string &text); // Сохраняет сообщение в БД, применяется при отправке
 
         /**
-         * @brief Получает последние сообщения из указанной комнаты.
+         * @brief Получает последние сообщения в порядке от новых к старым из указанной комнаты.
          * @param room_name Имя комнаты.
          * @param max_items Максимальное количество сообщений для загрузки.
          * @return std::vector<postgres::MessageRecord> Список записей сообщений.
@@ -141,7 +141,7 @@ namespace chat
         std::vector<postgres::MessageRecord> GetRecentMessages(const std::string &room_name, int max_items) const;
 
         /**
-         * @brief Получает страницу сообщений из указанной комнаты.
+         * @brief Получает страницу сообщений в порядке от новых к старым из указанной комнаты.
          * @param room_name Имя комнаты.
          * @param offset Смещение для загрузки страницы.
          * @param limit Количество записей на странице.
@@ -170,11 +170,29 @@ namespace chat
          */
         std::optional<std::string> GetUserNameById(const postgres::UserId &id) const;
 
+        /**
+         * @brief Обновляет время последней активности пользователя по токену.
+         * @param token Токен пользователя.
+         */
+        void UpdateActivityByToken(const std::string& token);
+
+        /**
+         * @brief Выполняет принудительный выход пользователя.
+         * @param token Токен аутентификации пользователя.
+         */
+        void ForceLogoutByToken(const std::string& token);
+
+        /**
+         * @brief Удаляет просроченные токены по таймауту.
+         * @param timeout Время бездействия, после которого токены считаются просроченными.
+         */
+        void RemoveExpiredTokens(std::chrono::minutes timeout);
+
     private:
-        /// @brief Указатель на объект `IRCDBWrapper` для доступа к базе данных.
-        std::shared_ptr<IRCDBWrapper> db_wrapper_;
-        /// @brief Указатель на объект `TokenManager` для управления токенами.
-        std::shared_ptr<TokenManager> token_manager_; // Токены сбрасываются при падении сервера, требуется новый вход по сохраненным в БД логину и хэшу пароля
+        /// @brief Ссылка на объект `IRCDBWrapper` для доступа к базе данных.
+        IRCDBWrapper& db_wrapper_;
+        /// @brief Локальный объект `TokenManager` для управления токенами - внутренний член класса.
+        TokenManager token_manager_; // Токены сбрасываются при падении сервера, требуется новый вход по сохраненным в БД логину и хэшу пароля
     };
 
 } // namespace chat
