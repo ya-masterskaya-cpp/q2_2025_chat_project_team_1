@@ -4,6 +4,7 @@
 #include <string>
 
 #include "domain.h"
+#include "query_handler.h"
 
 namespace domain {
 
@@ -40,7 +41,8 @@ public:
 
 private:
     UserData& user_;
-    std::string url_;
+    // std::string url_;
+    QueryHandler<cpr::Body,cpr::Header,cpr::Parameters> query_handler_;
 
     //methods
     bool ParseTokenFromJson(const std::string& jsonText);

@@ -68,9 +68,7 @@ void SettingsFrame::OnSaveButtonClicked(wxCommandEvent& event) {
 void SettingsFrame::Save() {
     //transfer
     file_configs_->SetPath("/Transfer");
-    std::cout <<ip_->GetValue() << std::endl;
     file_configs_->Write("IP", ip_->GetValue());
-    std::cout <<port_->GetValue() << std::endl;
     file_configs_->Write("Port", port_->GetValue());
 
 
