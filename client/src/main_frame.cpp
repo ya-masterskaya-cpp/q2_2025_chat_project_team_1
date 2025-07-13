@@ -304,8 +304,8 @@ void MainFrame::SaveConfig() {
 void MainFrame::LoadConfig() {
     file_configs_->SetPath("/MainFrame");
 
-    int width = 300;
-    int height = 300;
+    int width = 900;
+    int height = 600;
 
     if (file_configs_->HasEntry("Width")) {
         file_configs_->Read("Width", &width);
@@ -317,8 +317,6 @@ void MainFrame::LoadConfig() {
 
     SetSize(width,height);
 }
-
-
 
 MainFrame::~MainFrame() {
     SaveConfig();

@@ -4,11 +4,6 @@
 
 using namespace transfer;
 using namespace ix;
-using ::testing::_;
-using ::testing::MockFunction;
-using ::testing::StrictMock;
-using ::testing::SaveArg;
-
 
 class WebSocketClientTest : public ::testing::Test {
 protected:
@@ -50,9 +45,3 @@ TEST_F(WebSocketClientTest, SetToken) {
     auto ws_ptr = client.GetWebSocket();
     EXPECT_EQ(ws_ptr->getUrl(), "ws://127.0.0.1:8080/ws/chat?token=test_token");
 }
-
-
-
-
-
-

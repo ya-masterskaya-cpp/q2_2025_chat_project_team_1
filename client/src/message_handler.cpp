@@ -4,7 +4,6 @@
 #include <json/json.h>
 #include <password_hasher.h>
 
-
 namespace domain {
 
 MessageHandler::MessageHandler(UserData& user, const std::string& url)
@@ -49,10 +48,9 @@ ServerResponse MessageHandler::LoginUser(const std::string& login, const std::st
     if (res.status_code == 200 && ParseTokenFromJson(res.text)) {
         user_.name = login;
         return {true,res.text};
+    } else {
+        return {false,res.text};
     }
-
-    user_.token.clear();
-    return {false,res.text};
 }
 
 bool MessageHandler::ParseTokenFromJson(const std::string& jsonText) {
@@ -110,6 +108,7 @@ ServerResponse MessageHandler::UploadMessageToDB(const std::string& message) {
     body["text"] = message;
     auto& query = query_handler_.At(api::MESSAGE_UPLOAD);
     query.SetBody(Json::writeString(Json::StreamWriterBuilder{}, body));
+    query.SetToken(user_.token);
     return ToRequest(SendPostRequest(query_handler_.GetUrl(), query));
 }
 

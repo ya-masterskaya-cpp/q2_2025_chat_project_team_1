@@ -64,6 +64,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         ${TESTS_SRC_FILES}
         ${TESTS_INCL_FILES}
         ${CLIENT_SRC}/websocket_client.cpp
+        ${CLIENT_SRC}/message_handler.cpp
+        ${CLIENT_SRC}/domain.cpp
     )
 
     target_include_directories(Client_tests PRIVATE ${TESTS_INCL} ${CLIENT_INCL})
