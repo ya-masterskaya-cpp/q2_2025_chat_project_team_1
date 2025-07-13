@@ -4,6 +4,7 @@
 #include <string>
 
 #include "domain.h"
+#include "query_handler.h"
 
 namespace domain {
 
@@ -40,16 +41,18 @@ public:
 
 private:
     UserData& user_;
-    std::string url_;
+    // std::string url_;
+    QueryHandler<cpr::Body,cpr::Header,cpr::Parameters> query_handler_;
 
+    //methods
     bool ParseTokenFromJson(const std::string& jsonText);
     template<typename Function>
-    ServerResponse ToRequest(Function function) {
+    ServerResponse ToRequest(Function function, int code = 200) {
         auto res = function;
         if(res.error) {
-            return {res.status_code == 200, res.text, res.error.message};
+            return {res.status_code == code, res.text, res.error.message};
         }
-        return {res.status_code == 200, res.text};
+        return {res.status_code == code, res.text};
     }
 
 };

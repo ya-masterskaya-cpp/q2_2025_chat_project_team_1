@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(cpr REQUIRED)
 find_package(jsoncpp REQUIRED)
+find_package(Threads REQUIRED)
 find_package(ixwebsocket REQUIRED)
 find_package(wxWidgets COMPONENTS core base html xml richtext REQUIRED)
 set(wxBUILD_SHARED ON)
@@ -51,18 +52,22 @@ install(TARGETS Client DESTINATION bin)
 link_directories(/app/lib)
 
 # ---- TESTS ----
-find_package(GTest REQUIRED)
-set(TESTS_INCL ${CMAKE_CURRENT_SOURCE_DIR}/tests/include)
-set(TESTS_SRC  ${CMAKE_CURRENT_SOURCE_DIR}/tests/src)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    find_package(GTest REQUIRED)
+    set(TESTS_INCL ${CMAKE_CURRENT_SOURCE_DIR}/tests/include)
+    set(TESTS_SRC  ${CMAKE_CURRENT_SOURCE_DIR}/tests/src)
 
-file(GLOB_RECURSE TESTS_INCL_FILES ${TESTS_INCL}/*.h)
-file(GLOB_RECURSE TESTS_SRC_FILES  ${TESTS_SRC}/*.cpp)
+    file(GLOB_RECURSE TESTS_INCL_FILES ${TESTS_INCL}/*.h)
+    file(GLOB_RECURSE TESTS_SRC_FILES  ${TESTS_SRC}/*.cpp)
 
-add_executable(Client_tests
-    ${TESTS_SRC_FILES}
-    ${TESTS_INCL_FILES}
-    ${CLIENT_SRC}/websocket_client.cpp
-)
+    add_executable(Client_tests
+        ${TESTS_SRC_FILES}
+        ${TESTS_INCL_FILES}
+        ${CLIENT_SRC}/websocket_client.cpp
+        ${CLIENT_SRC}/message_handler.cpp
+        ${CLIENT_SRC}/domain.cpp
+    )
 
-target_include_directories(Client_tests PRIVATE ${TESTS_INCL} ${CLIENT_INCL})
-target_link_libraries(Client_tests PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket general_domain_lib GTest::gtest GTest::gmock GTest::gtest_main)
+    target_include_directories(Client_tests PRIVATE ${TESTS_INCL} ${CLIENT_INCL})
+    target_link_libraries(Client_tests PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket general_domain_lib GTest::gtest GTest::gmock)
+endif()

@@ -13,19 +13,14 @@ class CreateRoomFrame : public wxFrame {
 public:
     CreateRoomFrame(wxWindow* parent, domain::MessageHandler* message_handler);
     void OnEnterButtonClicked(wxCommandEvent& event);
-
-    void SetOnUpdate(std::function<void()> on_update) {
-        on_update_ = on_update;
-    }
+    void SetOnUpdate(ObserveFunc on_update);
 
 private:
     domain::MessageHandler* message_handler_;
     wxTextCtrl* room_name_input_;
     ObserveFunc on_update_;
 
-    void OnClose(wxCloseEvent& event){
-        Destroy();
-    }
+    void OnClose(wxCloseEvent& event);
 };
 
 }   //namespace gui
