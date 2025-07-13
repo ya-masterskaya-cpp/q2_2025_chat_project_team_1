@@ -107,6 +107,7 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
 
         if(res.status) {
             status_bar_->SetStatusText("Room: " + wxString::FromUTF8(parsed_val["info"].asString()),1);
+            chat_history_->Clear();
             chat_history_->AppendText("Room " + wxString::FromUTF8(parsed_val["info"].asString()) +":\n");
         } else {
             wxMessageBox(parsed_val["error"].asString(), "Warning", wxOK | wxICON_WARNING);
@@ -120,7 +121,6 @@ void MainFrame::OnJoinRoomButtonClicked(wxCommandEvent& event) {
         }
 
         Json::Value parsed_msg_val = domain::Parse(recent_msg_res.msg);
-
         for(auto& msg : parsed_msg_val) {
             chat_history_->AppendText(wxString::FromUTF8(msg["from"].asString()) + ": " + wxString::FromUTF8(msg["text"].asString()) +"\n");
             chat_history_->ShowPosition(chat_history_->GetLastPosition());
