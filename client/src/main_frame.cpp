@@ -264,6 +264,7 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
     }
 
     UpdateRoomsList();
+    info_sts_ = info_panel_status::rooms;
 
     ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
     ws_client_->SetOnOpen([self = this](const std::string& msg) {
@@ -280,7 +281,7 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
     ws_client_->SetOnMessage([self = this](const std::string& msg) {
         Json::Value parsed_msg = domain::Parse(msg);
         self->chat_history_->AppendText(wxString::FromUTF8(parsed_msg["from"].asString()) + ": "
-                                                           + wxString::FromUTF8(parsed_msg["text"].asString()) + "\n");
+                                        + wxString::FromUTF8(parsed_msg["text"].asString()) + "\n");
         self->chat_history_->ShowPosition(self->chat_history_->GetLastPosition());
     });
 
