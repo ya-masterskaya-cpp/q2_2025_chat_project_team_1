@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
         IP_GLB = server_param.substr(0, delimiter_pos);
         PORT_GLB =  server_param.substr(delimiter_pos + 1);
     } else {
-        ::testing::GTEST_FLAG(filter) = "-MessageHandler.*";
+        ::testing::GTEST_FLAG(filter) = "-MessageHandlerTest.*";
     }
 
     return RUN_ALL_TESTS();

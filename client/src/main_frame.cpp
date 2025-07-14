@@ -263,6 +263,8 @@ void MainFrame::OnConnectButtonClicked(wxCommandEvent& event) {
         return;
     }
 
+    UpdateRoomsList();
+
     ws_client_ = std::make_unique<transfer::WebSocketClient>(ip.ToStdString(),port,user_.token);
     ws_client_->SetOnOpen([self = this](const std::string& msg) {
         self->status_bar_->SetStatusText(std::string("User: ") + wxString::FromUTF8(self->user_.name),0);
