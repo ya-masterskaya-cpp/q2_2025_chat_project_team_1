@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Автоматически создаётся только одна база, вторую — создаём сами
+
+  server:
+    build: .
+    environment:
+      IRC_CHAT_DB_URL: ${IRC_CHAT_DB_URL}
+    depends_on:
+      - postgres
+    command: ["./build/server/Server"]
+    ports:
+    - "8080:8080"
+
+  dbtests:
+    build: .
+    environment:
+      IRC_CHAT_TEST_DB_URL: ${IRC_CHAT_TEST_DB_URL}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      - postgres
+    command: ["/bin/sh", "-c", "export PGPASSWORD=$POSTGRES_PASSWORD && sleep 10 && psql -U $POSTGRES_USER -h postgres -d postgres -c 'CREATE DATABASE irc_chat_test;' || true && ./build/server/DbTests"]
+
+volumes:
+  pgdata:

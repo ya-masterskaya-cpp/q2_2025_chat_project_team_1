@@ -1,0 +1,97 @@
+{
+  "app-id": "io.team_1.irc_chat",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "22.08",
+  "sdk": "org.freedesktop.Sdk",
+  "command": "Client",
+  "finish-args": [
+    "--socket=wayland",
+    "--socket=x11",
+    "--share=network",
+    "--device=dri"
+  ],
+  "modules": [
+    {
+      "name": "jsoncpp",
+      "buildsystem": "simple",
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/open-source-parsers/jsoncpp/archive/1.9.5.tar.gz",
+          "sha256": "f409856e5920c18d0c2fb85276e24ee607d2a09b5e7d5f0a371368903c275da2",
+          "dest": "."
+        }
+      ],
+      "build-commands": [
+        "mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/app -DJSONCPP_WITH_TESTS=OFF -DBUILD_SHARED_LIBS=ON .. && make -j$(nproc) && make install"
+      ]
+    },
+    {
+      "name": "cpr",
+      "buildsystem": "cmake",
+      "config-opts": [
+        "-DCMAKE_PREFIX_PATH=/app",
+        "-DCPR_FORCE_USE_SYSTEM_CURL=ON",
+        "-DCPR_BUILD_TESTS=OFF",
+        "-DCPR_FORCE_USE_SYSTEM_ZLIB=ON",
+        "-DZLIB_ROOT=/app",
+        "-DCMAKE_CXX_FLAGS=-Wno-deprecated-declarations"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/libcpr/cpr.git",
+          "tag": "1.10.0",
+          "disable-fetch-content": true
+        }
+      ]
+    },
+    {
+      "name": "ixwebsocket",
+      "buildsystem": "cmake",
+      "config-opts": [
+        "-DCMAKE_INSTALL_PREFIX=/app"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/machinezone/IXWebSocket.git",
+          "tag": "v11.4.4"
+        }
+      ]
+    },
+    {
+      "name": "wxWidgets",
+      "buildsystem": "cmake",
+      "config-opts": [
+        "-DwxBUILD_SHARED=ON",
+        "-DwxUSE_X11=ON",
+        "-DCMAKE_INSTALL_PREFIX=/app"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/wxWidgets/wxWidgets.git",
+          "tag": "v3.2.2.1"
+        }
+      ]
+    },
+    {
+      "name": "irc-chat",
+      "buildsystem": "simple",
+      "config-opts": [
+        "-DCMAKE_PREFIX_PATH=/app"
+      ],
+      "build-commands": [
+        "mkdir -p build && cd build && cmake ../client/ -DCMAKE_INSTALL_PREFIX=/app -DCMAKE_BUILD_TYPE=Release  && cmake --build . && cmake --install ."
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "ssh://git@github.com/ya-masterskaya-cpp/q2_2025_chat_project_team_1.git",
+          "branch": "client"
+        }
+      ]
+    }
+  ]
+}
