@@ -13,7 +13,7 @@ find_package(cpr REQUIRED)
 find_package(jsoncpp REQUIRED)
 find_package(Threads REQUIRED)
 find_package(ixwebsocket REQUIRED)
-find_package(wxWidgets COMPONENTS core base html xml richtext REQUIRED)
+find_package(wxWidgets COMPONENTS richtext html core xml base REQUIRED)
 set(wxBUILD_SHARED ON)
 include(${wxWidgets_USE_FILE})
 
@@ -40,7 +40,20 @@ if(wxWidgets_FOUND)
 
 
     target_include_directories(Client PRIVATE ${CLIENT_INCL} ${DOMAIN_INCL})
-    target_link_libraries(Client PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket general_domain_lib)
+
+    target_link_libraries(Client PRIVATE
+        ${wxWidgets_LIBRARIES}
+        cpr::cpr
+        jsoncpp_static
+        ixwebsocket::ixwebsocket
+        general_domain_lib
+    )
+
+    # Под MinGW статическая линковка
+    if(MINGW)
+        target_link_options(Client PRIVATE -static-libgcc -static-libstdc++ -static)
+        target_compile_options(Client PRIVATE -static-libgcc -static-libstdc++)
+    endif()
 
     if(UNIX)
         find_package(X11 REQUIRED)
@@ -69,5 +82,20 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 
     target_include_directories(Client_tests PRIVATE ${TESTS_INCL} ${CLIENT_INCL})
-    target_link_libraries(Client_tests PRIVATE ${wxWidgets_LIBRARIES} cpr::cpr jsoncpp_static ixwebsocket::ixwebsocket general_domain_lib GTest::gtest GTest::gmock)
+
+    target_link_libraries(Client_tests PRIVATE
+        ${wxWidgets_LIBRARIES}
+        cpr::cpr
+        jsoncpp_static
+        ixwebsocket::ixwebsocket
+        general_domain_lib
+        GTest::gtest
+        GTest::gmock
+    )
+
+    # Под MinGW статическая линковка
+    if(MINGW)
+        target_link_options(Client_tests PRIVATE -static-libgcc -static-libstdc++ -static)
+        target_compile_options(Client_tests PRIVATE -static-libgcc -static-libstdc++)
+    endif()
 endif()
