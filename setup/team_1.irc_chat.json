@@ -89,7 +89,7 @@
         {
           "type": "git",
           "url": "ssh://git@github.com/ya-masterskaya-cpp/q2_2025_chat_project_team_1.git",
-          "branch": "client"
+          "branch": "main"
         }
       ]
     }
