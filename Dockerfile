@@ -21,7 +21,7 @@ COPY . .
 RUN cmake -Bbuild -S. \
     -DBUILD_CLIENT=OFF \
     -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
-    && cmake --build build --target Server --target DbTests
+    && cmake --build build --target Server --target DbTests --target TokenManagerTests
 
 # 6. Значение по умолчанию: запуск тестов (можно переопределить через docker-compose)
 CMD ["./build/server/DbTests"]
