@@ -5,6 +5,12 @@ namespace chat {
 
 void TokenManager::SaveToken(postgres::UserId user_id, const std::string& token) {
     std::lock_guard<std::mutex> lock(mutex_);
+    // удаляем, если для user_id уже есть токен
+    auto it = id_to_token_.find(user_id);
+    if (it != id_to_token_.end()) {
+        const std::string& old_token = it->second.token;
+        token_to_id_.erase(old_token);
+    }
     id_to_token_[user_id] = {token, std::chrono::steady_clock::now()};
     token_to_id_[token] = user_id;
 }
@@ -45,7 +51,7 @@ std::optional<postgres::UserId> TokenManager::GetUserIdByToken(const std::string
     return std::nullopt;
 }
 
-std::vector<postgres::UserId> TokenManager::GetOnlineUserIds() const {
+std::vector<postgres::UserId> TokenManager::GetUserIds() const {
     std::lock_guard<std::mutex> lock(mutex_);
     std::vector<postgres::UserId> users;
     for (const auto& pair : id_to_token_) {
@@ -65,7 +71,7 @@ void TokenManager::UpdateActivityByToken(const std::string& token) {
     }
 }
 
-std::vector<std::string> TokenManager::GetExpiredTokens(std::chrono::minutes timeout) const {
+std::vector<std::string> TokenManager::GetExpiredTokens(std::chrono::milliseconds timeout) const {
     std::vector<std::string> expired;
     std::lock_guard<std::mutex> lock(mutex_);
     auto now = std::chrono::steady_clock::now();

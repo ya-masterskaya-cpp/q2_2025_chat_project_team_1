@@ -31,5 +31,9 @@ services:
       - postgres
     command: ["/bin/sh", "-c", "export PGPASSWORD=$POSTGRES_PASSWORD && sleep 10 && psql -U $POSTGRES_USER -h postgres -d postgres -c 'CREATE DATABASE irc_chat_test;' || true && ./build/server/DbTests"]
 
+  token-tests:
+    build: .
+    command: ["./build/server/TokenManagerTests"]
+
 volumes:
   pgdata:
