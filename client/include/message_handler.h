@@ -41,7 +41,6 @@ public:
 
 private:
     UserData& user_;
-    // std::string url_;
     QueryHandler<cpr::Body,cpr::Header,cpr::Parameters> query_handler_;
 
     //methods
