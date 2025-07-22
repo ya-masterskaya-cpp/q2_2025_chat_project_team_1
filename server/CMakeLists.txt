@@ -32,6 +32,7 @@ target_link_libraries(Server PRIVATE Drogon::Drogon general_domain_lib libpqxx::
 # ---- TESTS ----
 enable_testing()
 
+# Тест для БД
 add_executable(DbTests
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_postgres.cpp
     ${SERVER_SRC}/postgres.cpp
@@ -45,3 +46,14 @@ target_include_directories(DbTests PRIVATE ${SERVER_INCL})
 target_link_libraries(DbTests PRIVATE libpqxx::pqxx PostgreSQL::PostgreSQL)
 target_link_libraries(DbTests PRIVATE GTest::gtest GTest::gtest_main pthread)
 add_test(NAME DbTestRun COMMAND DbTests)
+
+# Тест для TokenManager
+add_executable(TokenManagerTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_token_manager.cpp
+    ${SERVER_SRC}/token_manager.cpp
+    ${SERVER_SRC}/tagged_uuid.cpp
+ )
+
+ target_include_directories(TokenManagerTests PRIVATE ${SERVER_INCL})
+ target_link_libraries(TokenManagerTests PRIVATE GTest::gtest GTest::gtest_main pthread PRIVATE libpqxx::pqxx PostgreSQL::PostgreSQL)
+ add_test(NAME TokenManagerTestRun COMMAND TokenManagerTests)

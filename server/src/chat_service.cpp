@@ -59,7 +59,7 @@ bool ChatService::Logout(const std::string& token) {
 
 std::vector<std::string> ChatService::GetOnlineUserNames() const {
     std::vector<std::string> names;
-    for (const auto& user_id : token_manager_.GetOnlineUserIds()) {
+    for (const auto& user_id : token_manager_.GetUserIds()) {
         auto user_opt = db_wrapper_.FindUserById(user_id);
         if (user_opt) {
             names.push_back(user_opt->username);
@@ -221,7 +221,8 @@ void ChatService::ForceLogoutByToken(const std::string& token) {
 }
 
 void ChatService::RemoveExpiredTokens(std::chrono::minutes timeout) {
-    const auto remove_tokens = token_manager_.GetExpiredTokens(timeout);
+    auto ms_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(timeout);
+    const auto remove_tokens = token_manager_.GetExpiredTokens(ms_timeout);
     //std::cout << "[ChatService] RemoveExpiredTokens: " << remove_tokens.size() << " invalid tokens\n"; // для отладки
     for (const auto& token : remove_tokens) {
         ForceLogoutByToken(token);

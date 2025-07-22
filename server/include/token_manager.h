@@ -60,7 +60,7 @@ public:
      * @brief Получает список идентификаторов всех пользователей с активными токенами.
      * @return Вектор идентификаторов пользователей.
      */
-    std::vector<postgres::UserId> GetOnlineUserIds() const;
+    std::vector<postgres::UserId> GetUserIds() const;
 
     /**
      * @brief Обновляет время последней активности пользователя по токену.
@@ -73,7 +73,7 @@ public:
      * @param timeout Время бездействия, по истечении которого токены считаются просроченными.
      * @return std::vector<std::string> список токенов, которые не обновлялись в течение заданного времени.
      */
-    std::vector<std::string> GetExpiredTokens(std::chrono::minutes timeout) const;
+    std::vector<std::string> GetExpiredTokens(std::chrono::milliseconds timeout) const;
 
 private:
     /**
